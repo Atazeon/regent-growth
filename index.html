@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Regent Growth</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div>
+        <p class="eyebrow">Internal AI Sales Engine</p>
+        <h1>Regent Growth</h1>
+      </div>
+      <nav aria-label="Pipeline stages">
+        <a href="#dashboard">Dashboard</a>
+        <a href="#prospects">Prospects</a>
+        <a href="#research">Research</a>
+        <a href="#outreach">Outreach</a>
+        <a href="#handoff">Handoff</a>
+      </nav>
+      <div class="target-card">
+        <span>Week Target</span>
+        <strong>100</strong>
+        <small>qualified companies</small>
+      </div>
+    </aside>
+
+    <main>
+      <section id="dashboard" class="toolbar">
+        <div>
+          <p class="eyebrow">Today</p>
+          <h2>50 new prospects, then push warm leads forward.</h2>
+        </div>
+        <button id="addProspectButton" type="button">Add sample prospect</button>
+      </section>
+
+      <section class="metrics" aria-label="Sales engine metrics">
+        <article>
+          <span>Qualified</span>
+          <strong id="qualifiedMetric">0</strong>
+        </article>
+        <article>
+          <span>Email Drafted</span>
+          <strong id="emailMetric">0</strong>
+        </article>
+        <article>
+          <span>Follow-up Due</span>
+          <strong id="followUpMetric">0</strong>
+        </article>
+        <article>
+          <span>Meetings</span>
+          <strong id="meetingMetric">0</strong>
+        </article>
+      </section>
+
+      <section id="prospects" class="panel">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Pipeline</p>
+            <h2>Qualified Companies</h2>
+          </div>
+          <select id="stageFilter" aria-label="Filter by stage">
+            <option value="all">All stages</option>
+            <option value="Research">Research</option>
+            <option value="Email Drafted">Email Drafted</option>
+            <option value="Sequence">Sequence</option>
+            <option value="LinkedIn">LinkedIn</option>
+            <option value="Call">Call</option>
+            <option value="Meeting">Meeting</option>
+            <option value="Assessment">Assessment</option>
+          </select>
+        </div>
+        <div id="prospectList" class="prospect-list"></div>
+      </section>
+
+      <section id="research" class="split">
+        <article class="panel">
+          <p class="eyebrow">Research Prompt</p>
+          <h2>Company Brief</h2>
+          <textarea id="researchPrompt" readonly></textarea>
+        </article>
+        <article id="outreach" class="panel">
+          <p class="eyebrow">Personalized Email</p>
+          <h2>Draft Template</h2>
+          <textarea id="emailDraft" readonly></textarea>
+        </article>
+      </section>
+
+      <section id="handoff" class="panel">
+        <p class="eyebrow">Warm Lead Handoff</p>
+        <h2>Checklist</h2>
+        <div class="checklist">
+          <label><input type="checkbox"> Decision-maker identified</label>
+          <label><input type="checkbox"> Company pain and buying trigger researched</label>
+          <label><input type="checkbox"> First email personalized and sent</label>
+          <label><input type="checkbox"> Follow-up sequence scheduled</label>
+          <label><input type="checkbox"> LinkedIn connection sent</label>
+          <label><input type="checkbox"> Phone call completed</label>
+          <label><input type="checkbox"> Meeting booked</label>
+          <label><input type="checkbox"> Assessment notes ready</label>
+        </div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>

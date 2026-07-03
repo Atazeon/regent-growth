@@ -1,0 +1,15 @@
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Runtime artifacts
+node_modules/
+dist/
+build/
+coverage/
+
+# Local secrets
+.env
+.env.*

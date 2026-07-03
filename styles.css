@@ -1,0 +1,263 @@
+:root {
+  --bg: #f7f8fb;
+  --ink: #18202f;
+  --muted: #647085;
+  --line: #d9deea;
+  --panel: #ffffff;
+  --nav: #111827;
+  --accent: #1d9a8a;
+  --accent-dark: #13776b;
+  --warn: #c77700;
+  --blue: #2867c7;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.sidebar {
+  min-height: 100vh;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: var(--nav);
+  color: #fff;
+  position: sticky;
+  top: 0;
+}
+
+.sidebar h1,
+.toolbar h2,
+.panel h2 {
+  margin: 0;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+nav {
+  display: grid;
+  gap: 8px;
+  margin: 36px 0;
+}
+
+nav a {
+  color: #d9deea;
+  text-decoration: none;
+  padding: 10px 0;
+}
+
+nav a:hover {
+  color: #fff;
+}
+
+.target-card {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  padding: 18px;
+  display: grid;
+  gap: 4px;
+}
+
+.target-card strong {
+  font-size: 2.5rem;
+}
+
+main {
+  padding: 32px;
+  display: grid;
+  gap: 24px;
+}
+
+.toolbar,
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.toolbar h2 {
+  max-width: 720px;
+  font-size: 2rem;
+}
+
+button,
+select {
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0 14px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+}
+
+button {
+  border-color: var(--accent-dark);
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+button:hover {
+  background: var(--accent-dark);
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(150px, 1fr));
+  gap: 16px;
+}
+
+.metrics article,
+.panel,
+.prospect-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.metrics article {
+  padding: 18px;
+  display: grid;
+  gap: 8px;
+}
+
+.metrics span,
+.prospect-meta,
+.stage {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.metrics strong {
+  font-size: 2rem;
+}
+
+.panel {
+  padding: 22px;
+}
+
+.prospect-list {
+  margin-top: 18px;
+  display: grid;
+  gap: 12px;
+}
+
+.prospect-card {
+  padding: 18px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 14px;
+}
+
+.prospect-card h3 {
+  margin: 0 0 8px;
+}
+
+.prospect-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.stage {
+  align-self: start;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: #f9fafc;
+  white-space: nowrap;
+}
+
+.score {
+  color: var(--warn);
+  font-weight: 700;
+}
+
+.split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+textarea {
+  width: 100%;
+  min-height: 260px;
+  margin-top: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  resize: vertical;
+  color: var(--ink);
+  font: 0.95rem/1.5 Consolas, Monaco, monospace;
+}
+
+.checklist {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 12px 18px;
+  margin-top: 16px;
+}
+
+.checklist label {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  color: var(--muted);
+}
+
+@media (max-width: 900px) {
+  body {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    min-height: auto;
+    position: static;
+    gap: 20px;
+  }
+
+  nav {
+    grid-template-columns: repeat(5, auto);
+    overflow-x: auto;
+    margin: 0;
+  }
+
+  main {
+    padding: 20px;
+  }
+
+  .metrics,
+  .split,
+  .checklist {
+    grid-template-columns: 1fr;
+  }
+
+  .toolbar,
+  .section-heading,
+  .prospect-card {
+    align-items: stretch;
+    flex-direction: column;
+    grid-template-columns: 1fr;
+  }
+}
