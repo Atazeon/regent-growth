@@ -24,9 +24,11 @@ The first useful version should help with daily execution before trying to autom
 - Sequence stage tracking
 - Manual task list for LinkedIn, phone, meeting, and assessment
 
+Current status: the local prototype now supports saved browser-based prospect management, including add, edit, delete, reset, stage advancement, and CSV export.
+
 ### Should Have
 
-- CSV import/export
+- CSV import
 - Email template variants
 - Lead score
 - Response status
@@ -99,8 +101,8 @@ Suggested branch names:
 
 ## First Issues To Create
 
-1. Add CSV prospect import and export.
-2. Add local storage persistence for edited prospects.
+1. Add CSV prospect import.
+2. Add selectable prospect detail view.
 3. Add OpenAI company research prompt flow.
 4. Add personalized email generation.
 5. Add sequence task reminders.

@@ -1,4 +1,6 @@
-const prospects = [
+const storageKey = "regent-growth-prospects";
+const stageOrder = ["Research", "Email Drafted", "Sequence", "LinkedIn", "Call", "Meeting", "Assessment"];
+const sampleProspects = [
   {
     company: "Northstar Dental Group",
     industry: "Healthcare services",
@@ -34,12 +36,62 @@ const prospects = [
   }
 ];
 
-const stageOrder = ["Research", "Email Drafted", "Sequence", "LinkedIn", "Call", "Meeting", "Assessment"];
+let prospects = loadProspects();
+let editingIndex = null;
+
 const prospectList = document.querySelector("#prospectList");
 const stageFilter = document.querySelector("#stageFilter");
-const addProspectButton = document.querySelector("#addProspectButton");
 const researchPrompt = document.querySelector("#researchPrompt");
 const emailDraft = document.querySelector("#emailDraft");
+const prospectForm = document.querySelector("#prospectForm");
+const formTitle = document.querySelector("#formTitle");
+const clearFormButton = document.querySelector("#clearFormButton");
+const exportButton = document.querySelector("#exportButton");
+const resetButton = document.querySelector("#resetButton");
+
+function loadProspects() {
+  const savedProspects = localStorage.getItem(storageKey);
+
+  if (!savedProspects) {
+    return structuredClone(sampleProspects);
+  }
+
+  try {
+    const parsedProspects = JSON.parse(savedProspects);
+    return Array.isArray(parsedProspects) && parsedProspects.length > 0
+      ? parsedProspects.map(normalizeProspect)
+      : structuredClone(sampleProspects);
+  } catch {
+    return structuredClone(sampleProspects);
+  }
+}
+
+function normalizeProspect(prospect) {
+  return {
+    company: prospect.company || "",
+    industry: prospect.industry || "",
+    size: prospect.size || "",
+    website: prospect.website || "",
+    decisionMaker: prospect.decisionMaker || "",
+    score: Number(prospect.score) || 0,
+    trigger: prospect.trigger || "",
+    fit: prospect.fit || "",
+    stage: stageOrder.includes(prospect.stage) ? prospect.stage : "Research"
+  };
+}
+
+function saveProspects() {
+  localStorage.setItem(storageKey, JSON.stringify(prospects));
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
 
 function renderProspects() {
   const selectedStage = stageFilter.value;
@@ -47,19 +99,27 @@ function renderProspects() {
     .map((prospect, index) => ({ prospect, index }))
     .filter((item) => selectedStage === "all" || item.prospect.stage === selectedStage);
 
-  prospectList.innerHTML = visibleProspects.map(({ prospect, index }) => `
-    <article class="prospect-card">
-      <div>
-        <h3>${prospect.company}</h3>
-        <p class="prospect-meta">${prospect.industry} | ${prospect.size} | ${prospect.website}</p>
-        <p>${prospect.fit}</p>
-        <p><strong>Decision-maker:</strong> ${prospect.decisionMaker}</p>
-        <p><strong>Trigger:</strong> ${prospect.trigger}</p>
-        <p class="score">Fit score ${prospect.score}</p>
-      </div>
-      <button type="button" data-index="${index}">${prospect.stage}</button>
-    </article>
-  `).join("");
+  if (visibleProspects.length === 0) {
+    prospectList.innerHTML = `<p class="empty-state">No companies match this stage yet.</p>`;
+  } else {
+    prospectList.innerHTML = visibleProspects.map(({ prospect, index }) => `
+      <article class="prospect-card">
+        <div>
+          <h3>${escapeHtml(prospect.company)}</h3>
+          <p class="prospect-meta">${escapeHtml(prospect.industry)} | ${escapeHtml(prospect.size)} | ${escapeHtml(prospect.website)}</p>
+          <p>${escapeHtml(prospect.fit)}</p>
+          <p><strong>Decision-maker:</strong> ${escapeHtml(prospect.decisionMaker)}</p>
+          <p><strong>Trigger:</strong> ${escapeHtml(prospect.trigger)}</p>
+          <p class="score">Fit score ${escapeHtml(prospect.score)}</p>
+        </div>
+        <div class="card-actions">
+          <button type="button" data-action="advance" data-index="${index}">${escapeHtml(prospect.stage)}</button>
+          <button class="secondary-button" type="button" data-action="edit" data-index="${index}">Edit</button>
+          <button class="danger-button" type="button" data-action="delete" data-index="${index}">Delete</button>
+        </div>
+      </article>
+    `).join("");
+  }
 
   updateMetrics();
   setDrafts(visibleProspects[0]?.prospect || prospects[0]);
@@ -73,6 +133,12 @@ function updateMetrics() {
 }
 
 function setDrafts(prospect) {
+  if (!prospect) {
+    researchPrompt.value = "";
+    emailDraft.value = "";
+    return;
+  }
+
   researchPrompt.value = `Research ${prospect.company} (${prospect.website}).
 
 Find:
@@ -104,31 +170,110 @@ function advanceStage(index) {
   const prospect = prospects[index];
   const currentStage = stageOrder.indexOf(prospect.stage);
   prospect.stage = stageOrder[(currentStage + 1) % stageOrder.length];
+  saveProspects();
   renderProspects();
 }
 
-function addSampleProspect() {
-  prospects.unshift({
-    company: "Summit Home Services",
-    industry: "Home services",
-    size: "64 employees",
-    website: "summithome.example",
-    decisionMaker: "General Manager",
-    score: 83,
-    trigger: "Launching a new maintenance plan",
-    fit: "Recurring service offer with strong need for local prospecting and follow-up.",
-    stage: "Research"
+function editProspect(index) {
+  const prospect = prospects[index];
+  editingIndex = index;
+  formTitle.textContent = "Edit Company";
+  prospectForm.company.value = prospect.company;
+  prospectForm.industry.value = prospect.industry;
+  prospectForm.size.value = prospect.size;
+  prospectForm.website.value = prospect.website;
+  prospectForm.decisionMaker.value = prospect.decisionMaker;
+  prospectForm.score.value = prospect.score;
+  prospectForm.stage.value = prospect.stage;
+  prospectForm.trigger.value = prospect.trigger;
+  prospectForm.fit.value = prospect.fit;
+  document.querySelector("#prospectFormPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function deleteProspect(index) {
+  prospects.splice(index, 1);
+  saveProspects();
+  resetForm();
+  renderProspects();
+}
+
+function resetForm() {
+  editingIndex = null;
+  formTitle.textContent = "Add Company";
+  prospectForm.reset();
+  prospectForm.score.value = 75;
+  prospectForm.stage.value = "Research";
+}
+
+function saveProspectFromForm(event) {
+  event.preventDefault();
+
+  const formData = new FormData(prospectForm);
+  const prospect = normalizeProspect({
+    company: formData.get("company").trim(),
+    industry: formData.get("industry").trim(),
+    size: formData.get("size").trim(),
+    website: formData.get("website").trim(),
+    decisionMaker: formData.get("decisionMaker").trim(),
+    score: formData.get("score"),
+    stage: formData.get("stage"),
+    trigger: formData.get("trigger").trim(),
+    fit: formData.get("fit").trim()
   });
+
+  if (editingIndex === null) {
+    prospects.unshift(prospect);
+  } else {
+    prospects[editingIndex] = prospect;
+  }
+
+  saveProspects();
+  resetForm();
+  renderProspects();
+}
+
+function exportCsv() {
+  const headers = ["company", "industry", "size", "website", "decisionMaker", "score", "trigger", "fit", "stage"];
+  const rows = prospects.map((prospect) => headers.map((header) => csvCell(prospect[header])).join(","));
+  const csv = [headers.join(","), ...rows].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "regent-growth-prospects.csv";
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function csvCell(value) {
+  return `"${String(value ?? "").replaceAll('"', '""')}"`;
+}
+
+function resetSamples() {
+  prospects = structuredClone(sampleProspects);
+  saveProspects();
+  resetForm();
   renderProspects();
 }
 
 prospectList.addEventListener("click", (event) => {
-  if (event.target.matches("button[data-index]")) {
-    advanceStage(Number(event.target.dataset.index));
-  }
+  const button = event.target.closest("button[data-action]");
+  if (!button) return;
+
+  const index = Number(button.dataset.index);
+  const actions = {
+    advance: advanceStage,
+    edit: editProspect,
+    delete: deleteProspect
+  };
+
+  actions[button.dataset.action]?.(index);
 });
 
 stageFilter.addEventListener("change", renderProspects);
-addProspectButton.addEventListener("click", addSampleProspect);
+prospectForm.addEventListener("submit", saveProspectFromForm);
+clearFormButton.addEventListener("click", resetForm);
+exportButton.addEventListener("click", exportCsv);
+resetButton.addEventListener("click", resetSamples);
 
 renderProspects();

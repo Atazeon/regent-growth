@@ -87,7 +87,8 @@ main {
 }
 
 .toolbar,
-.section-heading {
+.section-heading,
+.action-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -100,7 +101,8 @@ main {
 }
 
 button,
-select {
+select,
+input {
   min-height: 42px;
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -120,6 +122,26 @@ button {
 
 button:hover {
   background: var(--accent-dark);
+}
+
+.secondary-button {
+  border-color: var(--line);
+  background: #fff;
+  color: var(--ink);
+}
+
+.secondary-button:hover {
+  background: #eef2f7;
+}
+
+.danger-button {
+  border-color: #a73535;
+  background: #c54848;
+  color: #fff;
+}
+
+.danger-button:hover {
+  background: #a73535;
 }
 
 .metrics {
@@ -166,7 +188,7 @@ button:hover {
 .prospect-card {
   padding: 18px;
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr 150px;
   gap: 14px;
 }
 
@@ -192,6 +214,51 @@ button:hover {
 .score {
   color: var(--warn);
   font-weight: 700;
+}
+
+.card-actions {
+  display: grid;
+  gap: 8px;
+  align-self: start;
+}
+
+.empty-state {
+  margin: 0;
+  color: var(--muted);
+}
+
+.prospect-form {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.prospect-form label {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.prospect-form input,
+.prospect-form select,
+.prospect-form textarea {
+  margin: 0;
+  width: 100%;
+  color: var(--ink);
+  font: 1rem Arial, Helvetica, sans-serif;
+  font-weight: 400;
+}
+
+.prospect-form textarea {
+  min-height: 120px;
+  line-height: 1.5;
+}
+
+.full-span {
+  grid-column: 1 / -1;
 }
 
 .split {
@@ -255,9 +322,14 @@ textarea {
 
   .toolbar,
   .section-heading,
+  .action-row,
   .prospect-card {
     align-items: stretch;
     flex-direction: column;
+    grid-template-columns: 1fr;
+  }
+
+  .prospect-form {
     grid-template-columns: 1fr;
   }
 }

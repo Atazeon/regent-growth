@@ -23,13 +23,16 @@ Open `index.html` in a browser to use the first local dashboard. It includes:
 
 - daily/weekly prospect targets
 - pipeline stage tracking
+- saved prospect management in the browser
+- add, edit, delete, and reset controls
+- CSV export for prospect lists
 - sample qualified prospects
 - AI research prompts and email drafts
 - response and handoff checklist
 
 ## Next Build Milestones
 
-- Add CSV import/export for prospect lists.
+- Add CSV import for prospect lists.
 - Connect enrichment providers for company and contact research.
 - Add OpenAI-powered company research summaries.
 - Add personalized email generation with editable templates.

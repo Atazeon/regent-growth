@@ -32,7 +32,10 @@
           <p class="eyebrow">Today</p>
           <h2>50 new prospects, then push warm leads forward.</h2>
         </div>
-        <button id="addProspectButton" type="button">Add sample prospect</button>
+        <div class="action-row">
+          <button id="exportButton" class="secondary-button" type="button">Export CSV</button>
+          <button id="resetButton" class="secondary-button" type="button">Reset samples</button>
+        </div>
       </section>
 
       <section class="metrics" aria-label="Sales engine metrics">
@@ -72,6 +75,63 @@
           </select>
         </div>
         <div id="prospectList" class="prospect-list"></div>
+      </section>
+
+      <section id="prospectFormPanel" class="panel">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Prospect Intake</p>
+            <h2 id="formTitle">Add Company</h2>
+          </div>
+          <button id="clearFormButton" class="secondary-button" type="button">Clear form</button>
+        </div>
+        <form id="prospectForm" class="prospect-form">
+          <label>
+            Company
+            <input id="companyInput" name="company" required>
+          </label>
+          <label>
+            Industry
+            <input id="industryInput" name="industry" required>
+          </label>
+          <label>
+            Size
+            <input id="sizeInput" name="size" placeholder="50 employees">
+          </label>
+          <label>
+            Website
+            <input id="websiteInput" name="website" placeholder="example.com">
+          </label>
+          <label>
+            Decision-maker
+            <input id="decisionMakerInput" name="decisionMaker" placeholder="Founder, VP Sales, Operations Director">
+          </label>
+          <label>
+            Fit score
+            <input id="scoreInput" name="score" type="number" min="0" max="100" value="75">
+          </label>
+          <label>
+            Stage
+            <select id="stageInput" name="stage">
+              <option value="Research">Research</option>
+              <option value="Email Drafted">Email Drafted</option>
+              <option value="Sequence">Sequence</option>
+              <option value="LinkedIn">LinkedIn</option>
+              <option value="Call">Call</option>
+              <option value="Meeting">Meeting</option>
+              <option value="Assessment">Assessment</option>
+            </select>
+          </label>
+          <label>
+            Buying trigger
+            <input id="triggerInput" name="trigger" placeholder="Hiring sales reps, opening a location, launching an offer">
+          </label>
+          <label class="full-span">
+            Fit reason
+            <textarea id="fitInput" name="fit" required></textarea>
+          </label>
+          <button id="saveProspectButton" type="submit">Save prospect</button>
+        </form>
       </section>
 
       <section id="research" class="split">
