@@ -10,6 +10,7 @@ Build a private AI sales operating system that creates a repeatable outbound mac
 - automated follow-up
 - LinkedIn and call task tracking
 - meeting booking and warm-lead handoff
+- local-first AI through Ollama
 
 ## MVP Scope
 
@@ -26,6 +27,8 @@ The first useful version should help with daily execution before trying to autom
 
 Current status: the local prototype now supports saved browser-based prospect management, including add, edit, delete, reset, stage advancement, and CSV export.
 
+AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI backend. A direct API generation check succeeded with `qwen2.5:0.5b`, and available local models include `llama3:latest`, `qwen2.5:0.5b`, and `phi3:mini`.
+
 ### Should Have
 
 - CSV import
@@ -39,8 +42,8 @@ Current status: the local prototype now supports saved browser-based prospect ma
 
 - Automated company discovery
 - Contact enrichment
-- OpenAI research agent
-- OpenAI email writer
+- Ollama research agent
+- Ollama email writer
 - Gmail/Outlook sending
 - LinkedIn workflow support
 - CRM sync
@@ -95,7 +98,7 @@ git push
 Suggested branch names:
 
 - `codex/csv-import`
-- `codex/openai-research`
+- `codex/ollama-research`
 - `codex/email-generator`
 - `codex/pipeline-storage`
 
@@ -103,6 +106,6 @@ Suggested branch names:
 
 1. Add CSV prospect import.
 2. Add selectable prospect detail view.
-3. Add OpenAI company research prompt flow.
+3. Add Ollama company research prompt flow.
 4. Add personalized email generation.
 5. Add sequence task reminders.

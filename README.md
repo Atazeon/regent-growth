@@ -30,11 +30,21 @@ Open `index.html` in a browser to use the first local dashboard. It includes:
 - AI research prompts and email drafts
 - response and handoff checklist
 
+## Local AI Direction
+
+Regent Growth is intended to run locally first. The AI features should use the local Ollama API at `http://127.0.0.1:11434` before relying on any cloud AI provider.
+
+Verified local Ollama models on this machine:
+
+- `llama3:latest`
+- `qwen2.5:0.5b`
+- `phi3:mini`
+
 ## Next Build Milestones
 
 - Add CSV import for prospect lists.
 - Connect enrichment providers for company and contact research.
-- Add OpenAI-powered company research summaries.
+- Add Ollama-powered company research summaries.
 - Add personalized email generation with editable templates.
 - Store leads and sequences in a database.
 - Integrate Gmail/Outlook, LinkedIn, and calendar scheduling.
