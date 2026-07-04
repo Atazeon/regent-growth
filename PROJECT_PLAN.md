@@ -25,14 +25,14 @@ The first useful version should help with daily execution before trying to autom
 - Sequence stage tracking
 - Manual task list for LinkedIn, phone, meeting, and assessment
 
-Current status: the local prototype now supports saved browser-based prospect management, including add, edit, delete, reset, stage advancement, and CSV export.
+Current status: the local prototype now supports saved browser-based prospect management, including add, edit, delete, reset, stage advancement, CSV export, and local Ollama generation for company briefs and personalized emails.
 
-AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI backend. A direct API generation check succeeded with `qwen2.5:0.5b`, and available local models include `llama3:latest`, `qwen2.5:0.5b`, and `phi3:mini`.
+AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI backend. `qwen3:8b` is installed and verified, and the dashboard uses it as the default quality model. `qwen2.5:0.5b` remains available as a fast rough-draft fallback. Available local models include `qwen3:8b`, `llama3:latest`, `qwen2.5:0.5b`, and `phi3:mini`.
 
 ### Should Have
 
 - CSV import
-- Email template variants
+- Editable AI prompt templates
 - Lead score
 - Response status
 - Calendar booking link field
@@ -106,6 +106,6 @@ Suggested branch names:
 
 1. Add CSV prospect import.
 2. Add selectable prospect detail view.
-3. Add Ollama company research prompt flow.
-4. Add personalized email generation.
+3. Add editable AI prompt templates.
+4. Add response tracking.
 5. Add sequence task reminders.

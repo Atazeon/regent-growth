@@ -124,6 +124,11 @@ button:hover {
   background: var(--accent-dark);
 }
 
+button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
 .secondary-button {
   border-color: var(--line);
   background: #fff;
@@ -190,6 +195,11 @@ button:hover {
   display: grid;
   grid-template-columns: 1fr 150px;
   gap: 14px;
+}
+
+.selected-card {
+  border-color: var(--accent);
+  box-shadow: inset 4px 0 0 var(--accent);
 }
 
 .prospect-card h3 {
@@ -259,6 +269,22 @@ button:hover {
 
 .full-span {
   grid-column: 1 / -1;
+}
+
+.ai-status {
+  margin: -10px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.ai-status[data-state="working"] {
+  color: var(--blue);
+  font-weight: 700;
+}
+
+.ai-status[data-state="error"] {
+  color: #a73535;
+  font-weight: 700;
 }
 
 .split {

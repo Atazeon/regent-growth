@@ -33,6 +33,11 @@
           <h2>50 new prospects, then push warm leads forward.</h2>
         </div>
         <div class="action-row">
+          <select id="modelSelect" aria-label="Local AI model">
+            <option value="qwen3:8b">qwen3:8b</option>
+            <option value="llama3:latest">llama3:latest</option>
+            <option value="qwen2.5:0.5b">qwen2.5:0.5b</option>
+          </select>
           <button id="exportButton" class="secondary-button" type="button">Export CSV</button>
           <button id="resetButton" class="secondary-button" type="button">Reset samples</button>
         </div>
@@ -136,16 +141,28 @@
 
       <section id="research" class="split">
         <article class="panel">
-          <p class="eyebrow">Research Prompt</p>
-          <h2>Company Brief</h2>
-          <textarea id="researchPrompt" readonly></textarea>
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Local AI Research</p>
+              <h2>Company Brief</h2>
+            </div>
+            <button id="generateBriefButton" type="button">Generate brief</button>
+          </div>
+          <textarea id="researchPrompt"></textarea>
         </article>
         <article id="outreach" class="panel">
-          <p class="eyebrow">Personalized Email</p>
-          <h2>Draft Template</h2>
-          <textarea id="emailDraft" readonly></textarea>
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Personalized Email</p>
+              <h2>Draft</h2>
+            </div>
+            <button id="generateEmailButton" type="button">Generate email</button>
+          </div>
+          <textarea id="emailDraft"></textarea>
         </article>
       </section>
+
+      <p id="aiStatus" class="ai-status" aria-live="polite">Local AI ready: qwen3:8b</p>
 
       <section id="handoff" class="panel">
         <p class="eyebrow">Warm Lead Handoff</p>

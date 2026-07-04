@@ -27,25 +27,27 @@ Open `index.html` in a browser to use the first local dashboard. It includes:
 - add, edit, delete, and reset controls
 - CSV export for prospect lists
 - sample qualified prospects
-- AI research prompts and email drafts
+- Ollama-powered company brief and email generation
 - response and handoff checklist
 
 ## Local AI Direction
 
-Regent Growth is intended to run locally first. The AI features should use the local Ollama API at `http://127.0.0.1:11434` before relying on any cloud AI provider.
+Regent Growth is intended to run locally first. The AI features use the local Ollama API at `http://127.0.0.1:11434` before relying on any cloud AI provider.
 
 Verified local Ollama models on this machine:
 
+- `qwen3:8b` recommended default
 - `llama3:latest`
 - `qwen2.5:0.5b`
 - `phi3:mini`
+
+The dashboard defaults to `qwen3:8b` for AI company briefs and personalized email drafts. Ollama must be running locally before those buttons can generate output. On CPU fallback, `qwen3:8b` may take a minute or two; use `qwen2.5:0.5b` from the model selector for quick rough drafts.
 
 ## Next Build Milestones
 
 - Add CSV import for prospect lists.
 - Connect enrichment providers for company and contact research.
-- Add Ollama-powered company research summaries.
-- Add personalized email generation with editable templates.
+- Add editable AI prompt templates.
 - Store leads and sequences in a database.
 - Integrate Gmail/Outlook, LinkedIn, and calendar scheduling.
 - Add GitHub issues for each milestone once the first remote repo exists.

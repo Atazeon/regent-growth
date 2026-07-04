@@ -1,4 +1,6 @@
 const storageKey = "regent-growth-prospects";
+const ollamaEndpoint = "http://127.0.0.1:11434/api/generate";
+const ollamaTimeoutMs = 150000;
 const stageOrder = ["Research", "Email Drafted", "Sequence", "LinkedIn", "Call", "Meeting", "Assessment"];
 const sampleProspects = [
   {
@@ -38,6 +40,7 @@ const sampleProspects = [
 
 let prospects = loadProspects();
 let editingIndex = null;
+let selectedProspectIndex = 0;
 
 const prospectList = document.querySelector("#prospectList");
 const stageFilter = document.querySelector("#stageFilter");
@@ -48,6 +51,10 @@ const formTitle = document.querySelector("#formTitle");
 const clearFormButton = document.querySelector("#clearFormButton");
 const exportButton = document.querySelector("#exportButton");
 const resetButton = document.querySelector("#resetButton");
+const modelSelect = document.querySelector("#modelSelect");
+const generateBriefButton = document.querySelector("#generateBriefButton");
+const generateEmailButton = document.querySelector("#generateEmailButton");
+const aiStatus = document.querySelector("#aiStatus");
 
 function loadProspects() {
   const savedProspects = localStorage.getItem(storageKey);
@@ -103,7 +110,7 @@ function renderProspects() {
     prospectList.innerHTML = `<p class="empty-state">No companies match this stage yet.</p>`;
   } else {
     prospectList.innerHTML = visibleProspects.map(({ prospect, index }) => `
-      <article class="prospect-card">
+      <article class="prospect-card ${index === selectedProspectIndex ? "selected-card" : ""}">
         <div>
           <h3>${escapeHtml(prospect.company)}</h3>
           <p class="prospect-meta">${escapeHtml(prospect.industry)} | ${escapeHtml(prospect.size)} | ${escapeHtml(prospect.website)}</p>
@@ -113,6 +120,7 @@ function renderProspects() {
           <p class="score">Fit score ${escapeHtml(prospect.score)}</p>
         </div>
         <div class="card-actions">
+          <button class="secondary-button" type="button" data-action="select" data-index="${index}">Use for AI</button>
           <button type="button" data-action="advance" data-index="${index}">${escapeHtml(prospect.stage)}</button>
           <button class="secondary-button" type="button" data-action="edit" data-index="${index}">Edit</button>
           <button class="danger-button" type="button" data-action="delete" data-index="${index}">Delete</button>
@@ -122,7 +130,10 @@ function renderProspects() {
   }
 
   updateMetrics();
-  setDrafts(visibleProspects[0]?.prospect || prospects[0]);
+  const selectedVisibleProspect = visibleProspects.find((item) => item.index === selectedProspectIndex);
+  const selectedProspect = selectedVisibleProspect?.prospect || visibleProspects[0]?.prospect || prospects[0];
+  selectedProspectIndex = prospects.indexOf(selectedProspect);
+  setDrafts(selectedProspect);
 }
 
 function updateMetrics() {
@@ -130,6 +141,10 @@ function updateMetrics() {
   document.querySelector("#emailMetric").textContent = prospects.filter((prospect) => prospect.stage !== "Research").length;
   document.querySelector("#followUpMetric").textContent = prospects.filter((prospect) => prospect.stage === "Sequence").length;
   document.querySelector("#meetingMetric").textContent = prospects.filter((prospect) => prospect.stage === "Meeting").length;
+}
+
+function getSelectedProspect() {
+  return prospects[selectedProspectIndex] || prospects[0];
 }
 
 function setDrafts(prospect) {
@@ -166,6 +181,119 @@ Best,
 Ibrahim`;
 }
 
+function setAiStatus(message, state = "idle") {
+  aiStatus.textContent = message;
+  aiStatus.dataset.state = state;
+}
+
+async function generateWithOllama(prompt, numPredict = 260) {
+  const model = modelSelect.value;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), ollamaTimeoutMs);
+  setAiStatus(`Local AI working: ${model}. Qwen can take a minute on CPU.`, "working");
+
+  try {
+    const response = await fetch(ollamaEndpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model,
+        prompt,
+        stream: false,
+        think: false,
+        options: {
+          temperature: 0.35,
+          top_p: 0.9,
+          num_predict: numPredict
+        }
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Ollama returned ${response.status}`);
+    }
+
+    const data = await response.json();
+    setAiStatus(`Local AI ready: ${model}`, "idle");
+    return data.response?.trim() || "";
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+async function generateCompanyBrief() {
+  const prospect = getSelectedProspect();
+  if (!prospect) return;
+
+  generateBriefButton.disabled = true;
+  try {
+    researchPrompt.value = await generateWithOllama(`You are Regent Growth's local AI sales researcher.
+
+Regent Growth helps businesses find qualified prospects, research accounts, write personalized outreach, track follow-up, and book more meetings. You are researching the prospect below as a potential customer for Regent Growth. Do not write from the prospect's point of view.
+
+Write a concise company brief for outbound sales. Do not include hidden reasoning or chain-of-thought. Keep the entire answer under 180 words.
+
+Company: ${prospect.company}
+Industry: ${prospect.industry}
+Size: ${prospect.size}
+Website: ${prospect.website}
+Decision-maker: ${prospect.decisionMaker}
+Buying trigger: ${prospect.trigger}
+Fit reason: ${prospect.fit}
+
+Return exactly these sections:
+1. Why this company is qualified
+2. Likely pain points
+3. Best decision-maker angle
+4. One personalized opening line`, 220);
+  } catch (error) {
+    const message = error.name === "AbortError"
+      ? "Local AI timed out. Try qwen2.5:0.5b for a quick draft or retry qwen3:8b."
+      : "Local AI error: make sure Ollama is running and the model is installed.";
+    setAiStatus(message, "error");
+  } finally {
+    generateBriefButton.disabled = false;
+  }
+}
+
+async function generatePersonalizedEmail() {
+  const prospect = getSelectedProspect();
+  if (!prospect) return;
+
+  generateEmailButton.disabled = true;
+  try {
+    emailDraft.value = await generateWithOllama(`You are Regent Growth's local AI email writer.
+
+Regent Growth is the seller. The company below is the prospect. Write from Ibrahim at Regent Growth to the decision-maker. Do not write as the prospect.
+
+Write one concise B2B cold email. Do not include hidden reasoning or chain-of-thought.
+
+Company: ${prospect.company}
+Industry: ${prospect.industry}
+Size: ${prospect.size}
+Decision-maker: ${prospect.decisionMaker}
+Buying trigger: ${prospect.trigger}
+Fit reason: ${prospect.fit}
+
+Rules:
+- Include a subject line.
+- Keep the body under 120 words.
+- Make it personalized to the buying trigger.
+- Offer help getting more qualified meetings.
+- End with a simple question.`, 180);
+  } catch (error) {
+    const message = error.name === "AbortError"
+      ? "Local AI timed out. Try qwen2.5:0.5b for a quick draft or retry qwen3:8b."
+      : "Local AI error: make sure Ollama is running and the model is installed.";
+    setAiStatus(message, "error");
+  } finally {
+    generateEmailButton.disabled = false;
+  }
+}
+
 function advanceStage(index) {
   const prospect = prospects[index];
   const currentStage = stageOrder.indexOf(prospect.stage);
@@ -192,8 +320,15 @@ function editProspect(index) {
 
 function deleteProspect(index) {
   prospects.splice(index, 1);
+  selectedProspectIndex = Math.min(selectedProspectIndex, prospects.length - 1);
   saveProspects();
   resetForm();
+  renderProspects();
+}
+
+function selectProspect(index) {
+  selectedProspectIndex = index;
+  setDrafts(prospects[index]);
   renderProspects();
 }
 
@@ -223,8 +358,10 @@ function saveProspectFromForm(event) {
 
   if (editingIndex === null) {
     prospects.unshift(prospect);
+    selectedProspectIndex = 0;
   } else {
     prospects[editingIndex] = prospect;
+    selectedProspectIndex = editingIndex;
   }
 
   saveProspects();
@@ -251,6 +388,7 @@ function csvCell(value) {
 
 function resetSamples() {
   prospects = structuredClone(sampleProspects);
+  selectedProspectIndex = 0;
   saveProspects();
   resetForm();
   renderProspects();
@@ -262,6 +400,7 @@ prospectList.addEventListener("click", (event) => {
 
   const index = Number(button.dataset.index);
   const actions = {
+    select: selectProspect,
     advance: advanceStage,
     edit: editProspect,
     delete: deleteProspect
@@ -275,5 +414,8 @@ prospectForm.addEventListener("submit", saveProspectFromForm);
 clearFormButton.addEventListener("click", resetForm);
 exportButton.addEventListener("click", exportCsv);
 resetButton.addEventListener("click", resetSamples);
+modelSelect.addEventListener("change", () => setAiStatus(`Local AI ready: ${modelSelect.value}`));
+generateBriefButton.addEventListener("click", generateCompanyBrief);
+generateEmailButton.addEventListener("click", generatePersonalizedEmail);
 
 renderProspects();
