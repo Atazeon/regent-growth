@@ -3,6 +3,7 @@ const promptStorageKey = "regent-growth-prompt-templates";
 const ollamaEndpoint = "http://127.0.0.1:11434/api/generate";
 const ollamaTimeoutMs = 150000;
 const stageOrder = ["Research", "Email Drafted", "Sequence", "LinkedIn", "Call", "Meeting", "Assessment"];
+const responseStatuses = ["Not Contacted", "Contacted", "Replied", "Interested", "Meeting Booked", "Not Interested", "No Response"];
 const defaultPromptTemplates = {
   brief: `You are Regent Growth's local AI sales researcher.
 
@@ -57,7 +58,11 @@ const sampleProspects = [
     score: 86,
     trigger: "Expanding to two new clinics this quarter",
     fit: "Multi-location operator with appointment volume and front-desk follow-up pressure.",
-    stage: "Research"
+    stage: "Research",
+    responseStatus: "Not Contacted",
+    lastTouch: "",
+    nextTouch: "",
+    responseNotes: ""
   },
   {
     company: "CivicStone Roofing",
@@ -68,7 +73,11 @@ const sampleProspects = [
     score: 91,
     trigger: "Hiring outbound sales representatives",
     fit: "High-ticket B2B service where faster lead qualification can create direct revenue lift.",
-    stage: "Email Drafted"
+    stage: "Email Drafted",
+    responseStatus: "Contacted",
+    lastTouch: "",
+    nextTouch: "",
+    responseNotes: ""
   },
   {
     company: "Atlas Managed IT",
@@ -79,7 +88,11 @@ const sampleProspects = [
     score: 78,
     trigger: "Publishing new cybersecurity assessment offer",
     fit: "Clear assessment-led sales motion and likely need for qualified local business leads.",
-    stage: "Sequence"
+    stage: "Sequence",
+    responseStatus: "No Response",
+    lastTouch: "",
+    nextTouch: "",
+    responseNotes: ""
   }
 ];
 
@@ -93,6 +106,11 @@ const selectedDetail = document.querySelector("#selectedDetail");
 const detailCompany = document.querySelector("#detailCompany");
 const detailAdvanceButton = document.querySelector("#detailAdvanceButton");
 const detailEditButton = document.querySelector("#detailEditButton");
+const responseForm = document.querySelector("#responseForm");
+const detailResponseStatus = document.querySelector("#detailResponseStatus");
+const detailLastTouch = document.querySelector("#detailLastTouch");
+const detailNextTouch = document.querySelector("#detailNextTouch");
+const detailResponseNotes = document.querySelector("#detailResponseNotes");
 const briefTemplateInput = document.querySelector("#briefTemplateInput");
 const emailTemplateInput = document.querySelector("#emailTemplateInput");
 const savePromptsButton = document.querySelector("#savePromptsButton");
@@ -158,6 +176,10 @@ function normalizeProspect(prospect) {
     trigger: prospect.trigger || "",
     fit: prospect.fit || "",
     stage: stageOrder.includes(prospect.stage) ? prospect.stage : "Research",
+    responseStatus: responseStatuses.includes(prospect.responseStatus) ? prospect.responseStatus : "Not Contacted",
+    lastTouch: prospect.lastTouch || "",
+    nextTouch: prospect.nextTouch || "",
+    responseNotes: prospect.responseNotes || "",
     aiBrief: prospect.aiBrief || "",
     aiEmail: prospect.aiEmail || ""
   };
@@ -197,6 +219,7 @@ function renderProspects() {
           <p>${escapeHtml(prospect.fit)}</p>
           <p><strong>Decision-maker:</strong> ${escapeHtml(prospect.decisionMaker)}</p>
           <p><strong>Trigger:</strong> ${escapeHtml(prospect.trigger)}</p>
+          <p><strong>Response:</strong> ${escapeHtml(prospect.responseStatus)}${prospect.nextTouch ? ` | Next ${escapeHtml(formatDate(prospect.nextTouch))}` : ""}</p>
           <p class="score">Fit score ${escapeHtml(prospect.score)}</p>
         </div>
         <div class="card-actions">
@@ -220,12 +243,29 @@ function renderProspects() {
 function updateMetrics() {
   document.querySelector("#qualifiedMetric").textContent = prospects.length;
   document.querySelector("#emailMetric").textContent = prospects.filter((prospect) => prospect.stage !== "Research").length;
-  document.querySelector("#followUpMetric").textContent = prospects.filter((prospect) => prospect.stage === "Sequence").length;
-  document.querySelector("#meetingMetric").textContent = prospects.filter((prospect) => prospect.stage === "Meeting").length;
+  document.querySelector("#followUpMetric").textContent = prospects.filter(isFollowUpDue).length;
+  document.querySelector("#meetingMetric").textContent = prospects.filter((prospect) => prospect.stage === "Meeting" || prospect.responseStatus === "Meeting Booked").length;
 }
 
 function getSelectedProspect() {
   return prospects[selectedProspectIndex] || prospects[0];
+}
+
+function isFollowUpDue(prospect) {
+  if (!prospect.nextTouch || ["Meeting Booked", "Not Interested"].includes(prospect.responseStatus)) {
+    return false;
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const nextTouch = new Date(`${prospect.nextTouch}T00:00:00`);
+  return nextTouch <= today;
+}
+
+function formatDate(value) {
+  if (!value) return "Not set";
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
 function getNextAction(stage) {
@@ -255,12 +295,18 @@ function renderSelectedDetail() {
     selectedDetail.innerHTML = `<p class="empty-state">Select or add a prospect to view details.</p>`;
     detailAdvanceButton.disabled = true;
     detailEditButton.disabled = true;
+    responseForm.hidden = true;
     return;
   }
 
   detailCompany.textContent = prospect.company;
   detailAdvanceButton.disabled = false;
   detailEditButton.disabled = false;
+  responseForm.hidden = false;
+  detailResponseStatus.value = prospect.responseStatus;
+  detailLastTouch.value = prospect.lastTouch;
+  detailNextTouch.value = prospect.nextTouch;
+  detailResponseNotes.value = prospect.responseNotes;
   selectedDetail.innerHTML = `
     <article>
       <span>Stage</span>
@@ -278,6 +324,22 @@ function renderSelectedDetail() {
       <span>Website</span>
       <strong>${escapeHtml(prospect.website || "Unknown")}</strong>
     </article>
+    <article>
+      <span>Response</span>
+      <strong>${escapeHtml(prospect.responseStatus)}</strong>
+    </article>
+    <article>
+      <span>Last Touch</span>
+      <strong>${escapeHtml(formatDate(prospect.lastTouch))}</strong>
+    </article>
+    <article>
+      <span>Next Touch</span>
+      <strong>${escapeHtml(formatDate(prospect.nextTouch))}</strong>
+    </article>
+    <article>
+      <span>Follow-Up Due</span>
+      <strong>${isFollowUpDue(prospect) ? "Yes" : "No"}</strong>
+    </article>
     <article class="detail-wide">
       <span>Buying Trigger</span>
       <p>${escapeHtml(prospect.trigger || "No trigger recorded yet.")}</p>
@@ -289,6 +351,10 @@ function renderSelectedDetail() {
     <article class="detail-wide">
       <span>Next Action</span>
       <p>${escapeHtml(getNextAction(prospect.stage))}</p>
+    </article>
+    <article class="detail-wide">
+      <span>Response Notes</span>
+      <p>${previewText(prospect.responseNotes, "No response notes recorded yet.")}</p>
     </article>
     <article class="detail-wide">
       <span>Saved AI Brief</span>
@@ -479,8 +545,12 @@ function editProspect(index) {
   prospectForm.decisionMaker.value = prospect.decisionMaker;
   prospectForm.score.value = prospect.score;
   prospectForm.stage.value = prospect.stage;
+  prospectForm.responseStatus.value = prospect.responseStatus;
+  prospectForm.lastTouch.value = prospect.lastTouch;
+  prospectForm.nextTouch.value = prospect.nextTouch;
   prospectForm.trigger.value = prospect.trigger;
   prospectForm.fit.value = prospect.fit;
+  prospectForm.responseNotes.value = prospect.responseNotes;
   document.querySelector("#prospectFormPanel").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -504,6 +574,22 @@ function resetForm() {
   prospectForm.reset();
   prospectForm.score.value = 75;
   prospectForm.stage.value = "Research";
+  prospectForm.responseStatus.value = "Not Contacted";
+}
+
+function saveResponseFromForm(event) {
+  event.preventDefault();
+  const prospect = getSelectedProspect();
+  if (!prospect) return;
+
+  const formData = new FormData(responseForm);
+  prospect.responseStatus = formData.get("responseStatus");
+  prospect.lastTouch = formData.get("lastTouch");
+  prospect.nextTouch = formData.get("nextTouch");
+  prospect.responseNotes = formData.get("responseNotes").trim();
+  saveProspects();
+  renderProspects();
+  setDataStatus(`Response tracking saved for ${prospect.company}.`);
 }
 
 function saveProspectFromForm(event) {
@@ -518,8 +604,12 @@ function saveProspectFromForm(event) {
     decisionMaker: formData.get("decisionMaker").trim(),
     score: formData.get("score"),
     stage: formData.get("stage"),
+    responseStatus: formData.get("responseStatus"),
+    lastTouch: formData.get("lastTouch"),
+    nextTouch: formData.get("nextTouch"),
     trigger: formData.get("trigger").trim(),
     fit: formData.get("fit").trim(),
+    responseNotes: formData.get("responseNotes").trim(),
     aiBrief: editingIndex === null ? "" : prospects[editingIndex]?.aiBrief,
     aiEmail: editingIndex === null ? "" : prospects[editingIndex]?.aiEmail
   });
@@ -538,7 +628,7 @@ function saveProspectFromForm(event) {
 }
 
 function exportCsv() {
-  const headers = ["company", "industry", "size", "website", "decisionMaker", "score", "trigger", "fit", "stage"];
+  const headers = ["company", "industry", "size", "website", "decisionMaker", "score", "trigger", "fit", "stage", "responseStatus", "lastTouch", "nextTouch", "responseNotes"];
   const rows = prospects.map((prospect) => headers.map((header) => csvCell(prospect[header])).join(","));
   const csv = [headers.join(","), ...rows].join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
@@ -615,7 +705,11 @@ function prospectFromCsvRow(headers, row) {
     score: values.score || values.fitscore,
     trigger: values.trigger || values.buyingtrigger,
     fit: values.fit || values.fitreason || values.qualificationreason || values.notes,
-    stage: values.stage || values.status
+    stage: values.stage || values.status,
+    responseStatus: values.responsestatus || values.response || values.replystatus,
+    lastTouch: values.lasttouch || values.lastcontact || values.lasttouchdate,
+    nextTouch: values.nexttouch || values.nextfollowup || values.nexttouchdate,
+    responseNotes: values.responsenotes || values.replynotes || values.outreachnotes
   });
 }
 
@@ -680,6 +774,7 @@ prospectList.addEventListener("click", (event) => {
 
 stageFilter.addEventListener("change", renderProspects);
 prospectForm.addEventListener("submit", saveProspectFromForm);
+responseForm.addEventListener("submit", saveResponseFromForm);
 clearFormButton.addEventListener("click", resetForm);
 importInput.addEventListener("change", importCsv);
 exportButton.addEventListener("click", exportCsv);

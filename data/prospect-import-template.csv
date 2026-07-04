@@ -1,2 +1,2 @@
-company,industry,size,website,decisionMaker,score,trigger,fit,stage
-Example Dental Group,Healthcare services,50 employees,exampledental.com,Operations Director,80,Opening a second location,Multi-location operator with front-desk follow-up pressure,Research
+company,industry,size,website,decisionMaker,score,trigger,fit,stage,responseStatus,lastTouch,nextTouch,responseNotes
+Example Dental Group,Healthcare services,50 employees,exampledental.com,Operations Director,80,Opening a second location,Multi-location operator with front-desk follow-up pressure,Research,Not Contacted,,,Add reply or call notes here

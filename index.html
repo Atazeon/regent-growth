@@ -100,6 +100,33 @@
           </div>
         </div>
         <div id="selectedDetail" class="detail-grid"></div>
+        <form id="responseForm" class="response-form">
+          <label>
+            Response status
+            <select id="detailResponseStatus" name="responseStatus">
+              <option value="Not Contacted">Not Contacted</option>
+              <option value="Contacted">Contacted</option>
+              <option value="Replied">Replied</option>
+              <option value="Interested">Interested</option>
+              <option value="Meeting Booked">Meeting Booked</option>
+              <option value="Not Interested">Not Interested</option>
+              <option value="No Response">No Response</option>
+            </select>
+          </label>
+          <label>
+            Last touch
+            <input id="detailLastTouch" name="lastTouch" type="date">
+          </label>
+          <label>
+            Next touch
+            <input id="detailNextTouch" name="nextTouch" type="date">
+          </label>
+          <label class="full-span">
+            Response notes
+            <textarea id="detailResponseNotes" name="responseNotes"></textarea>
+          </label>
+          <button type="submit">Save response</button>
+        </form>
       </section>
 
       <section id="prospectFormPanel" class="panel">
@@ -148,12 +175,36 @@
             </select>
           </label>
           <label>
+            Response status
+            <select id="responseStatusInput" name="responseStatus">
+              <option value="Not Contacted">Not Contacted</option>
+              <option value="Contacted">Contacted</option>
+              <option value="Replied">Replied</option>
+              <option value="Interested">Interested</option>
+              <option value="Meeting Booked">Meeting Booked</option>
+              <option value="Not Interested">Not Interested</option>
+              <option value="No Response">No Response</option>
+            </select>
+          </label>
+          <label>
+            Last touch
+            <input id="lastTouchInput" name="lastTouch" type="date">
+          </label>
+          <label>
+            Next touch
+            <input id="nextTouchInput" name="nextTouch" type="date">
+          </label>
+          <label>
             Buying trigger
             <input id="triggerInput" name="trigger" placeholder="Hiring sales reps, opening a location, launching an offer">
           </label>
           <label class="full-span">
             Fit reason
             <textarea id="fitInput" name="fit" required></textarea>
+          </label>
+          <label class="full-span">
+            Response notes
+            <textarea id="responseNotesInput" name="responseNotes" placeholder="Reply summary, objections, call notes, or meeting context"></textarea>
           </label>
           <button id="saveProspectButton" type="submit">Save prospect</button>
         </form>

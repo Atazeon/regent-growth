@@ -263,7 +263,8 @@ button:disabled {
   gap: 16px;
 }
 
-.prospect-form label {
+.prospect-form label,
+.response-form label {
   display: grid;
   gap: 8px;
   color: var(--muted);
@@ -273,7 +274,10 @@ button:disabled {
 
 .prospect-form input,
 .prospect-form select,
-.prospect-form textarea {
+.prospect-form textarea,
+.response-form input,
+.response-form select,
+.response-form textarea {
   margin: 0;
   width: 100%;
   color: var(--ink);
@@ -284,6 +288,24 @@ button:disabled {
 .prospect-form textarea {
   min-height: 120px;
   line-height: 1.5;
+}
+
+.response-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(160px, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+}
+
+.response-form textarea {
+  min-height: 110px;
+  line-height: 1.5;
+}
+
+.response-form button {
+  align-self: end;
 }
 
 .full-span {
@@ -435,7 +457,8 @@ textarea {
   .split,
   .checklist,
   .detail-grid,
-  .prompt-grid {
+  .prompt-grid,
+  .response-form {
     grid-template-columns: 1fr;
   }
 
