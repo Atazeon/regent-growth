@@ -256,6 +256,66 @@ button:disabled {
   color: var(--muted);
 }
 
+.reminder-count {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: #f9fafc;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.reminder-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.reminder-item {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  background: #fff;
+}
+
+.reminder-due {
+  border-color: #d79d37;
+  box-shadow: inset 4px 0 0 var(--warn);
+}
+
+.reminder-title,
+.reminder-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.reminder-title {
+  justify-content: space-between;
+}
+
+.reminder-title h3,
+.reminder-item p {
+  margin: 0;
+}
+
+.reminder-title span {
+  color: var(--warn);
+  font-size: 0.9rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.reminder-item p {
+  margin-top: 8px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
 .prospect-form {
   margin-top: 18px;
   display: grid;
@@ -465,10 +525,17 @@ textarea {
   .toolbar,
   .section-heading,
   .action-row,
-  .prospect-card {
+  .prospect-card,
+  .reminder-item,
+  .reminder-title,
+  .reminder-actions {
     align-items: stretch;
     flex-direction: column;
     grid-template-columns: 1fr;
+  }
+
+  .reminder-title span {
+    white-space: normal;
   }
 
   .prospect-form {

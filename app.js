@@ -111,6 +111,8 @@ const detailResponseStatus = document.querySelector("#detailResponseStatus");
 const detailLastTouch = document.querySelector("#detailLastTouch");
 const detailNextTouch = document.querySelector("#detailNextTouch");
 const detailResponseNotes = document.querySelector("#detailResponseNotes");
+const reminderList = document.querySelector("#reminderList");
+const reminderCount = document.querySelector("#reminderCount");
 const briefTemplateInput = document.querySelector("#briefTemplateInput");
 const emailTemplateInput = document.querySelector("#emailTemplateInput");
 const savePromptsButton = document.querySelector("#savePromptsButton");
@@ -238,6 +240,7 @@ function renderProspects() {
   selectedProspectIndex = prospects.indexOf(selectedProspect);
   setDrafts(selectedProspect);
   renderSelectedDetail();
+  renderReminders();
 }
 
 function updateMetrics() {
@@ -252,20 +255,89 @@ function getSelectedProspect() {
 }
 
 function isFollowUpDue(prospect) {
-  if (!prospect.nextTouch || ["Meeting Booked", "Not Interested"].includes(prospect.responseStatus)) {
+  if (!prospect.nextTouch || isClosedResponse(prospect)) {
     return false;
   }
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const nextTouch = new Date(`${prospect.nextTouch}T00:00:00`);
-  return nextTouch <= today;
+  return daysUntil(prospect.nextTouch) <= 0;
 }
 
 function formatDate(value) {
   if (!value) return "Not set";
   const date = new Date(`${value}T00:00:00`);
   return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
+function isClosedResponse(prospect) {
+  return ["Meeting Booked", "Not Interested"].includes(prospect.responseStatus);
+}
+
+function getTodayString() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return toDateInputValue(today);
+}
+
+function addDays(dateString, days) {
+  const date = new Date(`${dateString}T00:00:00`);
+  date.setDate(date.getDate() + days);
+  return toDateInputValue(date);
+}
+
+function toDateInputValue(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function daysUntil(dateString) {
+  const today = new Date(`${getTodayString()}T00:00:00`);
+  const target = new Date(`${dateString}T00:00:00`);
+
+  if (Number.isNaN(target.getTime())) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  return Math.round((target - today) / 86400000);
+}
+
+function getReminderLabel(days) {
+  if (days < 0) return `${Math.abs(days)} day${Math.abs(days) === 1 ? "" : "s"} overdue`;
+  if (days === 0) return "Due today";
+  return `Due in ${days} day${days === 1 ? "" : "s"}`;
+}
+
+function renderReminders() {
+  const reminders = prospects
+    .map((prospect, index) => ({ prospect, index, days: prospect.nextTouch ? daysUntil(prospect.nextTouch) : Number.POSITIVE_INFINITY }))
+    .filter(({ prospect, days }) => prospect.nextTouch && !isClosedResponse(prospect) && Number.isFinite(days))
+    .sort((first, second) => first.days - second.days);
+
+  reminderCount.textContent = `${reminders.length} scheduled`;
+
+  if (reminders.length === 0) {
+    reminderList.innerHTML = `<p class="empty-state">No follow-up reminders scheduled yet. Add a next touch date on any prospect to place it here.</p>`;
+    return;
+  }
+
+  reminderList.innerHTML = reminders.map(({ prospect, index, days }) => `
+    <article class="reminder-item ${days <= 0 ? "reminder-due" : ""}">
+      <div>
+        <div class="reminder-title">
+          <h3>${escapeHtml(prospect.company)}</h3>
+          <span>${escapeHtml(getReminderLabel(days))}</span>
+        </div>
+        <p>${escapeHtml(prospect.decisionMaker || "Decision-maker not set")} | ${escapeHtml(prospect.stage)} | ${escapeHtml(prospect.responseStatus)}</p>
+        <p><strong>Next:</strong> ${escapeHtml(formatDate(prospect.nextTouch))}${prospect.responseNotes ? ` | ${escapeHtml(prospect.responseNotes)}` : ""}</p>
+      </div>
+      <div class="reminder-actions">
+        <button type="button" data-action="complete-reminder" data-index="${index}">Mark touched</button>
+        <button class="secondary-button" type="button" data-action="snooze-reminder" data-days="2" data-index="${index}">Snooze 2d</button>
+        <button class="secondary-button" type="button" data-action="snooze-reminder" data-days="7" data-index="${index}">Snooze 7d</button>
+      </div>
+    </article>
+  `).join("");
 }
 
 function getNextAction(stage) {
@@ -592,6 +664,33 @@ function saveResponseFromForm(event) {
   setDataStatus(`Response tracking saved for ${prospect.company}.`);
 }
 
+function markReminderTouched(index) {
+  const prospect = prospects[index];
+  if (!prospect) return;
+
+  prospect.lastTouch = getTodayString();
+  prospect.nextTouch = addDays(prospect.lastTouch, 2);
+  if (prospect.responseStatus === "Not Contacted") {
+    prospect.responseStatus = "Contacted";
+  }
+
+  selectedProspectIndex = index;
+  saveProspects();
+  renderProspects();
+  setDataStatus(`${prospect.company} marked touched. Next touch scheduled for ${formatDate(prospect.nextTouch)}.`);
+}
+
+function snoozeReminder(index, days) {
+  const prospect = prospects[index];
+  if (!prospect) return;
+
+  prospect.nextTouch = addDays(getTodayString(), days);
+  selectedProspectIndex = index;
+  saveProspects();
+  renderProspects();
+  setDataStatus(`${prospect.company} snoozed until ${formatDate(prospect.nextTouch)}.`);
+}
+
 function saveProspectFromForm(event) {
   event.preventDefault();
 
@@ -770,6 +869,21 @@ prospectList.addEventListener("click", (event) => {
   };
 
   actions[button.dataset.action]?.(index);
+});
+
+reminderList.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-action]");
+  if (!button) return;
+
+  const index = Number(button.dataset.index);
+
+  if (button.dataset.action === "complete-reminder") {
+    markReminderTouched(index);
+  }
+
+  if (button.dataset.action === "snooze-reminder") {
+    snoozeReminder(index, Number(button.dataset.days));
+  }
 });
 
 stageFilter.addEventListener("change", renderProspects);
