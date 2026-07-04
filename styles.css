@@ -102,7 +102,8 @@ main {
 
 button,
 select,
-input {
+input,
+.file-button {
   min-height: 42px;
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -118,6 +119,24 @@ button {
   color: #fff;
   cursor: pointer;
   font-weight: 700;
+}
+
+.file-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-color: var(--line);
+  background: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.file-button:hover {
+  background: #eef2f7;
+}
+
+.file-button input {
+  display: none;
 }
 
 button:hover {

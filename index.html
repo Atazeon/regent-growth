@@ -38,6 +38,10 @@
             <option value="llama3:latest">llama3:latest</option>
             <option value="qwen2.5:0.5b">qwen2.5:0.5b</option>
           </select>
+          <label class="file-button">
+            Import CSV
+            <input id="importInput" type="file" accept=".csv,text/csv">
+          </label>
           <button id="exportButton" class="secondary-button" type="button">Export CSV</button>
           <button id="resetButton" class="secondary-button" type="button">Reset samples</button>
         </div>
@@ -163,6 +167,7 @@
       </section>
 
       <p id="aiStatus" class="ai-status" aria-live="polite">Local AI ready: qwen3:8b</p>
+      <p id="dataStatus" class="ai-status" aria-live="polite">Prospect data saved locally in this browser.</p>
 
       <section id="handoff" class="panel">
         <p class="eyebrow">Warm Lead Handoff</p>

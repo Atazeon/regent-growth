@@ -49,12 +49,14 @@ const emailDraft = document.querySelector("#emailDraft");
 const prospectForm = document.querySelector("#prospectForm");
 const formTitle = document.querySelector("#formTitle");
 const clearFormButton = document.querySelector("#clearFormButton");
+const importInput = document.querySelector("#importInput");
 const exportButton = document.querySelector("#exportButton");
 const resetButton = document.querySelector("#resetButton");
 const modelSelect = document.querySelector("#modelSelect");
 const generateBriefButton = document.querySelector("#generateBriefButton");
 const generateEmailButton = document.querySelector("#generateEmailButton");
 const aiStatus = document.querySelector("#aiStatus");
+const dataStatus = document.querySelector("#dataStatus");
 
 function loadProspects() {
   const savedProspects = localStorage.getItem(storageKey);
@@ -184,6 +186,11 @@ Ibrahim`;
 function setAiStatus(message, state = "idle") {
   aiStatus.textContent = message;
   aiStatus.dataset.state = state;
+}
+
+function setDataStatus(message, state = "idle") {
+  dataStatus.textContent = message;
+  dataStatus.dataset.state = state;
 }
 
 async function generateWithOllama(prompt, numPredict = 260) {
@@ -386,12 +393,113 @@ function csvCell(value) {
   return `"${String(value ?? "").replaceAll('"', '""')}"`;
 }
 
+function parseCsv(text) {
+  const rows = [];
+  let row = [];
+  let cell = "";
+  let inQuotes = false;
+
+  for (let index = 0; index < text.length; index += 1) {
+    const character = text[index];
+    const nextCharacter = text[index + 1];
+
+    if (character === '"' && inQuotes && nextCharacter === '"') {
+      cell += '"';
+      index += 1;
+    } else if (character === '"') {
+      inQuotes = !inQuotes;
+    } else if (character === "," && !inQuotes) {
+      row.push(cell);
+      cell = "";
+    } else if ((character === "\n" || character === "\r") && !inQuotes) {
+      if (character === "\r" && nextCharacter === "\n") {
+        index += 1;
+      }
+      row.push(cell);
+      if (row.some((value) => value.trim() !== "")) {
+        rows.push(row);
+      }
+      row = [];
+      cell = "";
+    } else {
+      cell += character;
+    }
+  }
+
+  row.push(cell);
+  if (row.some((value) => value.trim() !== "")) {
+    rows.push(row);
+  }
+
+  return rows;
+}
+
+function normalizeHeader(header) {
+  return header.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function prospectFromCsvRow(headers, row) {
+  const values = {};
+
+  headers.forEach((header, index) => {
+    values[normalizeHeader(header)] = row[index]?.trim() || "";
+  });
+
+  return normalizeProspect({
+    company: values.company || values.name,
+    industry: values.industry,
+    size: values.size || values.employees || values.companysize,
+    website: values.website || values.url || values.domain,
+    decisionMaker: values.decisionmaker || values.decisionmakerrole || values.title || values.contact,
+    score: values.score || values.fitscore,
+    trigger: values.trigger || values.buyingtrigger,
+    fit: values.fit || values.fitreason || values.qualificationreason || values.notes,
+    stage: values.stage || values.status
+  });
+}
+
+async function importCsv(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  try {
+    const text = await file.text();
+    const rows = parseCsv(text);
+
+    if (rows.length < 2) {
+      throw new Error("CSV needs headers and at least one prospect row.");
+    }
+
+    const headers = rows[0];
+    const importedProspects = rows
+      .slice(1)
+      .map((row) => prospectFromCsvRow(headers, row))
+      .filter((prospect) => prospect.company && prospect.fit);
+
+    if (importedProspects.length === 0) {
+      throw new Error("No usable prospects found. Include company and fit fields.");
+    }
+
+    prospects = [...importedProspects, ...prospects];
+    selectedProspectIndex = 0;
+    saveProspects();
+    resetForm();
+    renderProspects();
+    setDataStatus(`Imported ${importedProspects.length} prospects from ${file.name}.`);
+  } catch (error) {
+    setDataStatus(error.message, "error");
+  } finally {
+    importInput.value = "";
+  }
+}
+
 function resetSamples() {
   prospects = structuredClone(sampleProspects);
   selectedProspectIndex = 0;
   saveProspects();
   resetForm();
   renderProspects();
+  setDataStatus("Sample prospects restored.");
 }
 
 prospectList.addEventListener("click", (event) => {
@@ -412,6 +520,7 @@ prospectList.addEventListener("click", (event) => {
 stageFilter.addEventListener("change", renderProspects);
 prospectForm.addEventListener("submit", saveProspectFromForm);
 clearFormButton.addEventListener("click", resetForm);
+importInput.addEventListener("change", importCsv);
 exportButton.addEventListener("click", exportCsv);
 resetButton.addEventListener("click", resetSamples);
 modelSelect.addEventListener("change", () => setAiStatus(`Local AI ready: ${modelSelect.value}`));
