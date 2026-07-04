@@ -43,6 +43,10 @@ let editingIndex = null;
 let selectedProspectIndex = 0;
 
 const prospectList = document.querySelector("#prospectList");
+const selectedDetail = document.querySelector("#selectedDetail");
+const detailCompany = document.querySelector("#detailCompany");
+const detailAdvanceButton = document.querySelector("#detailAdvanceButton");
+const detailEditButton = document.querySelector("#detailEditButton");
 const stageFilter = document.querySelector("#stageFilter");
 const researchPrompt = document.querySelector("#researchPrompt");
 const emailDraft = document.querySelector("#emailDraft");
@@ -85,7 +89,9 @@ function normalizeProspect(prospect) {
     score: Number(prospect.score) || 0,
     trigger: prospect.trigger || "",
     fit: prospect.fit || "",
-    stage: stageOrder.includes(prospect.stage) ? prospect.stage : "Research"
+    stage: stageOrder.includes(prospect.stage) ? prospect.stage : "Research",
+    aiBrief: prospect.aiBrief || "",
+    aiEmail: prospect.aiEmail || ""
   };
 }
 
@@ -136,6 +142,7 @@ function renderProspects() {
   const selectedProspect = selectedVisibleProspect?.prospect || visibleProspects[0]?.prospect || prospects[0];
   selectedProspectIndex = prospects.indexOf(selectedProspect);
   setDrafts(selectedProspect);
+  renderSelectedDetail();
 }
 
 function updateMetrics() {
@@ -149,6 +156,79 @@ function getSelectedProspect() {
   return prospects[selectedProspectIndex] || prospects[0];
 }
 
+function getNextAction(stage) {
+  const actions = {
+    Research: "Generate the account brief and identify the strongest decision-maker angle.",
+    "Email Drafted": "Review the email draft, personalize the opener, and send the first touch.",
+    Sequence: "Schedule the next follow-up and watch for replies.",
+    LinkedIn: "Send or review the LinkedIn connection request.",
+    Call: "Make the call and record the outcome.",
+    Meeting: "Confirm the meeting details and prepare discovery notes.",
+    Assessment: "Complete assessment notes and decide whether to hand off as a warm lead."
+  };
+
+  return actions[stage] || actions.Research;
+}
+
+function previewText(value, fallback) {
+  const text = value?.trim() || fallback;
+  return escapeHtml(text).replaceAll("\n", "<br>");
+}
+
+function renderSelectedDetail() {
+  const prospect = getSelectedProspect();
+
+  if (!prospect) {
+    detailCompany.textContent = "Company Detail";
+    selectedDetail.innerHTML = `<p class="empty-state">Select or add a prospect to view details.</p>`;
+    detailAdvanceButton.disabled = true;
+    detailEditButton.disabled = true;
+    return;
+  }
+
+  detailCompany.textContent = prospect.company;
+  detailAdvanceButton.disabled = false;
+  detailEditButton.disabled = false;
+  selectedDetail.innerHTML = `
+    <article>
+      <span>Stage</span>
+      <strong>${escapeHtml(prospect.stage)}</strong>
+    </article>
+    <article>
+      <span>Fit Score</span>
+      <strong>${escapeHtml(prospect.score)}</strong>
+    </article>
+    <article>
+      <span>Decision-Maker</span>
+      <strong>${escapeHtml(prospect.decisionMaker || "Unknown")}</strong>
+    </article>
+    <article>
+      <span>Website</span>
+      <strong>${escapeHtml(prospect.website || "Unknown")}</strong>
+    </article>
+    <article class="detail-wide">
+      <span>Buying Trigger</span>
+      <p>${escapeHtml(prospect.trigger || "No trigger recorded yet.")}</p>
+    </article>
+    <article class="detail-wide">
+      <span>Fit Reason</span>
+      <p>${escapeHtml(prospect.fit || "No fit reason recorded yet.")}</p>
+    </article>
+    <article class="detail-wide">
+      <span>Next Action</span>
+      <p>${escapeHtml(getNextAction(prospect.stage))}</p>
+    </article>
+    <article class="detail-wide">
+      <span>Saved AI Brief</span>
+      <p>${previewText(prospect.aiBrief, "Generate a company brief to attach research to this account.")}</p>
+    </article>
+    <article class="detail-wide">
+      <span>Saved AI Email</span>
+      <p>${previewText(prospect.aiEmail, "Generate an email draft to attach outreach copy to this account.")}</p>
+    </article>
+  `;
+}
+
 function setDrafts(prospect) {
   if (!prospect) {
     researchPrompt.value = "";
@@ -156,7 +236,7 @@ function setDrafts(prospect) {
     return;
   }
 
-  researchPrompt.value = `Research ${prospect.company} (${prospect.website}).
+  researchPrompt.value = prospect.aiBrief || `Research ${prospect.company} (${prospect.website}).
 
 Find:
 - what the company sells
@@ -169,7 +249,7 @@ Find:
 Known trigger: ${prospect.trigger}
 Fit reason: ${prospect.fit}`;
 
-  emailDraft.value = `Subject: Quick idea for ${prospect.company}
+  emailDraft.value = prospect.aiEmail || `Subject: Quick idea for ${prospect.company}
 
 Hi {{first_name}},
 
@@ -237,7 +317,7 @@ async function generateCompanyBrief() {
 
   generateBriefButton.disabled = true;
   try {
-    researchPrompt.value = await generateWithOllama(`You are Regent Growth's local AI sales researcher.
+    prospect.aiBrief = await generateWithOllama(`You are Regent Growth's local AI sales researcher.
 
 Regent Growth helps businesses find qualified prospects, research accounts, write personalized outreach, track follow-up, and book more meetings. You are researching the prospect below as a potential customer for Regent Growth. Do not write from the prospect's point of view.
 
@@ -256,6 +336,9 @@ Return exactly these sections:
 2. Likely pain points
 3. Best decision-maker angle
 4. One personalized opening line`, 220);
+    researchPrompt.value = prospect.aiBrief;
+    saveProspects();
+    renderSelectedDetail();
   } catch (error) {
     const message = error.name === "AbortError"
       ? "Local AI timed out. Try qwen2.5:0.5b for a quick draft or retry qwen3:8b."
@@ -272,7 +355,7 @@ async function generatePersonalizedEmail() {
 
   generateEmailButton.disabled = true;
   try {
-    emailDraft.value = await generateWithOllama(`You are Regent Growth's local AI email writer.
+    prospect.aiEmail = await generateWithOllama(`You are Regent Growth's local AI email writer.
 
 Regent Growth is the seller. The company below is the prospect. Write from Ibrahim at Regent Growth to the decision-maker. Do not write as the prospect.
 
@@ -291,6 +374,9 @@ Rules:
 - Make it personalized to the buying trigger.
 - Offer help getting more qualified meetings.
 - End with a simple question.`, 180);
+    emailDraft.value = prospect.aiEmail;
+    saveProspects();
+    renderSelectedDetail();
   } catch (error) {
     const message = error.name === "AbortError"
       ? "Local AI timed out. Try qwen2.5:0.5b for a quick draft or retry qwen3:8b."
@@ -360,7 +446,9 @@ function saveProspectFromForm(event) {
     score: formData.get("score"),
     stage: formData.get("stage"),
     trigger: formData.get("trigger").trim(),
-    fit: formData.get("fit").trim()
+    fit: formData.get("fit").trim(),
+    aiBrief: editingIndex === null ? "" : prospects[editingIndex]?.aiBrief,
+    aiEmail: editingIndex === null ? "" : prospects[editingIndex]?.aiEmail
   });
 
   if (editingIndex === null) {
@@ -523,6 +611,8 @@ clearFormButton.addEventListener("click", resetForm);
 importInput.addEventListener("change", importCsv);
 exportButton.addEventListener("click", exportCsv);
 resetButton.addEventListener("click", resetSamples);
+detailAdvanceButton.addEventListener("click", () => advanceStage(selectedProspectIndex));
+detailEditButton.addEventListener("click", () => editProspect(selectedProspectIndex));
 modelSelect.addEventListener("change", () => setAiStatus(`Local AI ready: ${modelSelect.value}`));
 generateBriefButton.addEventListener("click", generateCompanyBrief);
 generateEmailButton.addEventListener("click", generatePersonalizedEmail);

@@ -15,6 +15,7 @@
       <nav aria-label="Pipeline stages">
         <a href="#dashboard">Dashboard</a>
         <a href="#prospects">Prospects</a>
+        <a href="#detail">Detail</a>
         <a href="#research">Research</a>
         <a href="#outreach">Outreach</a>
         <a href="#handoff">Handoff</a>
@@ -84,6 +85,20 @@
           </select>
         </div>
         <div id="prospectList" class="prospect-list"></div>
+      </section>
+
+      <section id="detail" class="panel">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Selected Account</p>
+            <h2 id="detailCompany">Company Detail</h2>
+          </div>
+          <div class="action-row">
+            <button id="detailAdvanceButton" type="button">Advance stage</button>
+            <button id="detailEditButton" class="secondary-button" type="button">Edit</button>
+          </div>
+        </div>
+        <div id="selectedDetail" class="detail-grid"></div>
       </section>
 
       <section id="prospectFormPanel" class="panel">
