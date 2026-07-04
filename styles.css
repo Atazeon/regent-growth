@@ -406,6 +406,12 @@ button:disabled {
   line-height: 1.5;
 }
 
+.detail-grid a {
+  color: var(--blue);
+  overflow-wrap: anywhere;
+  font-weight: 700;
+}
+
 .detail-wide {
   grid-column: span 2;
 }

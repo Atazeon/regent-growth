@@ -59,6 +59,7 @@ const sampleProspects = [
     trigger: "Expanding to two new clinics this quarter",
     fit: "Multi-location operator with appointment volume and front-desk follow-up pressure.",
     stage: "Research",
+    bookingLink: "",
     responseStatus: "Not Contacted",
     lastTouch: "",
     nextTouch: "",
@@ -74,6 +75,7 @@ const sampleProspects = [
     trigger: "Hiring outbound sales representatives",
     fit: "High-ticket B2B service where faster lead qualification can create direct revenue lift.",
     stage: "Email Drafted",
+    bookingLink: "",
     responseStatus: "Contacted",
     lastTouch: "",
     nextTouch: "",
@@ -89,6 +91,7 @@ const sampleProspects = [
     trigger: "Publishing new cybersecurity assessment offer",
     fit: "Clear assessment-led sales motion and likely need for qualified local business leads.",
     stage: "Sequence",
+    bookingLink: "",
     responseStatus: "No Response",
     lastTouch: "",
     nextTouch: "",
@@ -178,6 +181,7 @@ function normalizeProspect(prospect) {
     trigger: prospect.trigger || "",
     fit: prospect.fit || "",
     stage: stageOrder.includes(prospect.stage) ? prospect.stage : "Research",
+    bookingLink: prospect.bookingLink || "",
     responseStatus: responseStatuses.includes(prospect.responseStatus) ? prospect.responseStatus : "Not Contacted",
     lastTouch: prospect.lastTouch || "",
     nextTouch: prospect.nextTouch || "",
@@ -359,6 +363,34 @@ function previewText(value, fallback) {
   return escapeHtml(text).replaceAll("\n", "<br>");
 }
 
+function toExternalUrl(value) {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  const urlValue = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+
+  try {
+    const url = new URL(urlValue);
+    return ["http:", "https:"].includes(url.protocol) ? url.href : "";
+  } catch {
+    return "";
+  }
+}
+
+function renderBookingLink(value) {
+  const url = toExternalUrl(value);
+
+  if (!value) {
+    return "<strong>Not set</strong>";
+  }
+
+  if (!url) {
+    return `<strong>${escapeHtml(value)}</strong>`;
+  }
+
+  return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(value)}</a>`;
+}
+
 function renderSelectedDetail() {
   const prospect = getSelectedProspect();
 
@@ -411,6 +443,10 @@ function renderSelectedDetail() {
     <article>
       <span>Follow-Up Due</span>
       <strong>${isFollowUpDue(prospect) ? "Yes" : "No"}</strong>
+    </article>
+    <article class="detail-wide">
+      <span>Booking Link</span>
+      <p>${renderBookingLink(prospect.bookingLink)}</p>
     </article>
     <article class="detail-wide">
       <span>Buying Trigger</span>
@@ -617,6 +653,7 @@ function editProspect(index) {
   prospectForm.decisionMaker.value = prospect.decisionMaker;
   prospectForm.score.value = prospect.score;
   prospectForm.stage.value = prospect.stage;
+  prospectForm.bookingLink.value = prospect.bookingLink;
   prospectForm.responseStatus.value = prospect.responseStatus;
   prospectForm.lastTouch.value = prospect.lastTouch;
   prospectForm.nextTouch.value = prospect.nextTouch;
@@ -703,6 +740,7 @@ function saveProspectFromForm(event) {
     decisionMaker: formData.get("decisionMaker").trim(),
     score: formData.get("score"),
     stage: formData.get("stage"),
+    bookingLink: formData.get("bookingLink").trim(),
     responseStatus: formData.get("responseStatus"),
     lastTouch: formData.get("lastTouch"),
     nextTouch: formData.get("nextTouch"),
@@ -727,7 +765,7 @@ function saveProspectFromForm(event) {
 }
 
 function exportCsv() {
-  const headers = ["company", "industry", "size", "website", "decisionMaker", "score", "trigger", "fit", "stage", "responseStatus", "lastTouch", "nextTouch", "responseNotes"];
+  const headers = ["company", "industry", "size", "website", "decisionMaker", "score", "trigger", "fit", "stage", "bookingLink", "responseStatus", "lastTouch", "nextTouch", "responseNotes"];
   const rows = prospects.map((prospect) => headers.map((header) => csvCell(prospect[header])).join(","));
   const csv = [headers.join(","), ...rows].join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
@@ -805,6 +843,7 @@ function prospectFromCsvRow(headers, row) {
     trigger: values.trigger || values.buyingtrigger,
     fit: values.fit || values.fitreason || values.qualificationreason || values.notes,
     stage: values.stage || values.status,
+    bookingLink: values.bookinglink || values.calendarlink || values.schedulinglink || values.meetinglink,
     responseStatus: values.responsestatus || values.response || values.replystatus,
     lastTouch: values.lasttouch || values.lastcontact || values.lasttouchdate,
     nextTouch: values.nexttouch || values.nextfollowup || values.nexttouchdate,

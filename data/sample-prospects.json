@@ -8,7 +8,8 @@
     "score": 86,
     "trigger": "Expanding to two new clinics this quarter",
     "fit": "Multi-location operator with appointment volume and front-desk follow-up pressure.",
-    "stage": "Research"
+    "stage": "Research",
+    "bookingLink": ""
   },
   {
     "company": "CivicStone Roofing",
@@ -19,7 +20,8 @@
     "score": 91,
     "trigger": "Hiring outbound sales representatives",
     "fit": "High-ticket B2B service where faster lead qualification can create direct revenue lift.",
-    "stage": "Email Drafted"
+    "stage": "Email Drafted",
+    "bookingLink": ""
   },
   {
     "company": "Atlas Managed IT",
@@ -30,6 +32,7 @@
     "score": 78,
     "trigger": "Publishing new cybersecurity assessment offer",
     "fit": "Clear assessment-led sales motion and likely need for qualified local business leads.",
-    "stage": "Sequence"
+    "stage": "Sequence",
+    "bookingLink": ""
   }
 ]
