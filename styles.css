@@ -328,6 +328,40 @@ button:disabled {
   grid-column: span 2;
 }
 
+.prompt-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.prompt-grid label {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.prompt-grid textarea {
+  min-height: 360px;
+  margin: 0;
+}
+
+.template-help {
+  margin: 14px 0 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.template-help code {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 2px 5px;
+  background: #f9fafc;
+  color: var(--ink);
+}
+
 .ai-status {
   margin: -10px 0 0;
   color: var(--muted);
@@ -400,7 +434,8 @@ textarea {
   .metrics,
   .split,
   .checklist,
-  .detail-grid {
+  .detail-grid,
+  .prompt-grid {
     grid-template-columns: 1fr;
   }
 

@@ -1,7 +1,52 @@
 const storageKey = "regent-growth-prospects";
+const promptStorageKey = "regent-growth-prompt-templates";
 const ollamaEndpoint = "http://127.0.0.1:11434/api/generate";
 const ollamaTimeoutMs = 150000;
 const stageOrder = ["Research", "Email Drafted", "Sequence", "LinkedIn", "Call", "Meeting", "Assessment"];
+const defaultPromptTemplates = {
+  brief: `You are Regent Growth's local AI sales researcher.
+
+Regent Growth helps businesses find qualified prospects, research accounts, write personalized outreach, track follow-up, and book more meetings. You are researching the prospect below as a potential customer for Regent Growth. Do not write from the prospect's point of view.
+
+Write a concise company brief for outbound sales. Do not include hidden reasoning or chain-of-thought. Keep the entire answer under 180 words.
+
+Company: {{company}}
+Industry: {{industry}}
+Size: {{size}}
+Website: {{website}}
+Decision-maker: {{decisionMaker}}
+Buying trigger: {{trigger}}
+Fit reason: {{fit}}
+Stage: {{stage}}
+Fit score: {{score}}
+
+Return exactly these sections:
+1. Why this company is qualified
+2. Likely pain points
+3. Best decision-maker angle
+4. One personalized opening line`,
+  email: `You are Regent Growth's local AI email writer.
+
+Regent Growth is the seller. The company below is the prospect. Write from Ibrahim at Regent Growth to the decision-maker. Do not write as the prospect.
+
+Write one concise B2B cold email. Do not include hidden reasoning or chain-of-thought.
+
+Company: {{company}}
+Industry: {{industry}}
+Size: {{size}}
+Decision-maker: {{decisionMaker}}
+Buying trigger: {{trigger}}
+Fit reason: {{fit}}
+Stage: {{stage}}
+Fit score: {{score}}
+
+Rules:
+- Include a subject line.
+- Keep the body under 120 words.
+- Make it personalized to the buying trigger.
+- Offer help getting more qualified meetings.
+- End with a simple question.`
+};
 const sampleProspects = [
   {
     company: "Northstar Dental Group",
@@ -39,6 +84,7 @@ const sampleProspects = [
 ];
 
 let prospects = loadProspects();
+let promptTemplates = loadPromptTemplates();
 let editingIndex = null;
 let selectedProspectIndex = 0;
 
@@ -47,6 +93,10 @@ const selectedDetail = document.querySelector("#selectedDetail");
 const detailCompany = document.querySelector("#detailCompany");
 const detailAdvanceButton = document.querySelector("#detailAdvanceButton");
 const detailEditButton = document.querySelector("#detailEditButton");
+const briefTemplateInput = document.querySelector("#briefTemplateInput");
+const emailTemplateInput = document.querySelector("#emailTemplateInput");
+const savePromptsButton = document.querySelector("#savePromptsButton");
+const resetPromptsButton = document.querySelector("#resetPromptsButton");
 const stageFilter = document.querySelector("#stageFilter");
 const researchPrompt = document.querySelector("#researchPrompt");
 const emailDraft = document.querySelector("#emailDraft");
@@ -79,6 +129,24 @@ function loadProspects() {
   }
 }
 
+function loadPromptTemplates() {
+  const savedTemplates = localStorage.getItem(promptStorageKey);
+
+  if (!savedTemplates) {
+    return structuredClone(defaultPromptTemplates);
+  }
+
+  try {
+    const parsedTemplates = JSON.parse(savedTemplates);
+    return {
+      brief: parsedTemplates.brief || defaultPromptTemplates.brief,
+      email: parsedTemplates.email || defaultPromptTemplates.email
+    };
+  } catch {
+    return structuredClone(defaultPromptTemplates);
+  }
+}
+
 function normalizeProspect(prospect) {
   return {
     company: prospect.company || "",
@@ -97,6 +165,10 @@ function normalizeProspect(prospect) {
 
 function saveProspects() {
   localStorage.setItem(storageKey, JSON.stringify(prospects));
+}
+
+function savePromptTemplates() {
+  localStorage.setItem(promptStorageKey, JSON.stringify(promptTemplates));
 }
 
 function escapeHtml(value) {
@@ -273,6 +345,43 @@ function setDataStatus(message, state = "idle") {
   dataStatus.dataset.state = state;
 }
 
+function renderPromptTemplates() {
+  briefTemplateInput.value = promptTemplates.brief;
+  emailTemplateInput.value = promptTemplates.email;
+}
+
+function savePromptTemplateEdits() {
+  promptTemplates = {
+    brief: briefTemplateInput.value.trim() || defaultPromptTemplates.brief,
+    email: emailTemplateInput.value.trim() || defaultPromptTemplates.email
+  };
+  savePromptTemplates();
+  setDataStatus("AI prompt templates saved.");
+}
+
+function resetPromptTemplates() {
+  promptTemplates = structuredClone(defaultPromptTemplates);
+  savePromptTemplates();
+  renderPromptTemplates();
+  setDataStatus("AI prompt templates reset.");
+}
+
+function renderTemplate(template, prospect) {
+  const values = {
+    company: prospect.company,
+    industry: prospect.industry,
+    size: prospect.size,
+    website: prospect.website,
+    decisionMaker: prospect.decisionMaker,
+    trigger: prospect.trigger,
+    fit: prospect.fit,
+    stage: prospect.stage,
+    score: prospect.score
+  };
+
+  return template.replace(/\{\{(\w+)\}\}/g, (match, key) => values[key] ?? "");
+}
+
 async function generateWithOllama(prompt, numPredict = 260) {
   const model = modelSelect.value;
   const controller = new AbortController();
@@ -317,25 +426,7 @@ async function generateCompanyBrief() {
 
   generateBriefButton.disabled = true;
   try {
-    prospect.aiBrief = await generateWithOllama(`You are Regent Growth's local AI sales researcher.
-
-Regent Growth helps businesses find qualified prospects, research accounts, write personalized outreach, track follow-up, and book more meetings. You are researching the prospect below as a potential customer for Regent Growth. Do not write from the prospect's point of view.
-
-Write a concise company brief for outbound sales. Do not include hidden reasoning or chain-of-thought. Keep the entire answer under 180 words.
-
-Company: ${prospect.company}
-Industry: ${prospect.industry}
-Size: ${prospect.size}
-Website: ${prospect.website}
-Decision-maker: ${prospect.decisionMaker}
-Buying trigger: ${prospect.trigger}
-Fit reason: ${prospect.fit}
-
-Return exactly these sections:
-1. Why this company is qualified
-2. Likely pain points
-3. Best decision-maker angle
-4. One personalized opening line`, 220);
+    prospect.aiBrief = await generateWithOllama(renderTemplate(promptTemplates.brief, prospect), 220);
     researchPrompt.value = prospect.aiBrief;
     saveProspects();
     renderSelectedDetail();
@@ -355,25 +446,7 @@ async function generatePersonalizedEmail() {
 
   generateEmailButton.disabled = true;
   try {
-    prospect.aiEmail = await generateWithOllama(`You are Regent Growth's local AI email writer.
-
-Regent Growth is the seller. The company below is the prospect. Write from Ibrahim at Regent Growth to the decision-maker. Do not write as the prospect.
-
-Write one concise B2B cold email. Do not include hidden reasoning or chain-of-thought.
-
-Company: ${prospect.company}
-Industry: ${prospect.industry}
-Size: ${prospect.size}
-Decision-maker: ${prospect.decisionMaker}
-Buying trigger: ${prospect.trigger}
-Fit reason: ${prospect.fit}
-
-Rules:
-- Include a subject line.
-- Keep the body under 120 words.
-- Make it personalized to the buying trigger.
-- Offer help getting more qualified meetings.
-- End with a simple question.`, 180);
+    prospect.aiEmail = await generateWithOllama(renderTemplate(promptTemplates.email, prospect), 180);
     emailDraft.value = prospect.aiEmail;
     saveProspects();
     renderSelectedDetail();
@@ -613,8 +686,11 @@ exportButton.addEventListener("click", exportCsv);
 resetButton.addEventListener("click", resetSamples);
 detailAdvanceButton.addEventListener("click", () => advanceStage(selectedProspectIndex));
 detailEditButton.addEventListener("click", () => editProspect(selectedProspectIndex));
+savePromptsButton.addEventListener("click", savePromptTemplateEdits);
+resetPromptsButton.addEventListener("click", resetPromptTemplates);
 modelSelect.addEventListener("change", () => setAiStatus(`Local AI ready: ${modelSelect.value}`));
 generateBriefButton.addEventListener("click", generateCompanyBrief);
 generateEmailButton.addEventListener("click", generatePersonalizedEmail);
 
+renderPromptTemplates();
 renderProspects();

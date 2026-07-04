@@ -16,6 +16,7 @@
         <a href="#dashboard">Dashboard</a>
         <a href="#prospects">Prospects</a>
         <a href="#detail">Detail</a>
+        <a href="#prompts">Prompts</a>
         <a href="#research">Research</a>
         <a href="#outreach">Outreach</a>
         <a href="#handoff">Handoff</a>
@@ -156,6 +157,30 @@
           </label>
           <button id="saveProspectButton" type="submit">Save prospect</button>
         </form>
+      </section>
+
+      <section id="prompts" class="panel">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Local AI Prompts</p>
+            <h2>Templates</h2>
+          </div>
+          <div class="action-row">
+            <button id="savePromptsButton" type="button">Save prompts</button>
+            <button id="resetPromptsButton" class="secondary-button" type="button">Reset prompts</button>
+          </div>
+        </div>
+        <div class="prompt-grid">
+          <label>
+            Company brief prompt
+            <textarea id="briefTemplateInput"></textarea>
+          </label>
+          <label>
+            Email draft prompt
+            <textarea id="emailTemplateInput"></textarea>
+          </label>
+        </div>
+        <p class="template-help">Available placeholders: <code>{{company}}</code>, <code>{{industry}}</code>, <code>{{size}}</code>, <code>{{website}}</code>, <code>{{decisionMaker}}</code>, <code>{{trigger}}</code>, <code>{{fit}}</code>, <code>{{stage}}</code>, <code>{{score}}</code></p>
       </section>
 
       <section id="research" class="split">
