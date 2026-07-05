@@ -131,6 +131,7 @@ const savePromptsButton = document.querySelector("#savePromptsButton");
 const resetPromptsButton = document.querySelector("#resetPromptsButton");
 const stageFilter = document.querySelector("#stageFilter");
 const responseFilter = document.querySelector("#responseFilter");
+const savedViews = document.querySelector("#savedViews");
 const researchPrompt = document.querySelector("#researchPrompt");
 const emailDraft = document.querySelector("#emailDraft");
 const prospectForm = document.querySelector("#prospectForm");
@@ -224,13 +225,15 @@ function escapeHtml(value) {
 function renderProspects() {
   const selectedStage = stageFilter.value;
   const selectedResponse = responseFilter.value;
+  const selectedView = savedViews.dataset.activeView || "all";
   const visibleProspects = prospects
     .map((prospect, index) => ({ prospect, index }))
     .filter((item) => selectedStage === "all" || item.prospect.stage === selectedStage)
-    .filter((item) => selectedResponse === "all" || item.prospect.responseStatus === selectedResponse);
+    .filter((item) => selectedResponse === "all" || item.prospect.responseStatus === selectedResponse)
+    .filter((item) => matchesSavedView(item.prospect, selectedView));
 
   if (visibleProspects.length === 0) {
-    prospectList.innerHTML = `<p class="empty-state">${escapeHtml(getEmptyProspectMessage(selectedStage, selectedResponse))}</p>`;
+    prospectList.innerHTML = `<p class="empty-state">${escapeHtml(getEmptyProspectMessage(selectedStage, selectedResponse, selectedView))}</p>`;
   } else {
     prospectList.innerHTML = visibleProspects.map(({ prospect, index }) => `
       <article class="prospect-card ${index === selectedProspectIndex ? "selected-card" : ""}">
@@ -254,6 +257,7 @@ function renderProspects() {
   }
 
   updateMetrics();
+  renderSavedViews();
   const selectedVisibleProspect = visibleProspects.find((item) => item.index === selectedProspectIndex);
   const selectedProspect = selectedVisibleProspect?.prospect || visibleProspects[0]?.prospect || null;
   selectedProspectIndex = selectedProspect ? prospects.indexOf(selectedProspect) : -1;
@@ -262,16 +266,45 @@ function renderProspects() {
   renderReminders();
 }
 
-function getEmptyProspectMessage(selectedStage, selectedResponse) {
+function matchesSavedView(prospect, selectedView) {
+  const viewPredicates = {
+    all: () => true,
+    replied: (item) => item.responseStatus === "Replied",
+    interested: (item) => item.responseStatus === "Interested",
+    meetings: (item) => item.stage === "Meeting" || item.responseStatus === "Meeting Booked",
+    "not-interested": (item) => item.responseStatus === "Not Interested",
+    "no-response": (item) => item.responseStatus === "No Response",
+    "follow-up-due": isFollowUpDue
+  };
+
+  return (viewPredicates[selectedView] || viewPredicates.all)(prospect);
+}
+
+function getSavedViewLabel(selectedView) {
+  const labels = {
+    all: "All",
+    replied: "Replied",
+    interested: "Interested",
+    meetings: "Meetings",
+    "not-interested": "Not Interested",
+    "no-response": "No Response",
+    "follow-up-due": "Follow-up Due"
+  };
+
+  return labels[selectedView] || labels.all;
+}
+
+function getEmptyProspectMessage(selectedStage, selectedResponse, selectedView) {
   const hasStageFilter = selectedStage !== "all";
   const hasResponseFilter = selectedResponse !== "all";
+  const hasSavedView = selectedView !== "all";
+
+  if (hasSavedView) {
+    return `No companies match the ${getSavedViewLabel(selectedView)} view with the current filters.`;
+  }
 
   if (hasStageFilter && hasResponseFilter) {
     return `No companies match ${selectedStage} with ${selectedResponse} response.`;
-  }
-
-  if (hasStageFilter) {
-    return `No companies match ${selectedStage} yet.`;
   }
 
   if (hasResponseFilter) {
@@ -279,6 +312,17 @@ function getEmptyProspectMessage(selectedStage, selectedResponse) {
   }
 
   return "No companies added yet.";
+}
+
+function renderSavedViews() {
+  const activeView = savedViews.dataset.activeView || "all";
+  const buttons = savedViews.querySelectorAll("button[data-view]");
+
+  buttons.forEach((button) => {
+    const isActive = button.dataset.view === activeView;
+    button.classList.toggle("secondary-button", !isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
 }
 
 function updateMetrics() {
@@ -1094,6 +1138,13 @@ reminderList.addEventListener("click", (event) => {
 
 stageFilter.addEventListener("change", renderProspects);
 responseFilter.addEventListener("change", renderProspects);
+savedViews.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-view]");
+  if (!button) return;
+
+  savedViews.dataset.activeView = button.dataset.view;
+  renderProspects();
+});
 prospectForm.addEventListener("submit", saveProspectFromForm);
 responseForm.addEventListener("submit", saveResponseFromForm);
 clearFormButton.addEventListener("click", resetForm);
