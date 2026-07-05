@@ -780,6 +780,62 @@ function snoozeReminder(index, days) {
   setDataStatus(`${prospect.company} snoozed until ${formatDate(prospect.nextTouch)}.`);
 }
 
+function normalizeCompanyName(value) {
+  return value
+    .toLowerCase()
+    .replaceAll("&", " and ")
+    .replace(/\b(inc|llc|ltd|co|corp|corporation|company|group)\b/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function normalizeWebsite(value) {
+  const trimmed = value.trim().toLowerCase();
+  if (!trimmed) return "";
+
+  try {
+    const url = new URL(/^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`);
+    return url.hostname.replace(/^www\./, "");
+  } catch {
+    return trimmed
+      .replace(/^https?:\/\//, "")
+      .replace(/^www\./, "")
+      .split("/")[0]
+      .trim();
+  }
+}
+
+function getDuplicateKeys(prospect) {
+  const keys = [];
+  const websiteKey = normalizeWebsite(prospect.website || "");
+  const companyKey = normalizeCompanyName(prospect.company || "");
+
+  if (websiteKey) {
+    keys.push(`website:${websiteKey}`);
+  }
+
+  if (companyKey) {
+    keys.push(`company:${companyKey}`);
+  }
+
+  return keys;
+}
+
+function findDuplicateProspect(prospect, ignoredIndex = null) {
+  const prospectKeys = new Set(getDuplicateKeys(prospect));
+  if (prospectKeys.size === 0) return null;
+
+  return prospects.find((existingProspect, index) => {
+    if (index === ignoredIndex) return false;
+    return getDuplicateKeys(existingProspect).some((key) => prospectKeys.has(key));
+  }) || null;
+}
+
+function addDuplicateKeys(keySet, prospect) {
+  getDuplicateKeys(prospect).forEach((key) => keySet.add(key));
+}
+
 function saveProspectFromForm(event) {
   event.preventDefault();
 
@@ -806,6 +862,12 @@ function saveProspectFromForm(event) {
     aiEmail: editingIndex === null ? "" : prospects[editingIndex]?.aiEmail
   });
 
+  const duplicateProspect = findDuplicateProspect(prospect, editingIndex);
+  if (duplicateProspect) {
+    setDataStatus(`Duplicate not saved: ${prospect.company} matches ${duplicateProspect.company}.`, "error");
+    return;
+  }
+
   if (editingIndex === null) {
     prospects.unshift(prospect);
     selectedProspectIndex = 0;
@@ -817,6 +879,7 @@ function saveProspectFromForm(event) {
   saveProspects();
   resetForm();
   renderProspects();
+  setDataStatus(`${prospect.company} saved.`);
 }
 
 function exportCsv() {
@@ -922,13 +985,36 @@ async function importCsv(event) {
     }
 
     const headers = rows[0];
-    const importedProspects = rows
+    const usableProspects = rows
       .slice(1)
       .map((row) => prospectFromCsvRow(headers, row))
       .filter((prospect) => prospect.company && prospect.fit);
 
-    if (importedProspects.length === 0) {
+    if (usableProspects.length === 0) {
       throw new Error("No usable prospects found. Include company and fit fields.");
+    }
+
+    const knownKeys = new Set();
+    prospects.forEach((prospect) => addDuplicateKeys(knownKeys, prospect));
+
+    const importedProspects = [];
+    let skippedDuplicates = 0;
+
+    usableProspects.forEach((prospect) => {
+      const keys = getDuplicateKeys(prospect);
+      const isDuplicate = keys.some((key) => knownKeys.has(key));
+
+      if (isDuplicate) {
+        skippedDuplicates += 1;
+        return;
+      }
+
+      importedProspects.push(prospect);
+      addDuplicateKeys(knownKeys, prospect);
+    });
+
+    if (importedProspects.length === 0) {
+      throw new Error(`No new prospects imported. Skipped ${skippedDuplicates} duplicate ${skippedDuplicates === 1 ? "row" : "rows"}.`);
     }
 
     prospects = [...importedProspects, ...prospects];
@@ -936,7 +1022,8 @@ async function importCsv(event) {
     saveProspects();
     resetForm();
     renderProspects();
-    setDataStatus(`Imported ${importedProspects.length} prospects from ${file.name}.`);
+    const duplicateMessage = skippedDuplicates > 0 ? ` Skipped ${skippedDuplicates} duplicate ${skippedDuplicates === 1 ? "row" : "rows"}.` : "";
+    setDataStatus(`Imported ${importedProspects.length} prospects from ${file.name}.${duplicateMessage}`);
   } catch (error) {
     setDataStatus(error.message, "error");
   } finally {
