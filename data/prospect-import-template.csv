@@ -1,2 +1,2 @@
-company,industry,size,website,decisionMaker,score,trigger,fit,stage,bookingLink,responseStatus,lastTouch,nextTouch,responseNotes
-Example Dental Group,Healthcare services,50 employees,exampledental.com,Operations Director,80,Opening a second location,Multi-location operator with front-desk follow-up pressure,Research,cal.com/regent-growth/intro,Not Contacted,,,Add reply or call notes here
+company,industry,size,website,decisionMaker,contactEmail,contactLinkedIn,contactPhone,score,trigger,fit,stage,bookingLink,responseStatus,lastTouch,nextTouch,responseNotes
+Example Dental Group,Healthcare services,50 employees,exampledental.com,Operations Director,ops@exampledental.com,linkedin.com/in/example-ops,555-123-4567,80,Opening a second location,Multi-location operator with front-desk follow-up pressure,Research,cal.com/regent-growth/intro,Not Contacted,,,Add reply or call notes here

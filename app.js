@@ -55,6 +55,9 @@ const sampleProspects = [
     size: "85 employees",
     website: "northstardental.example",
     decisionMaker: "Operations Director",
+    contactEmail: "",
+    contactLinkedIn: "",
+    contactPhone: "",
     score: 86,
     trigger: "Expanding to two new clinics this quarter",
     fit: "Multi-location operator with appointment volume and front-desk follow-up pressure.",
@@ -71,6 +74,9 @@ const sampleProspects = [
     size: "120 employees",
     website: "civicstone.example",
     decisionMaker: "VP Sales",
+    contactEmail: "",
+    contactLinkedIn: "",
+    contactPhone: "",
     score: 91,
     trigger: "Hiring outbound sales representatives",
     fit: "High-ticket B2B service where faster lead qualification can create direct revenue lift.",
@@ -87,6 +93,9 @@ const sampleProspects = [
     size: "42 employees",
     website: "atlasmanaged.example",
     decisionMaker: "Founder",
+    contactEmail: "",
+    contactLinkedIn: "",
+    contactPhone: "",
     score: 78,
     trigger: "Publishing new cybersecurity assessment offer",
     fit: "Clear assessment-led sales motion and likely need for qualified local business leads.",
@@ -177,6 +186,9 @@ function normalizeProspect(prospect) {
     size: prospect.size || "",
     website: prospect.website || "",
     decisionMaker: prospect.decisionMaker || "",
+    contactEmail: prospect.contactEmail || "",
+    contactLinkedIn: prospect.contactLinkedIn || "",
+    contactPhone: prospect.contactPhone || "",
     score: Number(prospect.score) || 0,
     trigger: prospect.trigger || "",
     fit: prospect.fit || "",
@@ -391,6 +403,31 @@ function renderBookingLink(value) {
   return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(value)}</a>`;
 }
 
+function renderEmailLink(value) {
+  if (!value) return "<strong>Not set</strong>";
+  return `<a href="mailto:${escapeHtml(value)}">${escapeHtml(value)}</a>`;
+}
+
+function renderPhoneLink(value) {
+  if (!value) return "<strong>Not set</strong>";
+  const dialValue = value.replace(/[^\d+]/g, "");
+  return dialValue ? `<a href="tel:${escapeHtml(dialValue)}">${escapeHtml(value)}</a>` : `<strong>${escapeHtml(value)}</strong>`;
+}
+
+function renderExternalLink(value) {
+  const url = toExternalUrl(value);
+
+  if (!value) {
+    return "<strong>Not set</strong>";
+  }
+
+  if (!url) {
+    return `<strong>${escapeHtml(value)}</strong>`;
+  }
+
+  return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(value)}</a>`;
+}
+
 function renderSelectedDetail() {
   const prospect = getSelectedProspect();
 
@@ -423,6 +460,18 @@ function renderSelectedDetail() {
     <article>
       <span>Decision-Maker</span>
       <strong>${escapeHtml(prospect.decisionMaker || "Unknown")}</strong>
+    </article>
+    <article>
+      <span>Contact Email</span>
+      <p>${renderEmailLink(prospect.contactEmail)}</p>
+    </article>
+    <article>
+      <span>LinkedIn</span>
+      <p>${renderExternalLink(prospect.contactLinkedIn)}</p>
+    </article>
+    <article>
+      <span>Phone</span>
+      <p>${renderPhoneLink(prospect.contactPhone)}</p>
     </article>
     <article>
       <span>Website</span>
@@ -651,6 +700,9 @@ function editProspect(index) {
   prospectForm.size.value = prospect.size;
   prospectForm.website.value = prospect.website;
   prospectForm.decisionMaker.value = prospect.decisionMaker;
+  prospectForm.contactEmail.value = prospect.contactEmail;
+  prospectForm.contactLinkedIn.value = prospect.contactLinkedIn;
+  prospectForm.contactPhone.value = prospect.contactPhone;
   prospectForm.score.value = prospect.score;
   prospectForm.stage.value = prospect.stage;
   prospectForm.bookingLink.value = prospect.bookingLink;
@@ -738,6 +790,9 @@ function saveProspectFromForm(event) {
     size: formData.get("size").trim(),
     website: formData.get("website").trim(),
     decisionMaker: formData.get("decisionMaker").trim(),
+    contactEmail: formData.get("contactEmail").trim(),
+    contactLinkedIn: formData.get("contactLinkedIn").trim(),
+    contactPhone: formData.get("contactPhone").trim(),
     score: formData.get("score"),
     stage: formData.get("stage"),
     bookingLink: formData.get("bookingLink").trim(),
@@ -765,7 +820,7 @@ function saveProspectFromForm(event) {
 }
 
 function exportCsv() {
-  const headers = ["company", "industry", "size", "website", "decisionMaker", "score", "trigger", "fit", "stage", "bookingLink", "responseStatus", "lastTouch", "nextTouch", "responseNotes"];
+  const headers = ["company", "industry", "size", "website", "decisionMaker", "contactEmail", "contactLinkedIn", "contactPhone", "score", "trigger", "fit", "stage", "bookingLink", "responseStatus", "lastTouch", "nextTouch", "responseNotes"];
   const rows = prospects.map((prospect) => headers.map((header) => csvCell(prospect[header])).join(","));
   const csv = [headers.join(","), ...rows].join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
@@ -839,6 +894,9 @@ function prospectFromCsvRow(headers, row) {
     size: values.size || values.employees || values.companysize,
     website: values.website || values.url || values.domain,
     decisionMaker: values.decisionmaker || values.decisionmakerrole || values.title || values.contact,
+    contactEmail: values.contactemail || values.email || values.emailaddress,
+    contactLinkedIn: values.contactlinkedin || values.linkedin || values.linkedinurl || values.linkedinprofile,
+    contactPhone: values.contactphone || values.phone || values.phonenumber || values.mobile,
     score: values.score || values.fitscore,
     trigger: values.trigger || values.buyingtrigger,
     fit: values.fit || values.fitreason || values.qualificationreason || values.notes,
