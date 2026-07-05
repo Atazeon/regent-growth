@@ -130,6 +130,7 @@ const emailTemplateInput = document.querySelector("#emailTemplateInput");
 const savePromptsButton = document.querySelector("#savePromptsButton");
 const resetPromptsButton = document.querySelector("#resetPromptsButton");
 const stageFilter = document.querySelector("#stageFilter");
+const responseFilter = document.querySelector("#responseFilter");
 const researchPrompt = document.querySelector("#researchPrompt");
 const emailDraft = document.querySelector("#emailDraft");
 const prospectForm = document.querySelector("#prospectForm");
@@ -222,12 +223,14 @@ function escapeHtml(value) {
 
 function renderProspects() {
   const selectedStage = stageFilter.value;
+  const selectedResponse = responseFilter.value;
   const visibleProspects = prospects
     .map((prospect, index) => ({ prospect, index }))
-    .filter((item) => selectedStage === "all" || item.prospect.stage === selectedStage);
+    .filter((item) => selectedStage === "all" || item.prospect.stage === selectedStage)
+    .filter((item) => selectedResponse === "all" || item.prospect.responseStatus === selectedResponse);
 
   if (visibleProspects.length === 0) {
-    prospectList.innerHTML = `<p class="empty-state">No companies match this stage yet.</p>`;
+    prospectList.innerHTML = `<p class="empty-state">${escapeHtml(getEmptyProspectMessage(selectedStage, selectedResponse))}</p>`;
   } else {
     prospectList.innerHTML = visibleProspects.map(({ prospect, index }) => `
       <article class="prospect-card ${index === selectedProspectIndex ? "selected-card" : ""}">
@@ -252,11 +255,30 @@ function renderProspects() {
 
   updateMetrics();
   const selectedVisibleProspect = visibleProspects.find((item) => item.index === selectedProspectIndex);
-  const selectedProspect = selectedVisibleProspect?.prospect || visibleProspects[0]?.prospect || prospects[0];
-  selectedProspectIndex = prospects.indexOf(selectedProspect);
+  const selectedProspect = selectedVisibleProspect?.prospect || visibleProspects[0]?.prospect || null;
+  selectedProspectIndex = selectedProspect ? prospects.indexOf(selectedProspect) : -1;
   setDrafts(selectedProspect);
   renderSelectedDetail();
   renderReminders();
+}
+
+function getEmptyProspectMessage(selectedStage, selectedResponse) {
+  const hasStageFilter = selectedStage !== "all";
+  const hasResponseFilter = selectedResponse !== "all";
+
+  if (hasStageFilter && hasResponseFilter) {
+    return `No companies match ${selectedStage} with ${selectedResponse} response.`;
+  }
+
+  if (hasStageFilter) {
+    return `No companies match ${selectedStage} yet.`;
+  }
+
+  if (hasResponseFilter) {
+    return `No companies match ${selectedResponse} response yet.`;
+  }
+
+  return "No companies added yet.";
 }
 
 function updateMetrics() {
@@ -267,7 +289,7 @@ function updateMetrics() {
 }
 
 function getSelectedProspect() {
-  return prospects[selectedProspectIndex] || prospects[0];
+  return selectedProspectIndex >= 0 ? prospects[selectedProspectIndex] : null;
 }
 
 function isFollowUpDue(prospect) {
@@ -1071,6 +1093,7 @@ reminderList.addEventListener("click", (event) => {
 });
 
 stageFilter.addEventListener("change", renderProspects);
+responseFilter.addEventListener("change", renderProspects);
 prospectForm.addEventListener("submit", saveProspectFromForm);
 responseForm.addEventListener("submit", saveResponseFromForm);
 clearFormButton.addEventListener("click", resetForm);

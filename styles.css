@@ -88,11 +88,17 @@ main {
 
 .toolbar,
 .section-heading,
-.action-row {
+.action-row,
+.filter-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 18px;
+}
+
+.filter-row {
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 .toolbar h2 {
@@ -531,6 +537,7 @@ textarea {
   .toolbar,
   .section-heading,
   .action-row,
+  .filter-row,
   .prospect-card,
   .reminder-item,
   .reminder-title,

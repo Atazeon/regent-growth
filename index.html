@@ -86,16 +86,28 @@
             <p class="eyebrow">Pipeline</p>
             <h2>Qualified Companies</h2>
           </div>
-          <select id="stageFilter" aria-label="Filter by stage">
-            <option value="all">All stages</option>
-            <option value="Research">Research</option>
-            <option value="Email Drafted">Email Drafted</option>
-            <option value="Sequence">Sequence</option>
-            <option value="LinkedIn">LinkedIn</option>
-            <option value="Call">Call</option>
-            <option value="Meeting">Meeting</option>
-            <option value="Assessment">Assessment</option>
-          </select>
+          <div class="filter-row">
+            <select id="stageFilter" aria-label="Filter by stage">
+              <option value="all">All stages</option>
+              <option value="Research">Research</option>
+              <option value="Email Drafted">Email Drafted</option>
+              <option value="Sequence">Sequence</option>
+              <option value="LinkedIn">LinkedIn</option>
+              <option value="Call">Call</option>
+              <option value="Meeting">Meeting</option>
+              <option value="Assessment">Assessment</option>
+            </select>
+            <select id="responseFilter" aria-label="Filter by response outcome">
+              <option value="all">All responses</option>
+              <option value="Not Contacted">Not Contacted</option>
+              <option value="Contacted">Contacted</option>
+              <option value="Replied">Replied</option>
+              <option value="Interested">Interested</option>
+              <option value="Meeting Booked">Meeting Booked</option>
+              <option value="Not Interested">Not Interested</option>
+              <option value="No Response">No Response</option>
+            </select>
+          </div>
         </div>
         <div id="prospectList" class="prospect-list"></div>
       </section>
