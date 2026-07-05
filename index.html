@@ -160,6 +160,40 @@
           </label>
           <button type="submit">Save response</button>
         </form>
+        <form id="workflowForm" class="response-form">
+          <label>
+            LinkedIn status
+            <select id="detailLinkedInStatus" name="linkedInStatus">
+              <option value="Not Started">Not Started</option>
+              <option value="Connection Sent">Connection Sent</option>
+              <option value="Connected">Connected</option>
+              <option value="Messaged">Messaged</option>
+              <option value="No Profile">No Profile</option>
+              <option value="Not Relevant">Not Relevant</option>
+            </select>
+          </label>
+          <label>
+            Call status
+            <select id="detailCallStatus" name="callStatus">
+              <option value="Not Started">Not Started</option>
+              <option value="Planned">Planned</option>
+              <option value="Called">Called</option>
+              <option value="Left Voicemail">Left Voicemail</option>
+              <option value="Connected">Connected</option>
+              <option value="No Answer">No Answer</option>
+              <option value="Bad Number">Bad Number</option>
+            </select>
+          </label>
+          <label class="full-span">
+            LinkedIn notes
+            <textarea id="detailLinkedInNotes" name="linkedInNotes" placeholder="Connection request, profile context, message sent, or reply notes"></textarea>
+          </label>
+          <label class="full-span">
+            Call notes
+            <textarea id="detailCallNotes" name="callNotes" placeholder="Dial result, voicemail, objections, or callback details"></textarea>
+          </label>
+          <button type="submit">Save tasks</button>
+        </form>
       </section>
 
       <section id="prospectFormPanel" class="panel">

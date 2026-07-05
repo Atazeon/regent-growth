@@ -12,7 +12,15 @@
     "trigger": "Expanding to two new clinics this quarter",
     "fit": "Multi-location operator with appointment volume and front-desk follow-up pressure.",
     "stage": "Research",
-    "bookingLink": ""
+    "bookingLink": "",
+    "responseStatus": "Not Contacted",
+    "lastTouch": "",
+    "nextTouch": "",
+    "responseNotes": "",
+    "linkedInStatus": "Not Started",
+    "linkedInNotes": "",
+    "callStatus": "Not Started",
+    "callNotes": ""
   },
   {
     "company": "CivicStone Roofing",
@@ -27,7 +35,15 @@
     "trigger": "Hiring outbound sales representatives",
     "fit": "High-ticket B2B service where faster lead qualification can create direct revenue lift.",
     "stage": "Email Drafted",
-    "bookingLink": ""
+    "bookingLink": "",
+    "responseStatus": "Contacted",
+    "lastTouch": "",
+    "nextTouch": "",
+    "responseNotes": "",
+    "linkedInStatus": "Connection Sent",
+    "linkedInNotes": "Connection request queued for VP Sales angle.",
+    "callStatus": "Not Started",
+    "callNotes": ""
   },
   {
     "company": "Atlas Managed IT",
@@ -42,6 +58,14 @@
     "trigger": "Publishing new cybersecurity assessment offer",
     "fit": "Clear assessment-led sales motion and likely need for qualified local business leads.",
     "stage": "Sequence",
-    "bookingLink": ""
+    "bookingLink": "",
+    "responseStatus": "No Response",
+    "lastTouch": "",
+    "nextTouch": "",
+    "responseNotes": "",
+    "linkedInStatus": "Connected",
+    "linkedInNotes": "Founder profile found; reference cybersecurity assessment offer.",
+    "callStatus": "Planned",
+    "callNotes": "Call after the next sequence touch if no reply."
   }
 ]

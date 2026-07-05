@@ -4,6 +4,8 @@ const ollamaEndpoint = "http://127.0.0.1:11434/api/generate";
 const ollamaTimeoutMs = 150000;
 const stageOrder = ["Research", "Email Drafted", "Sequence", "LinkedIn", "Call", "Meeting", "Assessment"];
 const responseStatuses = ["Not Contacted", "Contacted", "Replied", "Interested", "Meeting Booked", "Not Interested", "No Response"];
+const linkedInStatuses = ["Not Started", "Connection Sent", "Connected", "Messaged", "No Profile", "Not Relevant"];
+const callStatuses = ["Not Started", "Planned", "Called", "Left Voicemail", "Connected", "No Answer", "Bad Number"];
 const defaultPromptTemplates = {
   brief: `You are Regent Growth's local AI sales researcher.
 
@@ -66,7 +68,11 @@ const sampleProspects = [
     responseStatus: "Not Contacted",
     lastTouch: "",
     nextTouch: "",
-    responseNotes: ""
+    responseNotes: "",
+    linkedInStatus: "Not Started",
+    linkedInNotes: "",
+    callStatus: "Not Started",
+    callNotes: ""
   },
   {
     company: "CivicStone Roofing",
@@ -85,7 +91,11 @@ const sampleProspects = [
     responseStatus: "Contacted",
     lastTouch: "",
     nextTouch: "",
-    responseNotes: ""
+    responseNotes: "",
+    linkedInStatus: "Connection Sent",
+    linkedInNotes: "Connection request queued for VP Sales angle.",
+    callStatus: "Not Started",
+    callNotes: ""
   },
   {
     company: "Atlas Managed IT",
@@ -104,7 +114,11 @@ const sampleProspects = [
     responseStatus: "No Response",
     lastTouch: "",
     nextTouch: "",
-    responseNotes: ""
+    responseNotes: "",
+    linkedInStatus: "Connected",
+    linkedInNotes: "Founder profile found; reference cybersecurity assessment offer.",
+    callStatus: "Planned",
+    callNotes: "Call after the next sequence touch if no reply."
   }
 ];
 
@@ -123,6 +137,11 @@ const detailResponseStatus = document.querySelector("#detailResponseStatus");
 const detailLastTouch = document.querySelector("#detailLastTouch");
 const detailNextTouch = document.querySelector("#detailNextTouch");
 const detailResponseNotes = document.querySelector("#detailResponseNotes");
+const workflowForm = document.querySelector("#workflowForm");
+const detailLinkedInStatus = document.querySelector("#detailLinkedInStatus");
+const detailCallStatus = document.querySelector("#detailCallStatus");
+const detailLinkedInNotes = document.querySelector("#detailLinkedInNotes");
+const detailCallNotes = document.querySelector("#detailCallNotes");
 const reminderList = document.querySelector("#reminderList");
 const reminderCount = document.querySelector("#reminderCount");
 const briefTemplateInput = document.querySelector("#briefTemplateInput");
@@ -201,6 +220,10 @@ function normalizeProspect(prospect) {
     lastTouch: prospect.lastTouch || "",
     nextTouch: prospect.nextTouch || "",
     responseNotes: prospect.responseNotes || "",
+    linkedInStatus: linkedInStatuses.includes(prospect.linkedInStatus) ? prospect.linkedInStatus : "Not Started",
+    linkedInNotes: prospect.linkedInNotes || "",
+    callStatus: callStatuses.includes(prospect.callStatus) ? prospect.callStatus : "Not Started",
+    callNotes: prospect.callNotes || "",
     aiBrief: prospect.aiBrief || "",
     aiEmail: prospect.aiEmail || ""
   };
@@ -504,6 +527,7 @@ function renderSelectedDetail() {
     detailAdvanceButton.disabled = true;
     detailEditButton.disabled = true;
     responseForm.hidden = true;
+    workflowForm.hidden = true;
     return;
   }
 
@@ -511,10 +535,15 @@ function renderSelectedDetail() {
   detailAdvanceButton.disabled = false;
   detailEditButton.disabled = false;
   responseForm.hidden = false;
+  workflowForm.hidden = false;
   detailResponseStatus.value = prospect.responseStatus;
   detailLastTouch.value = prospect.lastTouch;
   detailNextTouch.value = prospect.nextTouch;
   detailResponseNotes.value = prospect.responseNotes;
+  detailLinkedInStatus.value = prospect.linkedInStatus;
+  detailCallStatus.value = prospect.callStatus;
+  detailLinkedInNotes.value = prospect.linkedInNotes;
+  detailCallNotes.value = prospect.callNotes;
   selectedDetail.innerHTML = `
     <article>
       <span>Stage</span>
@@ -549,6 +578,14 @@ function renderSelectedDetail() {
       <strong>${escapeHtml(prospect.responseStatus)}</strong>
     </article>
     <article>
+      <span>LinkedIn Task</span>
+      <strong>${escapeHtml(prospect.linkedInStatus)}</strong>
+    </article>
+    <article>
+      <span>Call Task</span>
+      <strong>${escapeHtml(prospect.callStatus)}</strong>
+    </article>
+    <article>
       <span>Last Touch</span>
       <strong>${escapeHtml(formatDate(prospect.lastTouch))}</strong>
     </article>
@@ -579,6 +616,14 @@ function renderSelectedDetail() {
     <article class="detail-wide">
       <span>Response Notes</span>
       <p>${previewText(prospect.responseNotes, "No response notes recorded yet.")}</p>
+    </article>
+    <article class="detail-wide">
+      <span>LinkedIn Notes</span>
+      <p>${previewText(prospect.linkedInNotes, "No LinkedIn notes recorded yet.")}</p>
+    </article>
+    <article class="detail-wide">
+      <span>Call Notes</span>
+      <p>${previewText(prospect.callNotes, "No call notes recorded yet.")}</p>
     </article>
     <article class="detail-wide">
       <span>Saved AI Brief</span>
@@ -930,6 +975,24 @@ function saveResponseFromForm(event) {
   setDataStatus(`Response tracking saved for ${prospect.company}.`);
 }
 
+function saveWorkflowFromForm(event) {
+  event.preventDefault();
+  const prospect = getSelectedProspect();
+  if (!prospect) return;
+
+  const formData = new FormData(workflowForm);
+  const linkedInStatus = formData.get("linkedInStatus");
+  const callStatus = formData.get("callStatus");
+
+  prospect.linkedInStatus = linkedInStatuses.includes(linkedInStatus) ? linkedInStatus : "Not Started";
+  prospect.callStatus = callStatuses.includes(callStatus) ? callStatus : "Not Started";
+  prospect.linkedInNotes = formData.get("linkedInNotes").trim();
+  prospect.callNotes = formData.get("callNotes").trim();
+  saveProspects();
+  renderProspects();
+  setDataStatus(`LinkedIn and call tasks saved for ${prospect.company}.`);
+}
+
 function markReminderTouched(index) {
   const prospect = prospects[index];
   if (!prospect) return;
@@ -1035,6 +1098,10 @@ function saveProspectFromForm(event) {
     trigger: formData.get("trigger").trim(),
     fit: formData.get("fit").trim(),
     responseNotes: formData.get("responseNotes").trim(),
+    linkedInStatus: editingIndex === null ? "Not Started" : prospects[editingIndex]?.linkedInStatus,
+    linkedInNotes: editingIndex === null ? "" : prospects[editingIndex]?.linkedInNotes,
+    callStatus: editingIndex === null ? "Not Started" : prospects[editingIndex]?.callStatus,
+    callNotes: editingIndex === null ? "" : prospects[editingIndex]?.callNotes,
     aiBrief: editingIndex === null ? "" : prospects[editingIndex]?.aiBrief,
     aiEmail: editingIndex === null ? "" : prospects[editingIndex]?.aiEmail
   });
@@ -1060,7 +1127,7 @@ function saveProspectFromForm(event) {
 }
 
 function exportCsv() {
-  const headers = ["company", "industry", "size", "website", "decisionMaker", "contactEmail", "contactLinkedIn", "contactPhone", "score", "trigger", "fit", "stage", "bookingLink", "responseStatus", "lastTouch", "nextTouch", "responseNotes"];
+  const headers = ["company", "industry", "size", "website", "decisionMaker", "contactEmail", "contactLinkedIn", "contactPhone", "score", "trigger", "fit", "stage", "bookingLink", "responseStatus", "lastTouch", "nextTouch", "responseNotes", "linkedInStatus", "linkedInNotes", "callStatus", "callNotes"];
   const rows = prospects.map((prospect) => headers.map((header) => csvCell(prospect[header])).join(","));
   const csv = [headers.join(","), ...rows].join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
@@ -1145,7 +1212,11 @@ function prospectFromCsvRow(headers, row) {
     responseStatus: values.responsestatus || values.response || values.replystatus,
     lastTouch: values.lasttouch || values.lastcontact || values.lasttouchdate,
     nextTouch: values.nexttouch || values.nextfollowup || values.nexttouchdate,
-    responseNotes: values.responsenotes || values.replynotes || values.outreachnotes
+    responseNotes: values.responsenotes || values.replynotes || values.outreachnotes,
+    linkedInStatus: values.linkedinstatus || values.linkedinworkflowstatus || values.connectionstatus,
+    linkedInNotes: values.linkedinnotes || values.linkedinworkflownotes || values.connectionnotes,
+    callStatus: values.callstatus || values.phonestatus || values.dialstatus,
+    callNotes: values.callnotes || values.phonenotes || values.dialnotes
   });
 }
 
@@ -1258,6 +1329,7 @@ savedViews.addEventListener("click", (event) => {
 });
 prospectForm.addEventListener("submit", saveProspectFromForm);
 responseForm.addEventListener("submit", saveResponseFromForm);
+workflowForm.addEventListener("submit", saveWorkflowFromForm);
 clearFormButton.addEventListener("click", resetForm);
 importInput.addEventListener("change", importCsv);
 exportButton.addEventListener("click", exportCsv);
