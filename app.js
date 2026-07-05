@@ -141,6 +141,7 @@ const importInput = document.querySelector("#importInput");
 const exportButton = document.querySelector("#exportButton");
 const resetButton = document.querySelector("#resetButton");
 const modelSelect = document.querySelector("#modelSelect");
+const researchAccountButton = document.querySelector("#researchAccountButton");
 const generateBriefButton = document.querySelector("#generateBriefButton");
 const generateEmailButton = document.querySelector("#generateEmailButton");
 const aiStatus = document.querySelector("#aiStatus");
@@ -671,6 +672,91 @@ function renderTemplate(template, prospect) {
   return template.replace(/\{\{(\w+)\}\}/g, (match, key) => values[key] ?? "");
 }
 
+function buildResearchAgentPrompt(prospect) {
+  return `You are Regent Growth's local AI account researcher.
+
+Regent Growth helps businesses find qualified prospects, research accounts, write personalized outreach, track follow-up, and book more meetings.
+
+Use only the company details below and reasonable business inference. Do not claim you browsed the web. Do not include hidden reasoning or chain-of-thought.
+
+Company: ${prospect.company}
+Industry: ${prospect.industry}
+Size: ${prospect.size}
+Website/domain: ${prospect.website}
+Decision-maker role: ${prospect.decisionMaker}
+Known buying trigger: ${prospect.trigger}
+Known fit reason: ${prospect.fit}
+
+Return one valid JSON object only. No markdown. Use these exact keys:
+{
+  "companySummary": "one sentence on what this company likely does",
+  "likelyPainPoints": ["pain point 1", "pain point 2", "pain point 3"],
+  "decisionMakerAngle": "best angle for the listed decision-maker",
+  "buyingTrigger": "best inferred buying trigger or improved version of the known trigger",
+  "fitReason": "why Regent Growth is relevant for this account",
+  "personalizedOpeningLine": "one concise cold email opening line"
+}`;
+}
+
+function parseJsonFromText(text) {
+  const trimmed = text.trim();
+
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    const jsonStart = trimmed.indexOf("{");
+    const jsonEnd = trimmed.lastIndexOf("}");
+
+    if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
+      throw new Error("AI did not return usable JSON.");
+    }
+
+    return JSON.parse(trimmed.slice(jsonStart, jsonEnd + 1));
+  }
+}
+
+function formatResearchBrief(research) {
+  const painPoints = Array.isArray(research.likelyPainPoints)
+    ? research.likelyPainPoints
+    : String(research.likelyPainPoints || "").split(/\n|;/).map((item) => item.trim()).filter(Boolean);
+
+  return [
+    "1. Company summary",
+    research.companySummary || "No company summary returned.",
+    "",
+    "2. Likely pain points",
+    painPoints.length > 0 ? painPoints.map((item) => `- ${item}`).join("\n") : "- No pain points returned.",
+    "",
+    "3. Best decision-maker angle",
+    research.decisionMakerAngle || "No decision-maker angle returned.",
+    "",
+    "4. Buying trigger",
+    research.buyingTrigger || "No buying trigger returned.",
+    "",
+    "5. Fit reason",
+    research.fitReason || "No fit reason returned.",
+    "",
+    "6. Personalized opening line",
+    research.personalizedOpeningLine || "No opening line returned."
+  ].join("\n");
+}
+
+function applyResearchToProspect(prospect, research) {
+  if (research.buyingTrigger) {
+    prospect.trigger = String(research.buyingTrigger).trim();
+  }
+
+  if (research.fitReason) {
+    prospect.fit = String(research.fitReason).trim();
+  }
+
+  if (research.decisionMakerAngle && !prospect.responseNotes) {
+    prospect.responseNotes = `Decision-maker angle: ${String(research.decisionMakerAngle).trim()}`;
+  }
+
+  prospect.aiBrief = formatResearchBrief(research);
+}
+
 async function generateWithOllama(prompt, numPredict = 260) {
   const model = modelSelect.value;
   const controller = new AbortController();
@@ -725,6 +811,31 @@ async function generateCompanyBrief() {
       : "Local AI error: make sure Ollama is running and the model is installed.";
     setAiStatus(message, "error");
   } finally {
+    generateBriefButton.disabled = false;
+  }
+}
+
+async function researchSelectedAccount() {
+  const prospect = getSelectedProspect();
+  if (!prospect) return;
+
+  researchAccountButton.disabled = true;
+  generateBriefButton.disabled = true;
+  try {
+    const rawResearch = await generateWithOllama(buildResearchAgentPrompt(prospect), 420);
+    const research = parseJsonFromText(rawResearch);
+    applyResearchToProspect(prospect, research);
+    researchPrompt.value = prospect.aiBrief;
+    saveProspects();
+    renderProspects();
+    setDataStatus(`Research saved for ${prospect.company}.`);
+  } catch (error) {
+    const message = error.name === "AbortError"
+      ? "Local AI timed out. Try qwen2.5:0.5b for a quick research pass or retry qwen3:8b."
+      : "Local AI research error: make sure Ollama is running and the model returned valid JSON.";
+    setAiStatus(message, "error");
+  } finally {
+    researchAccountButton.disabled = false;
     generateBriefButton.disabled = false;
   }
 }
@@ -1156,6 +1267,7 @@ detailEditButton.addEventListener("click", () => editProspect(selectedProspectIn
 savePromptsButton.addEventListener("click", savePromptTemplateEdits);
 resetPromptsButton.addEventListener("click", resetPromptTemplates);
 modelSelect.addEventListener("change", () => setAiStatus(`Local AI ready: ${modelSelect.value}`));
+researchAccountButton.addEventListener("click", researchSelectedAccount);
 generateBriefButton.addEventListener("click", generateCompanyBrief);
 generateEmailButton.addEventListener("click", generatePersonalizedEmail);
 
