@@ -6,6 +6,10 @@ const root = process.cwd();
 const port = Number(process.env.PORT || 5193);
 const maxBodyBytes = 1024 * 1024;
 const sourceTimeoutMs = 12000;
+const searchTimeoutMs = 12000;
+const searchApiUrl = process.env.REGENT_SEARCH_API_URL || "";
+const searchApiKey = process.env.REGENT_SEARCH_API_KEY || "";
+const searchApiKeyHeader = process.env.REGENT_SEARCH_API_KEY_HEADER || "Authorization";
 const contentTypes = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
@@ -94,6 +98,101 @@ function getSourceUrl(value) {
   return url;
 }
 
+function getConfiguredSearchUrl(query, count) {
+  if (!searchApiUrl) {
+    throw new Error("Search API is not configured. Set REGENT_SEARCH_API_URL and optional REGENT_SEARCH_API_KEY before starting the server.");
+  }
+
+  const url = new URL(searchApiUrl);
+  if (!["http:", "https:"].includes(url.protocol)) {
+    throw new Error("REGENT_SEARCH_API_URL must use http or https.");
+  }
+
+  if (!url.searchParams.has("q") && !url.searchParams.has("query")) {
+    url.searchParams.set("q", query);
+  }
+
+  if (!url.searchParams.has("count") && !url.searchParams.has("limit") && !url.searchParams.has("num")) {
+    url.searchParams.set("count", String(count));
+  }
+
+  return url;
+}
+
+function getByPath(value, pathValue) {
+  return pathValue.split(".").reduce((current, key) => current?.[key], value);
+}
+
+function firstArrayFromPayload(payload) {
+  const paths = [
+    "results",
+    "items",
+    "webPages.value",
+    "organic",
+    "organic_results",
+    "data",
+    "response.results"
+  ];
+
+  for (const pathValue of paths) {
+    const value = getByPath(payload, pathValue);
+    if (Array.isArray(value)) {
+      return value;
+    }
+  }
+
+  return [];
+}
+
+function normalizeSearchResult(item) {
+  const url = item.url || item.link || item.href || item.displayUrl || item.displayed_link || "";
+  const title = item.title || item.name || item.heading || "";
+  const snippet = item.snippet || item.description || item.summary || item.text || "";
+
+  return {
+    title: cleanText(title),
+    url: cleanText(url),
+    snippet: cleanText(snippet)
+  };
+}
+
+async function searchSources(query, count = 5) {
+  const url = getConfiguredSearchUrl(query, count);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), searchTimeoutMs);
+  const headers = {
+    "Accept": "application/json"
+  };
+
+  if (searchApiKey) {
+    headers[searchApiKeyHeader] = searchApiKeyHeader.toLowerCase() === "authorization"
+      ? `Bearer ${searchApiKey}`
+      : searchApiKey;
+  }
+
+  try {
+    const response = await fetch(url, { headers, signal: controller.signal });
+
+    if (!response.ok) {
+      throw new Error(`Search API returned ${response.status}`);
+    }
+
+    const payload = await response.json();
+    const results = firstArrayFromPayload(payload)
+      .map(normalizeSearchResult)
+      .filter((result) => result.url || result.title)
+      .slice(0, count);
+
+    return {
+      query,
+      fetchedAt: new Date().toISOString(),
+      results
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 async function fetchSourceEvidence(sourceUrl) {
   const url = getSourceUrl(sourceUrl);
   const controller = new AbortController();
@@ -170,6 +269,24 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "POST" && requestUrl.pathname === "/api/search-sources") {
+    try {
+      const body = await readJsonBody(request);
+      const query = cleanText(body.query);
+      const count = Math.min(10, Math.max(1, Number(body.count) || 5));
+
+      if (!query) {
+        throw new Error("Search query is required.");
+      }
+
+      const results = await searchSources(query, count);
+      sendJson(response, 200, results);
+    } catch (error) {
+      sendJson(response, 400, { message: error.name === "AbortError" ? "Search API timed out." : error.message });
+    }
+    return;
+  }
+
   if (request.method === "GET") {
     serveStatic(request, response);
     return;
@@ -179,6 +296,13 @@ const server = http.createServer(async (request, response) => {
   response.end("Method not allowed");
 });
 
-server.listen(port, "127.0.0.1", () => {
-  console.log(`Regent Growth local research server: http://127.0.0.1:${port}/index.html`);
-});
+if (require.main === module) {
+  server.listen(port, "127.0.0.1", () => {
+    console.log(`Regent Growth local research server: http://127.0.0.1:${port}/index.html`);
+  });
+}
+
+module.exports = {
+  firstArrayFromPayload,
+  normalizeSearchResult
+};

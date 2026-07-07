@@ -3,6 +3,7 @@ const promptStorageKey = "regent-growth-prompt-templates";
 const discoveryStorageKey = "regent-growth-discovery-queue";
 const ollamaEndpoint = "http://127.0.0.1:11434/api/generate";
 const sourceFetchEndpoint = "/api/fetch-source";
+const sourceSearchEndpoint = "/api/search-sources";
 const ollamaTimeoutMs = 150000;
 const stageOrder = ["Research", "Email Drafted", "Sequence", "LinkedIn", "Call", "Meeting", "Assessment"];
 const responseStatuses = ["Not Contacted", "Contacted", "Replied", "Interested", "Meeting Booked", "Not Interested", "No Response"];
@@ -371,6 +372,7 @@ function renderDiscoveryQueue() {
             Evidence notes
             <textarea data-source-notes placeholder="Paste proof from company site, LinkedIn, jobs page, news, or directory listing.">${escapeHtml(candidate.sourceNotes)}</textarea>
           </label>
+          <button class="secondary-button" type="button" data-action="search-source" data-id="${escapeHtml(candidate.id)}">Search sources</button>
           <button class="secondary-button" type="button" data-action="fetch-source" data-id="${escapeHtml(candidate.id)}" ${candidate.website ? "" : "disabled"}>Fetch website</button>
           <button class="secondary-button" type="button" data-action="save-source" data-id="${escapeHtml(candidate.id)}">Save evidence</button>
         </div>
@@ -1337,6 +1339,85 @@ function formatFetchedEvidence(result) {
   ].filter(Boolean).join("\n");
 }
 
+function buildCandidateSearchQuery(candidate) {
+  const location = discoveryForm.elements.location?.value || "";
+  const parts = [
+    candidate.company,
+    candidate.industry,
+    location,
+    candidate.trigger,
+    "company website hiring expansion"
+  ].filter(Boolean);
+
+  return parts.join(" ");
+}
+
+function formatSearchEvidence(result) {
+  const lines = [
+    `Search query: ${result.query}`,
+    ...result.results.map((item, index) => [
+      `${index + 1}. ${item.title || "Untitled result"}`,
+      item.url ? `URL: ${item.url}` : "",
+      item.snippet ? `Snippet: ${item.snippet}` : ""
+    ].filter(Boolean).join("\n"))
+  ];
+
+  return lines.join("\n\n");
+}
+
+async function searchDiscoverySources(id) {
+  const candidate = discoveryQueue.find((item) => item.id === id);
+  if (!candidate) return;
+
+  setDataStatus(`Searching sources for ${candidate.company}...`, "working");
+
+  try {
+    const response = await fetch(sourceSearchEndpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        query: buildCandidateSearchQuery(candidate),
+        count: 5
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || `Source search returned ${response.status}`);
+    }
+
+    const result = await response.json();
+    if (!Array.isArray(result.results) || result.results.length === 0) {
+      throw new Error("Search API returned no source results.");
+    }
+
+    const firstUrl = result.results.find((item) => item.url)?.url || "";
+    if (!candidate.website && firstUrl) {
+      try {
+        candidate.website = new URL(firstUrl).hostname.replace(/^www\./, "");
+      } catch {
+        candidate.website = firstUrl;
+      }
+    }
+
+    const searchEvidence = formatSearchEvidence(result);
+    candidate.sourceStatus = "Sources Opened";
+    candidate.sourceNotes = candidate.sourceNotes
+      ? `${candidate.sourceNotes}\n\n${searchEvidence}`
+      : searchEvidence;
+    saveDiscoveryQueue();
+    renderDiscoveryQueue();
+    setDataStatus(`Search sources saved for ${candidate.company}.`);
+  } catch (error) {
+    const message = location.protocol === "file:"
+      ? "Source search needs the local research server. Run local-research-server.js and open the local URL."
+      : `Source search error: ${error.message}`;
+    setDataStatus(message, "error");
+  }
+}
+
 async function fetchDiscoverySource(id) {
   const candidate = discoveryQueue.find((item) => item.id === id);
   if (!candidate) return;
@@ -1684,6 +1765,10 @@ discoveryList.addEventListener("click", (event) => {
 
   if (button.dataset.action === "fetch-source") {
     fetchDiscoverySource(button.dataset.id);
+  }
+
+  if (button.dataset.action === "search-source") {
+    searchDiscoverySources(button.dataset.id);
   }
 });
 prospectForm.addEventListener("submit", saveProspectFromForm);
