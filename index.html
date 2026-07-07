@@ -407,8 +407,27 @@ $env:REGENT_SEARCH_API_KEY="your_api_key"
       <p id="dataStatus" class="ai-status" aria-live="polite">Prospect data saved locally in this browser.</p>
 
       <section id="handoff" class="panel">
-        <p class="eyebrow">Warm Lead Handoff</p>
-        <h2>Checklist</h2>
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Warm Lead Handoff</p>
+            <h2>CRM Export</h2>
+          </div>
+          <div class="action-row">
+            <button id="exportWarmCsvButton" type="button">Export warm CSV</button>
+            <button id="exportWarmJsonButton" class="secondary-button" type="button">Export JSON</button>
+          </div>
+        </div>
+        <div class="handoff-tools">
+          <div>
+            <p class="handoff-summary" id="handoffSummary">No warm leads ready yet.</p>
+            <div class="handoff-actions">
+              <button id="copyHandoffPacketButton" class="secondary-button" type="button">Copy selected packet</button>
+              <button id="markCrmReadyButton" type="button">Mark CRM ready</button>
+            </div>
+          </div>
+          <textarea id="handoffPacket" readonly></textarea>
+        </div>
+        <h3>Checklist</h3>
         <div class="checklist">
           <label><input type="checkbox"> Decision-maker identified</label>
           <label><input type="checkbox"> Company pain and buying trigger researched</label>

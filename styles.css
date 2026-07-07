@@ -663,6 +663,35 @@ button:disabled {
   padding: 0 12px;
 }
 
+.handoff-tools {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) 1.2fr;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.handoff-summary {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.handoff-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+#handoff h3 {
+  margin: 22px 0 0;
+}
+
+#handoffPacket {
+  min-height: 220px;
+  margin: 0;
+}
+
 textarea {
   width: 100%;
   min-height: 260px;
@@ -732,6 +761,8 @@ textarea {
   .setup-actions,
   .source-controls,
   .email-handoff,
+  .handoff-tools,
+  .handoff-actions,
   .reminder-item,
   .reminder-title,
   .reminder-actions {

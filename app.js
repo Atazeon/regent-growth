@@ -183,6 +183,12 @@ const openGmailButton = document.querySelector("#openGmailButton");
 const openOutlookButton = document.querySelector("#openOutlookButton");
 const copyEmailDraftButton = document.querySelector("#copyEmailDraftButton");
 const markEmailSentButton = document.querySelector("#markEmailSentButton");
+const exportWarmCsvButton = document.querySelector("#exportWarmCsvButton");
+const exportWarmJsonButton = document.querySelector("#exportWarmJsonButton");
+const copyHandoffPacketButton = document.querySelector("#copyHandoffPacketButton");
+const markCrmReadyButton = document.querySelector("#markCrmReadyButton");
+const handoffSummary = document.querySelector("#handoffSummary");
+const handoffPacket = document.querySelector("#handoffPacket");
 const aiStatus = document.querySelector("#aiStatus");
 const dataStatus = document.querySelector("#dataStatus");
 
@@ -349,6 +355,7 @@ function renderProspects() {
   setDrafts(selectedProspect);
   renderSelectedDetail();
   renderReminders();
+  renderHandoff();
 }
 
 function renderDiscoveryQueue() {
@@ -480,6 +487,13 @@ function updateMetrics() {
   document.querySelector("#emailMetric").textContent = prospects.filter((prospect) => prospect.stage !== "Research").length;
   document.querySelector("#followUpMetric").textContent = prospects.filter(isFollowUpDue).length;
   document.querySelector("#meetingMetric").textContent = prospects.filter((prospect) => prospect.stage === "Meeting" || prospect.responseStatus === "Meeting Booked").length;
+}
+
+function isWarmLead(prospect) {
+  return prospect.responseStatus === "Interested"
+    || prospect.responseStatus === "Meeting Booked"
+    || prospect.stage === "Meeting"
+    || prospect.stage === "Assessment";
 }
 
 function getSelectedProspect() {
@@ -1240,6 +1254,148 @@ function markEmailSent() {
   setDataStatus(`${prospect.company} marked contacted. Next touch scheduled for ${formatDate(prospect.nextTouch)}.`);
 }
 
+function getWarmLeads() {
+  return prospects.filter(isWarmLead);
+}
+
+function getCrmRecord(prospect) {
+  return {
+    company: prospect.company,
+    website: prospect.website,
+    industry: prospect.industry,
+    companySize: prospect.size,
+    decisionMaker: prospect.decisionMaker,
+    email: prospect.contactEmail,
+    linkedIn: prospect.contactLinkedIn,
+    phone: prospect.contactPhone,
+    stage: prospect.stage,
+    responseStatus: prospect.responseStatus,
+    fitScore: prospect.score,
+    buyingTrigger: prospect.trigger,
+    fitReason: prospect.fit,
+    bookingLink: prospect.bookingLink,
+    lastTouch: prospect.lastTouch,
+    nextTouch: prospect.nextTouch,
+    linkedInStatus: prospect.linkedInStatus,
+    callStatus: prospect.callStatus,
+    notes: prospect.responseNotes,
+    aiBrief: prospect.aiBrief,
+    aiEmail: prospect.aiEmail
+  };
+}
+
+function formatHandoffPacket(prospect) {
+  if (!prospect) {
+    return "Select a prospect to build a CRM handoff packet.";
+  }
+
+  const record = getCrmRecord(prospect);
+  return [
+    `CRM Handoff: ${record.company}`,
+    "",
+    `Stage: ${record.stage}`,
+    `Response: ${record.responseStatus}`,
+    `Fit score: ${record.fitScore}`,
+    `Decision-maker: ${record.decisionMaker || "Not set"}`,
+    `Email: ${record.email || "Not set"}`,
+    `LinkedIn: ${record.linkedIn || "Not set"}`,
+    `Phone: ${record.phone || "Not set"}`,
+    `Website: ${record.website || "Not set"}`,
+    `Booking link: ${record.bookingLink || "Not set"}`,
+    "",
+    "Why this is warm",
+    record.buyingTrigger || "No buying trigger recorded.",
+    record.fitReason || "No fit reason recorded.",
+    "",
+    "Outreach status",
+    `Last touch: ${formatDate(record.lastTouch)}`,
+    `Next touch: ${formatDate(record.nextTouch)}`,
+    `LinkedIn: ${record.linkedInStatus}`,
+    `Call: ${record.callStatus}`,
+    "",
+    "Notes",
+    record.notes || "No notes recorded.",
+    "",
+    "AI brief",
+    record.aiBrief || "No AI brief saved.",
+    "",
+    "Email draft",
+    record.aiEmail || "No email draft saved."
+  ].join("\n");
+}
+
+function renderHandoff() {
+  const warmLeads = getWarmLeads();
+  const selectedProspect = getSelectedProspect();
+  const selectedIsWarm = selectedProspect ? isWarmLead(selectedProspect) : false;
+  handoffSummary.textContent = `${warmLeads.length} warm lead${warmLeads.length === 1 ? "" : "s"} ready for CRM export.${selectedIsWarm ? ` Selected: ${selectedProspect.company}.` : " Select or mark a warm lead to build its packet."}`;
+  handoffPacket.value = formatHandoffPacket(selectedProspect);
+}
+
+function downloadFile(filename, content, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportWarmLeadCsv() {
+  const warmLeads = getWarmLeads();
+  if (warmLeads.length === 0) {
+    setDataStatus("No warm leads to export yet.", "error");
+    return;
+  }
+
+  const headers = ["company", "website", "industry", "companySize", "decisionMaker", "email", "linkedIn", "phone", "stage", "responseStatus", "fitScore", "buyingTrigger", "fitReason", "bookingLink", "lastTouch", "nextTouch", "linkedInStatus", "callStatus", "notes"];
+  const rows = warmLeads.map((prospect) => {
+    const record = getCrmRecord(prospect);
+    return headers.map((header) => csvCell(record[header])).join(",");
+  });
+  downloadFile("regent-growth-warm-leads.csv", [headers.join(","), ...rows].join("\n"), "text/csv;charset=utf-8");
+  setDataStatus(`Exported ${warmLeads.length} warm lead${warmLeads.length === 1 ? "" : "s"} for CRM.`);
+}
+
+function exportWarmLeadJson() {
+  const warmLeads = getWarmLeads();
+  if (warmLeads.length === 0) {
+    setDataStatus("No warm leads to export yet.", "error");
+    return;
+  }
+
+  downloadFile("regent-growth-warm-leads.json", JSON.stringify(warmLeads.map(getCrmRecord), null, 2), "application/json;charset=utf-8");
+  setDataStatus(`Exported ${warmLeads.length} warm lead${warmLeads.length === 1 ? "" : "s"} as JSON.`);
+}
+
+async function copySelectedHandoffPacket() {
+  const prospect = getSelectedProspect();
+  if (!prospect) return;
+
+  const packet = formatHandoffPacket(prospect);
+  try {
+    await navigator.clipboard.writeText(packet);
+    setDataStatus(`CRM handoff packet copied for ${prospect.company}.`);
+  } catch {
+    handoffPacket.select();
+    document.execCommand("copy");
+    setDataStatus(`CRM handoff packet selected for ${prospect.company}.`);
+  }
+}
+
+function markSelectedCrmReady() {
+  const prospect = getSelectedProspect();
+  if (!prospect) return;
+
+  prospect.stage = "Assessment";
+  prospect.responseStatus = prospect.responseStatus === "Not Contacted" ? "Interested" : prospect.responseStatus;
+  prospect.responseNotes = [prospect.responseNotes, "Marked CRM ready for warm-lead handoff."].filter(Boolean).join("\n");
+  saveProspects();
+  renderProspects();
+  setDataStatus(`${prospect.company} marked CRM ready.`);
+}
+
 function advanceStage(index) {
   const prospect = prospects[index];
   const currentStage = stageOrder.indexOf(prospect.stage);
@@ -1973,6 +2129,10 @@ openGmailButton.addEventListener("click", () => openEmailHandoff("gmail"));
 openOutlookButton.addEventListener("click", () => openEmailHandoff("outlook"));
 copyEmailDraftButton.addEventListener("click", copyEmailDraft);
 markEmailSentButton.addEventListener("click", markEmailSent);
+exportWarmCsvButton.addEventListener("click", exportWarmLeadCsv);
+exportWarmJsonButton.addEventListener("click", exportWarmLeadJson);
+copyHandoffPacketButton.addEventListener("click", copySelectedHandoffPacket);
+markCrmReadyButton.addEventListener("click", markSelectedCrmReady);
 
 renderPromptTemplates();
 renderDiscoveryQueue();
