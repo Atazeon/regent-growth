@@ -4,6 +4,7 @@ const discoveryStorageKey = "regent-growth-discovery-queue";
 const ollamaEndpoint = "http://127.0.0.1:11434/api/generate";
 const sourceFetchEndpoint = "/api/fetch-source";
 const sourceSearchEndpoint = "/api/search-sources";
+const sourceSearchStatusEndpoint = "/api/search-status";
 const ollamaTimeoutMs = 150000;
 const stageOrder = ["Research", "Email Drafted", "Sequence", "LinkedIn", "Call", "Meeting", "Assessment"];
 const responseStatuses = ["Not Contacted", "Contacted", "Replied", "Interested", "Meeting Booked", "Not Interested", "No Response"];
@@ -160,6 +161,10 @@ const discoveryForm = document.querySelector("#discoveryForm");
 const discoveryList = document.querySelector("#discoveryList");
 const generateDiscoveryButton = document.querySelector("#generateDiscoveryButton");
 const clearDiscoveryButton = document.querySelector("#clearDiscoveryButton");
+const searchSetupStatus = document.querySelector("#searchSetupStatus");
+const searchTestQuery = document.querySelector("#searchTestQuery");
+const checkSearchSetupButton = document.querySelector("#checkSearchSetupButton");
+const testSearchSetupButton = document.querySelector("#testSearchSetupButton");
 const researchPrompt = document.querySelector("#researchPrompt");
 const emailDraft = document.querySelector("#emailDraft");
 const prospectForm = document.querySelector("#prospectForm");
@@ -795,6 +800,11 @@ function setDataStatus(message, state = "idle") {
   dataStatus.dataset.state = state;
 }
 
+function setSearchSetupStatus(message, state = "idle") {
+  searchSetupStatus.textContent = message;
+  searchSetupStatus.dataset.state = state;
+}
+
 function renderPromptTemplates() {
   briefTemplateInput.value = promptTemplates.brief;
   emailTemplateInput.value = promptTemplates.email;
@@ -1418,6 +1428,66 @@ async function searchDiscoverySources(id) {
   }
 }
 
+async function checkSearchSetup() {
+  checkSearchSetupButton.disabled = true;
+  try {
+    const response = await fetch(sourceSearchStatusEndpoint);
+    if (!response.ok) {
+      throw new Error(`Search status returned ${response.status}`);
+    }
+
+    const status = await response.json();
+    if (status.configured) {
+      const keyText = status.hasApiKey ? ` API key configured with ${status.keyHeader}.` : " No API key configured.";
+      setSearchSetupStatus(`Search connector ready for ${status.providerHost}.${keyText}`);
+    } else {
+      setSearchSetupStatus("Search connector is not configured. Set REGENT_SEARCH_API_URL before starting the local research server.", "error");
+    }
+  } catch (error) {
+    const message = location.protocol === "file:"
+      ? "Search setup check needs the local research server. Run local-research-server.js and open the local URL."
+      : `Search setup check failed: ${error.message}`;
+    setSearchSetupStatus(message, "error");
+  } finally {
+    checkSearchSetupButton.disabled = false;
+  }
+}
+
+async function testSearchSetup() {
+  const query = searchTestQuery.value.trim();
+  if (!query) {
+    setSearchSetupStatus("Enter a test query before running a search test.", "error");
+    return;
+  }
+
+  testSearchSetupButton.disabled = true;
+  try {
+    const response = await fetch(sourceSearchEndpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ query, count: 3 })
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || `Search test returned ${response.status}`);
+    }
+
+    const result = await response.json();
+    const count = Array.isArray(result.results) ? result.results.length : 0;
+    setSearchSetupStatus(`Search test returned ${count} result${count === 1 ? "" : "s"} for "${query}".`);
+  } catch (error) {
+    const message = location.protocol === "file:"
+      ? "Search test needs the local research server. Run local-research-server.js and open the local URL."
+      : `Search test failed: ${error.message}`;
+    setSearchSetupStatus(message, "error");
+  } finally {
+    testSearchSetupButton.disabled = false;
+  }
+}
+
 async function fetchDiscoverySource(id) {
   const candidate = discoveryQueue.find((item) => item.id === id);
   if (!candidate) return;
@@ -1780,6 +1850,8 @@ exportButton.addEventListener("click", exportCsv);
 resetButton.addEventListener("click", resetSamples);
 generateDiscoveryButton.addEventListener("click", generateDiscoveryCandidates);
 clearDiscoveryButton.addEventListener("click", clearDiscoveryQueue);
+checkSearchSetupButton.addEventListener("click", checkSearchSetup);
+testSearchSetupButton.addEventListener("click", testSearchSetup);
 detailAdvanceButton.addEventListener("click", () => advanceStage(selectedProspectIndex));
 detailEditButton.addEventListener("click", () => editProspect(selectedProspectIndex));
 savePromptsButton.addEventListener("click", savePromptTemplateEdits);
@@ -1792,3 +1864,4 @@ generateEmailButton.addEventListener("click", generatePersonalizedEmail);
 renderPromptTemplates();
 renderDiscoveryQueue();
 renderProspects();
+checkSearchSetup();

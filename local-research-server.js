@@ -119,6 +119,31 @@ function getConfiguredSearchUrl(query, count) {
   return url;
 }
 
+function getSearchStatus() {
+  let providerHost = "";
+  let configured = false;
+
+  try {
+    if (searchApiUrl) {
+      const url = new URL(searchApiUrl);
+      providerHost = url.hostname;
+      configured = ["http:", "https:"].includes(url.protocol);
+    }
+  } catch {
+    configured = false;
+  }
+
+  return {
+    configured,
+    providerHost,
+    hasApiKey: Boolean(searchApiKey),
+    keyHeader: searchApiKeyHeader,
+    endpointEnv: "REGENT_SEARCH_API_URL",
+    keyEnv: "REGENT_SEARCH_API_KEY",
+    keyHeaderEnv: "REGENT_SEARCH_API_KEY_HEADER"
+  };
+}
+
 function getByPath(value, pathValue) {
   return pathValue.split(".").reduce((current, key) => current?.[key], value);
 }
@@ -258,6 +283,11 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "GET" && requestUrl.pathname === "/api/search-status") {
+    sendJson(response, 200, getSearchStatus());
+    return;
+  }
+
   if (request.method === "POST" && requestUrl.pathname === "/api/fetch-source") {
     try {
       const body = await readJsonBody(request);
@@ -304,5 +334,6 @@ if (require.main === module) {
 
 module.exports = {
   firstArrayFromPayload,
+  getSearchStatus,
   normalizeSearchResult
 };

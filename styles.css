@@ -360,6 +360,53 @@ button:disabled {
   line-height: 1.5;
 }
 
+.search-setup {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: 1fr minmax(220px, 320px) auto;
+  gap: 16px;
+  align-items: end;
+  margin-top: 18px;
+  padding: 16px;
+  background: #f9fafc;
+}
+
+.search-setup p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.search-setup p[data-state="error"] {
+  color: #a73535;
+  font-weight: 700;
+}
+
+.search-setup pre {
+  overflow-x: auto;
+  margin: 10px 0 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px;
+  background: #fff;
+  color: var(--ink);
+  font: 0.85rem/1.45 Consolas, Monaco, monospace;
+}
+
+.search-setup label {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.setup-actions {
+  display: flex;
+  gap: 8px;
+}
+
 .source-links {
   display: flex;
   flex-wrap: wrap;
@@ -669,6 +716,8 @@ textarea {
   .prospect-card,
   .discovery-card,
   .discovery-title,
+  .search-setup,
+  .setup-actions,
   .source-controls,
   .reminder-item,
   .reminder-title,

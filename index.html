@@ -110,6 +110,23 @@
             <textarea id="discoverySignals" name="signals">Hiring sales or operations roles, opening new locations, launching assessment offers, expanding service areas, or showing appointment-setting pressure.</textarea>
           </label>
         </form>
+        <div class="search-setup">
+          <div>
+            <p class="eyebrow">Search API Setup</p>
+            <p id="searchSetupStatus">Search connector status not checked yet.</p>
+            <pre>$env:REGENT_SEARCH_API_URL="https://your-search-api.example/search"
+$env:REGENT_SEARCH_API_KEY="your_api_key"
+&amp; "C:\Users\ibrah\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe" local-research-server.js</pre>
+          </div>
+          <label>
+            Test query
+            <input id="searchTestQuery" value="managed IT companies hiring sales United States">
+          </label>
+          <div class="setup-actions">
+            <button id="checkSearchSetupButton" class="secondary-button" type="button">Check setup</button>
+            <button id="testSearchSetupButton" type="button">Test search</button>
+          </div>
+        </div>
         <div id="discoveryList" class="discovery-list"></div>
       </section>
 
