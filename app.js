@@ -2,6 +2,7 @@ const storageKey = "regent-growth-prospects";
 const promptStorageKey = "regent-growth-prompt-templates";
 const discoveryStorageKey = "regent-growth-discovery-queue";
 const ollamaEndpoint = "http://127.0.0.1:11434/api/generate";
+const sourceFetchEndpoint = "/api/fetch-source";
 const ollamaTimeoutMs = 150000;
 const stageOrder = ["Research", "Email Drafted", "Sequence", "LinkedIn", "Call", "Meeting", "Assessment"];
 const responseStatuses = ["Not Contacted", "Contacted", "Replied", "Interested", "Meeting Booked", "Not Interested", "No Response"];
@@ -370,6 +371,7 @@ function renderDiscoveryQueue() {
             Evidence notes
             <textarea data-source-notes placeholder="Paste proof from company site, LinkedIn, jobs page, news, or directory listing.">${escapeHtml(candidate.sourceNotes)}</textarea>
           </label>
+          <button class="secondary-button" type="button" data-action="fetch-source" data-id="${escapeHtml(candidate.id)}" ${candidate.website ? "" : "disabled"}>Fetch website</button>
           <button class="secondary-button" type="button" data-action="save-source" data-id="${escapeHtml(candidate.id)}">Save evidence</button>
         </div>
       </div>
@@ -1326,6 +1328,58 @@ function saveDiscoveryEvidence(id) {
   setDataStatus(`Source evidence saved for ${candidate.company}.`);
 }
 
+function formatFetchedEvidence(result) {
+  return [
+    `Fetched source: ${result.finalUrl || result.url}`,
+    result.title ? `Title: ${result.title}` : "",
+    result.description ? `Description: ${result.description}` : "",
+    result.snippet ? `Snippet: ${result.snippet}` : ""
+  ].filter(Boolean).join("\n");
+}
+
+async function fetchDiscoverySource(id) {
+  const candidate = discoveryQueue.find((item) => item.id === id);
+  if (!candidate) return;
+
+  const url = toExternalUrl(candidate.website || "");
+  if (!url) {
+    setDataStatus(`Add a valid website before fetching source evidence for ${candidate.company}.`, "error");
+    return;
+  }
+
+  setDataStatus(`Fetching website evidence for ${candidate.company}...`, "working");
+
+  try {
+    const response = await fetch(sourceFetchEndpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ url })
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || `Source fetch returned ${response.status}`);
+    }
+
+    const result = await response.json();
+    const fetchedEvidence = formatFetchedEvidence(result);
+    candidate.sourceStatus = "Evidence Found";
+    candidate.sourceNotes = candidate.sourceNotes
+      ? `${candidate.sourceNotes}\n\n${fetchedEvidence}`
+      : fetchedEvidence;
+    saveDiscoveryQueue();
+    renderDiscoveryQueue();
+    setDataStatus(`Fetched website evidence for ${candidate.company}.`);
+  } catch (error) {
+    const message = location.protocol === "file:"
+      ? "Source fetch needs the local research server. Run local-research-server.js and open the local URL."
+      : `Source fetch error: ${error.message}`;
+    setDataStatus(message, "error");
+  }
+}
+
 function addDiscoveryCandidate(id) {
   const candidate = discoveryQueue.find((item) => item.id === id);
   if (!candidate) return;
@@ -1626,6 +1680,10 @@ discoveryList.addEventListener("click", (event) => {
 
   if (button.dataset.action === "save-source") {
     saveDiscoveryEvidence(button.dataset.id);
+  }
+
+  if (button.dataset.action === "fetch-source") {
+    fetchDiscoverySource(button.dataset.id);
   }
 });
 prospectForm.addEventListener("submit", saveProspectFromForm);
