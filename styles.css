@@ -290,6 +290,76 @@ button:disabled {
   margin-top: 18px;
 }
 
+.discovery-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(170px, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.discovery-form label {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.discovery-form input,
+.discovery-form textarea {
+  margin: 0;
+  width: 100%;
+  color: var(--ink);
+  font: 1rem Arial, Helvetica, sans-serif;
+  font-weight: 400;
+}
+
+.discovery-form textarea {
+  min-height: 96px;
+  line-height: 1.5;
+}
+
+.discovery-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.discovery-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 18px;
+  display: grid;
+  grid-template-columns: 1fr 150px;
+  gap: 14px;
+  background: #fff;
+}
+
+.discovery-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.discovery-title h3,
+.discovery-card p {
+  margin: 0;
+}
+
+.discovery-title span,
+.source-reason {
+  color: var(--warn);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.discovery-card p {
+  margin-top: 8px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
 .reminder-item {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -542,7 +612,8 @@ textarea {
   .checklist,
   .detail-grid,
   .prompt-grid,
-  .response-form {
+  .response-form,
+  .discovery-form {
     grid-template-columns: 1fr;
   }
 
@@ -552,6 +623,8 @@ textarea {
   .filter-row,
   .saved-views,
   .prospect-card,
+  .discovery-card,
+  .discovery-title,
   .reminder-item,
   .reminder-title,
   .reminder-actions {

@@ -1,5 +1,6 @@
 const storageKey = "regent-growth-prospects";
 const promptStorageKey = "regent-growth-prompt-templates";
+const discoveryStorageKey = "regent-growth-discovery-queue";
 const ollamaEndpoint = "http://127.0.0.1:11434/api/generate";
 const ollamaTimeoutMs = 150000;
 const stageOrder = ["Research", "Email Drafted", "Sequence", "LinkedIn", "Call", "Meeting", "Assessment"];
@@ -124,6 +125,7 @@ const sampleProspects = [
 
 let prospects = loadProspects();
 let promptTemplates = loadPromptTemplates();
+let discoveryQueue = loadDiscoveryQueue();
 let editingIndex = null;
 let selectedProspectIndex = 0;
 
@@ -151,6 +153,10 @@ const resetPromptsButton = document.querySelector("#resetPromptsButton");
 const stageFilter = document.querySelector("#stageFilter");
 const responseFilter = document.querySelector("#responseFilter");
 const savedViews = document.querySelector("#savedViews");
+const discoveryForm = document.querySelector("#discoveryForm");
+const discoveryList = document.querySelector("#discoveryList");
+const generateDiscoveryButton = document.querySelector("#generateDiscoveryButton");
+const clearDiscoveryButton = document.querySelector("#clearDiscoveryButton");
 const researchPrompt = document.querySelector("#researchPrompt");
 const emailDraft = document.querySelector("#emailDraft");
 const prospectForm = document.querySelector("#prospectForm");
@@ -201,6 +207,21 @@ function loadPromptTemplates() {
   }
 }
 
+function loadDiscoveryQueue() {
+  const savedQueue = localStorage.getItem(discoveryStorageKey);
+
+  if (!savedQueue) {
+    return [];
+  }
+
+  try {
+    const parsedQueue = JSON.parse(savedQueue);
+    return Array.isArray(parsedQueue) ? parsedQueue.map(normalizeDiscoveryCandidate).filter((candidate) => candidate.company) : [];
+  } catch {
+    return [];
+  }
+}
+
 function normalizeProspect(prospect) {
   return {
     company: prospect.company || "",
@@ -229,12 +250,36 @@ function normalizeProspect(prospect) {
   };
 }
 
+function createId() {
+  return globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : `discovery-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function normalizeDiscoveryCandidate(candidate) {
+  return {
+    id: candidate.id || createId(),
+    company: candidate.company || "",
+    industry: candidate.industry || "",
+    size: candidate.size || "",
+    website: candidate.website || "",
+    decisionMaker: candidate.decisionMaker || "",
+    score: Number(candidate.score) || 75,
+    trigger: candidate.trigger || "",
+    fit: candidate.fit || "",
+    sourceReason: candidate.sourceReason || candidate.source || "",
+    generatedAt: candidate.generatedAt || new Date().toISOString()
+  };
+}
+
 function saveProspects() {
   localStorage.setItem(storageKey, JSON.stringify(prospects));
 }
 
 function savePromptTemplates() {
   localStorage.setItem(promptStorageKey, JSON.stringify(promptTemplates));
+}
+
+function saveDiscoveryQueue() {
+  localStorage.setItem(discoveryStorageKey, JSON.stringify(discoveryQueue));
 }
 
 function escapeHtml(value) {
@@ -288,6 +333,33 @@ function renderProspects() {
   setDrafts(selectedProspect);
   renderSelectedDetail();
   renderReminders();
+}
+
+function renderDiscoveryQueue() {
+  if (discoveryQueue.length === 0) {
+    discoveryList.innerHTML = `<p class="empty-state">No discovery candidates yet. Generate candidates from your target industries and qualification signals.</p>`;
+    return;
+  }
+
+  discoveryList.innerHTML = discoveryQueue.map((candidate) => `
+    <article class="discovery-card">
+      <div>
+        <div class="discovery-title">
+          <h3>${escapeHtml(candidate.company)}</h3>
+          <span>Fit score ${escapeHtml(candidate.score)}</span>
+        </div>
+        <p class="prospect-meta">${escapeHtml(candidate.industry || "Industry unknown")} | ${escapeHtml(candidate.size || "Size unknown")} | ${escapeHtml(candidate.website || "Website unknown")}</p>
+        <p><strong>Decision-maker:</strong> ${escapeHtml(candidate.decisionMaker || "Unknown")}</p>
+        <p><strong>Trigger:</strong> ${escapeHtml(candidate.trigger || "No trigger generated.")}</p>
+        <p>${escapeHtml(candidate.fit || "No fit reason generated.")}</p>
+        <p class="source-reason">${escapeHtml(candidate.sourceReason || "Generated from your discovery criteria.")}</p>
+      </div>
+      <div class="card-actions">
+        <button type="button" data-action="add-discovery" data-id="${escapeHtml(candidate.id)}">Add prospect</button>
+        <button class="secondary-button" type="button" data-action="dismiss-discovery" data-id="${escapeHtml(candidate.id)}">Dismiss</button>
+      </div>
+    </article>
+  `).join("");
 }
 
 function matchesSavedView(prospect, selectedView) {
@@ -743,6 +815,39 @@ Return one valid JSON object only. No markdown. Use these exact keys:
 }`;
 }
 
+function buildDiscoveryPrompt(criteria) {
+  const existingCompanies = prospects.map((prospect) => prospect.company).filter(Boolean).join(", ") || "None yet";
+
+  return `You are Regent Growth's local AI sales prospecting researcher.
+
+Regent Growth helps businesses find qualified prospects, research accounts, write personalized outreach, track follow-up, and book more meetings.
+
+Generate plausible B2B company candidates for outbound prospecting. Use only the criteria below and reasonable business inference. Do not claim you browsed the web. Avoid companies already in the existing pipeline.
+
+Target industries: ${criteria.industries}
+Target location: ${criteria.location}
+Qualification signals: ${criteria.signals}
+Number of candidates: ${criteria.count}
+Existing pipeline companies: ${existingCompanies}
+
+Return one valid JSON object only. No markdown. Use this exact shape:
+{
+  "candidates": [
+    {
+      "company": "company name",
+      "industry": "industry",
+      "size": "estimated employee count",
+      "website": "likely domain if inferable, otherwise blank",
+      "decisionMaker": "best decision-maker role",
+      "score": 80,
+      "trigger": "specific buying trigger",
+      "fit": "why Regent Growth is relevant",
+      "sourceReason": "why this candidate matched the discovery criteria"
+    }
+  ]
+}`;
+}
+
 function parseJsonFromText(text) {
   const trimmed = text.trim();
 
@@ -758,6 +863,13 @@ function parseJsonFromText(text) {
 
     return JSON.parse(trimmed.slice(jsonStart, jsonEnd + 1));
   }
+}
+
+function parseDiscoveryCandidates(text) {
+  const parsed = parseJsonFromText(text);
+  const candidates = Array.isArray(parsed.candidates) ? parsed.candidates : [];
+
+  return candidates.map(normalizeDiscoveryCandidate).filter((candidate) => candidate.company && candidate.fit);
 }
 
 function formatResearchBrief(research) {
@@ -882,6 +994,69 @@ async function researchSelectedAccount() {
   } finally {
     researchAccountButton.disabled = false;
     generateBriefButton.disabled = false;
+  }
+}
+
+async function generateDiscoveryCandidates() {
+  const formData = new FormData(discoveryForm);
+  const criteria = {
+    industries: formData.get("industries").trim(),
+    location: formData.get("location").trim(),
+    count: Math.min(20, Math.max(3, Number(formData.get("count")) || 8)),
+    signals: formData.get("signals").trim()
+  };
+
+  if (!criteria.industries || !criteria.signals) {
+    setDataStatus("Add target industries and qualification signals before generating discovery candidates.", "error");
+    return;
+  }
+
+  generateDiscoveryButton.disabled = true;
+  try {
+    const rawDiscovery = await generateWithOllama(buildDiscoveryPrompt(criteria), 900);
+    const candidates = parseDiscoveryCandidates(rawDiscovery);
+
+    if (candidates.length === 0) {
+      throw new Error("No usable discovery candidates returned.");
+    }
+
+    const knownKeys = new Set();
+    prospects.forEach((prospect) => addDuplicateKeys(knownKeys, prospect));
+    discoveryQueue.forEach((candidate) => addDuplicateKeys(knownKeys, discoveryCandidateToProspect(candidate)));
+
+    const newCandidates = [];
+    let skippedDuplicates = 0;
+
+    candidates.forEach((candidate) => {
+      const prospect = discoveryCandidateToProspect(candidate);
+      const keys = getDuplicateKeys(prospect);
+      const isDuplicate = keys.some((key) => knownKeys.has(key));
+
+      if (isDuplicate) {
+        skippedDuplicates += 1;
+        return;
+      }
+
+      newCandidates.push(candidate);
+      addDuplicateKeys(knownKeys, prospect);
+    });
+
+    if (newCandidates.length === 0) {
+      throw new Error(`No new discovery candidates added. Skipped ${skippedDuplicates} duplicate ${skippedDuplicates === 1 ? "candidate" : "candidates"}.`);
+    }
+
+    discoveryQueue = [...newCandidates, ...discoveryQueue];
+    saveDiscoveryQueue();
+    renderDiscoveryQueue();
+    const duplicateMessage = skippedDuplicates > 0 ? ` Skipped ${skippedDuplicates} duplicate ${skippedDuplicates === 1 ? "candidate" : "candidates"}.` : "";
+    setDataStatus(`Generated ${newCandidates.length} discovery candidates.${duplicateMessage}`);
+  } catch (error) {
+    const message = error.name === "AbortError"
+      ? "Local AI timed out. Try qwen2.5:0.5b or ask for fewer discovery candidates."
+      : `Discovery error: ${error.message || "make sure Ollama is running and returned valid JSON."}`;
+    setAiStatus(message, "error");
+  } finally {
+    generateDiscoveryButton.disabled = false;
   }
 }
 
@@ -1074,6 +1249,58 @@ function findDuplicateProspect(prospect, ignoredIndex = null) {
 
 function addDuplicateKeys(keySet, prospect) {
   getDuplicateKeys(prospect).forEach((key) => keySet.add(key));
+}
+
+function discoveryCandidateToProspect(candidate) {
+  return normalizeProspect({
+    company: candidate.company,
+    industry: candidate.industry,
+    size: candidate.size,
+    website: candidate.website,
+    decisionMaker: candidate.decisionMaker,
+    score: candidate.score,
+    trigger: candidate.trigger,
+    fit: candidate.fit,
+    stage: "Research",
+    responseStatus: "Not Contacted",
+    responseNotes: candidate.sourceReason ? `Discovery source: ${candidate.sourceReason}` : "",
+    aiBrief: candidate.sourceReason ? `Discovery source\n${candidate.sourceReason}` : ""
+  });
+}
+
+function addDiscoveryCandidate(id) {
+  const candidate = discoveryQueue.find((item) => item.id === id);
+  if (!candidate) return;
+
+  const prospect = discoveryCandidateToProspect(candidate);
+  const duplicateProspect = findDuplicateProspect(prospect);
+  if (duplicateProspect) {
+    setDataStatus(`Discovery candidate not added: ${candidate.company} matches ${duplicateProspect.company}.`, "error");
+    return;
+  }
+
+  prospects.unshift(prospect);
+  discoveryQueue = discoveryQueue.filter((item) => item.id !== id);
+  selectedProspectIndex = 0;
+  saveProspects();
+  saveDiscoveryQueue();
+  renderProspects();
+  renderDiscoveryQueue();
+  setDataStatus(`${candidate.company} added to the prospect pipeline.`);
+}
+
+function dismissDiscoveryCandidate(id) {
+  discoveryQueue = discoveryQueue.filter((item) => item.id !== id);
+  saveDiscoveryQueue();
+  renderDiscoveryQueue();
+  setDataStatus("Discovery candidate dismissed.");
+}
+
+function clearDiscoveryQueue() {
+  discoveryQueue = [];
+  saveDiscoveryQueue();
+  renderDiscoveryQueue();
+  setDataStatus("Discovery queue cleared.");
 }
 
 function saveProspectFromForm(event) {
@@ -1327,6 +1554,18 @@ savedViews.addEventListener("click", (event) => {
   savedViews.dataset.activeView = button.dataset.view;
   renderProspects();
 });
+discoveryList.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-action]");
+  if (!button) return;
+
+  if (button.dataset.action === "add-discovery") {
+    addDiscoveryCandidate(button.dataset.id);
+  }
+
+  if (button.dataset.action === "dismiss-discovery") {
+    dismissDiscoveryCandidate(button.dataset.id);
+  }
+});
 prospectForm.addEventListener("submit", saveProspectFromForm);
 responseForm.addEventListener("submit", saveResponseFromForm);
 workflowForm.addEventListener("submit", saveWorkflowFromForm);
@@ -1334,6 +1573,8 @@ clearFormButton.addEventListener("click", resetForm);
 importInput.addEventListener("change", importCsv);
 exportButton.addEventListener("click", exportCsv);
 resetButton.addEventListener("click", resetSamples);
+generateDiscoveryButton.addEventListener("click", generateDiscoveryCandidates);
+clearDiscoveryButton.addEventListener("click", clearDiscoveryQueue);
 detailAdvanceButton.addEventListener("click", () => advanceStage(selectedProspectIndex));
 detailEditButton.addEventListener("click", () => editProspect(selectedProspectIndex));
 savePromptsButton.addEventListener("click", savePromptTemplateEdits);
@@ -1344,4 +1585,5 @@ generateBriefButton.addEventListener("click", generateCompanyBrief);
 generateEmailButton.addEventListener("click", generatePersonalizedEmail);
 
 renderPromptTemplates();
+renderDiscoveryQueue();
 renderProspects();
