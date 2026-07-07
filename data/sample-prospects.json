@@ -20,7 +20,10 @@
     "linkedInStatus": "Not Started",
     "linkedInNotes": "",
     "callStatus": "Not Started",
-    "callNotes": ""
+    "callNotes": "",
+    "meetingDate": "",
+    "meetingOutcome": "Not Scheduled",
+    "assessmentNotes": ""
   },
   {
     "company": "CivicStone Roofing",
@@ -43,7 +46,10 @@
     "linkedInStatus": "Connection Sent",
     "linkedInNotes": "Connection request queued for VP Sales angle.",
     "callStatus": "Not Started",
-    "callNotes": ""
+    "callNotes": "",
+    "meetingDate": "",
+    "meetingOutcome": "Not Scheduled",
+    "assessmentNotes": ""
   },
   {
     "company": "Atlas Managed IT",
@@ -66,6 +72,9 @@
     "linkedInStatus": "Connected",
     "linkedInNotes": "Founder profile found; reference cybersecurity assessment offer.",
     "callStatus": "Planned",
-    "callNotes": "Call after the next sequence touch if no reply."
+    "callNotes": "Call after the next sequence touch if no reply.",
+    "meetingDate": "",
+    "meetingOutcome": "Not Scheduled",
+    "assessmentNotes": ""
   }
 ]

@@ -244,6 +244,29 @@ $env:REGENT_SEARCH_API_KEY="your_api_key"
           </label>
           <button type="submit">Save tasks</button>
         </form>
+        <form id="assessmentForm" class="response-form">
+          <label>
+            Meeting date
+            <input id="detailMeetingDate" name="meetingDate" type="datetime-local">
+          </label>
+          <label>
+            Meeting outcome
+            <select id="detailMeetingOutcome" name="meetingOutcome">
+              <option value="Not Scheduled">Not Scheduled</option>
+              <option value="Scheduled">Scheduled</option>
+              <option value="Completed">Completed</option>
+              <option value="No Show">No Show</option>
+              <option value="Rescheduled">Rescheduled</option>
+              <option value="Closed Won">Closed Won</option>
+              <option value="Closed Lost">Closed Lost</option>
+            </select>
+          </label>
+          <label class="full-span">
+            Assessment notes
+            <textarea id="detailAssessmentNotes" name="assessmentNotes" placeholder="Meeting outcome, buying criteria, objections, decision process, next step, or assessment summary"></textarea>
+          </label>
+          <button type="submit">Save assessment</button>
+        </form>
       </section>
 
       <section id="prospectFormPanel" class="panel">

@@ -11,6 +11,7 @@ const responseStatuses = ["Not Contacted", "Contacted", "Replied", "Interested",
 const linkedInStatuses = ["Not Started", "Connection Sent", "Connected", "Messaged", "No Profile", "Not Relevant"];
 const callStatuses = ["Not Started", "Planned", "Called", "Left Voicemail", "Connected", "No Answer", "Bad Number"];
 const sourceStatuses = ["Needs Review", "Sources Opened", "Evidence Found", "Rejected"];
+const meetingOutcomes = ["Not Scheduled", "Scheduled", "Completed", "No Show", "Rescheduled", "Closed Won", "Closed Lost"];
 const defaultPromptTemplates = {
   brief: `You are Regent Growth's local AI sales researcher.
 
@@ -77,7 +78,10 @@ const sampleProspects = [
     linkedInStatus: "Not Started",
     linkedInNotes: "",
     callStatus: "Not Started",
-    callNotes: ""
+    callNotes: "",
+    meetingDate: "",
+    meetingOutcome: "Not Scheduled",
+    assessmentNotes: ""
   },
   {
     company: "CivicStone Roofing",
@@ -100,7 +104,10 @@ const sampleProspects = [
     linkedInStatus: "Connection Sent",
     linkedInNotes: "Connection request queued for VP Sales angle.",
     callStatus: "Not Started",
-    callNotes: ""
+    callNotes: "",
+    meetingDate: "",
+    meetingOutcome: "Not Scheduled",
+    assessmentNotes: ""
   },
   {
     company: "Atlas Managed IT",
@@ -123,7 +130,10 @@ const sampleProspects = [
     linkedInStatus: "Connected",
     linkedInNotes: "Founder profile found; reference cybersecurity assessment offer.",
     callStatus: "Planned",
-    callNotes: "Call after the next sequence touch if no reply."
+    callNotes: "Call after the next sequence touch if no reply.",
+    meetingDate: "",
+    meetingOutcome: "Not Scheduled",
+    assessmentNotes: ""
   }
 ];
 
@@ -148,6 +158,10 @@ const detailLinkedInStatus = document.querySelector("#detailLinkedInStatus");
 const detailCallStatus = document.querySelector("#detailCallStatus");
 const detailLinkedInNotes = document.querySelector("#detailLinkedInNotes");
 const detailCallNotes = document.querySelector("#detailCallNotes");
+const assessmentForm = document.querySelector("#assessmentForm");
+const detailMeetingDate = document.querySelector("#detailMeetingDate");
+const detailMeetingOutcome = document.querySelector("#detailMeetingOutcome");
+const detailAssessmentNotes = document.querySelector("#detailAssessmentNotes");
 const reminderList = document.querySelector("#reminderList");
 const reminderCount = document.querySelector("#reminderCount");
 const briefTemplateInput = document.querySelector("#briefTemplateInput");
@@ -265,6 +279,9 @@ function normalizeProspect(prospect) {
     linkedInNotes: prospect.linkedInNotes || "",
     callStatus: callStatuses.includes(prospect.callStatus) ? prospect.callStatus : "Not Started",
     callNotes: prospect.callNotes || "",
+    meetingDate: prospect.meetingDate || "",
+    meetingOutcome: meetingOutcomes.includes(prospect.meetingOutcome) ? prospect.meetingOutcome : "Not Scheduled",
+    assessmentNotes: prospect.assessmentNotes || "",
     aiBrief: prospect.aiBrief || "",
     aiEmail: prospect.aiEmail || ""
   };
@@ -514,6 +531,12 @@ function formatDate(value) {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
+function formatDateTime(value) {
+  if (!value) return "Not set";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
+}
+
 function isClosedResponse(prospect) {
   return ["Meeting Booked", "Not Interested"].includes(prospect.responseStatus);
 }
@@ -668,6 +691,7 @@ function renderSelectedDetail() {
     detailEditButton.disabled = true;
     responseForm.hidden = true;
     workflowForm.hidden = true;
+    assessmentForm.hidden = true;
     return;
   }
 
@@ -676,6 +700,7 @@ function renderSelectedDetail() {
   detailEditButton.disabled = false;
   responseForm.hidden = false;
   workflowForm.hidden = false;
+  assessmentForm.hidden = false;
   detailResponseStatus.value = prospect.responseStatus;
   detailLastTouch.value = prospect.lastTouch;
   detailNextTouch.value = prospect.nextTouch;
@@ -684,6 +709,9 @@ function renderSelectedDetail() {
   detailCallStatus.value = prospect.callStatus;
   detailLinkedInNotes.value = prospect.linkedInNotes;
   detailCallNotes.value = prospect.callNotes;
+  detailMeetingDate.value = prospect.meetingDate;
+  detailMeetingOutcome.value = prospect.meetingOutcome;
+  detailAssessmentNotes.value = prospect.assessmentNotes;
   selectedDetail.innerHTML = `
     <article>
       <span>Stage</span>
@@ -737,6 +765,14 @@ function renderSelectedDetail() {
       <span>Follow-Up Due</span>
       <strong>${isFollowUpDue(prospect) ? "Yes" : "No"}</strong>
     </article>
+    <article>
+      <span>Meeting Date</span>
+      <strong>${escapeHtml(formatDateTime(prospect.meetingDate))}</strong>
+    </article>
+    <article>
+      <span>Meeting Outcome</span>
+      <strong>${escapeHtml(prospect.meetingOutcome)}</strong>
+    </article>
     <article class="detail-wide">
       <span>Booking Link</span>
       <p>${renderBookingLink(prospect.bookingLink)}</p>
@@ -764,6 +800,10 @@ function renderSelectedDetail() {
     <article class="detail-wide">
       <span>Call Notes</span>
       <p>${previewText(prospect.callNotes, "No call notes recorded yet.")}</p>
+    </article>
+    <article class="detail-wide">
+      <span>Assessment Notes</span>
+      <p>${previewText(prospect.assessmentNotes, "No assessment notes recorded yet.")}</p>
     </article>
     <article class="detail-wide">
       <span>Saved AI Brief</span>
@@ -1274,6 +1314,9 @@ function getCrmRecord(prospect) {
     buyingTrigger: prospect.trigger,
     fitReason: prospect.fit,
     bookingLink: prospect.bookingLink,
+    meetingDate: prospect.meetingDate,
+    meetingOutcome: prospect.meetingOutcome,
+    assessmentNotes: prospect.assessmentNotes,
     lastTouch: prospect.lastTouch,
     nextTouch: prospect.nextTouch,
     linkedInStatus: prospect.linkedInStatus,
@@ -1302,6 +1345,8 @@ function formatHandoffPacket(prospect) {
     `Phone: ${record.phone || "Not set"}`,
     `Website: ${record.website || "Not set"}`,
     `Booking link: ${record.bookingLink || "Not set"}`,
+    `Meeting date: ${formatDateTime(record.meetingDate)}`,
+    `Meeting outcome: ${record.meetingOutcome}`,
     "",
     "Why this is warm",
     record.buyingTrigger || "No buying trigger recorded.",
@@ -1315,6 +1360,9 @@ function formatHandoffPacket(prospect) {
     "",
     "Notes",
     record.notes || "No notes recorded.",
+    "",
+    "Assessment",
+    record.assessmentNotes || "No assessment notes recorded.",
     "",
     "AI brief",
     record.aiBrief || "No AI brief saved.",
@@ -1349,7 +1397,7 @@ function exportWarmLeadCsv() {
     return;
   }
 
-  const headers = ["company", "website", "industry", "companySize", "decisionMaker", "email", "linkedIn", "phone", "stage", "responseStatus", "fitScore", "buyingTrigger", "fitReason", "bookingLink", "lastTouch", "nextTouch", "linkedInStatus", "callStatus", "notes"];
+  const headers = ["company", "website", "industry", "companySize", "decisionMaker", "email", "linkedIn", "phone", "stage", "responseStatus", "fitScore", "buyingTrigger", "fitReason", "bookingLink", "meetingDate", "meetingOutcome", "assessmentNotes", "lastTouch", "nextTouch", "linkedInStatus", "callStatus", "notes"];
   const rows = warmLeads.map((prospect) => {
     const record = getCrmRecord(prospect);
     return headers.map((header) => csvCell(record[header])).join(",");
@@ -1482,6 +1530,36 @@ function saveWorkflowFromForm(event) {
   saveProspects();
   renderProspects();
   setDataStatus(`LinkedIn and call tasks saved for ${prospect.company}.`);
+}
+
+function saveAssessmentFromForm(event) {
+  event.preventDefault();
+  const prospect = getSelectedProspect();
+  if (!prospect) return;
+
+  const formData = new FormData(assessmentForm);
+  const meetingOutcome = formData.get("meetingOutcome");
+  prospect.meetingDate = formData.get("meetingDate");
+  prospect.meetingOutcome = meetingOutcomes.includes(meetingOutcome) ? meetingOutcome : "Not Scheduled";
+  prospect.assessmentNotes = formData.get("assessmentNotes").trim();
+
+  if (prospect.meetingOutcome === "Scheduled") {
+    prospect.stage = "Meeting";
+    prospect.responseStatus = "Meeting Booked";
+  }
+
+  if (["Completed", "Closed Won", "Closed Lost"].includes(prospect.meetingOutcome)) {
+    prospect.stage = "Assessment";
+    prospect.responseStatus = prospect.responseStatus === "Not Contacted" ? "Interested" : prospect.responseStatus;
+  }
+
+  if (prospect.meetingOutcome === "Closed Lost") {
+    prospect.responseStatus = "Not Interested";
+  }
+
+  saveProspects();
+  renderProspects();
+  setDataStatus(`Meeting and assessment tracking saved for ${prospect.company}.`);
 }
 
 function markReminderTouched(index) {
@@ -1855,6 +1933,9 @@ function saveProspectFromForm(event) {
     linkedInNotes: editingIndex === null ? "" : prospects[editingIndex]?.linkedInNotes,
     callStatus: editingIndex === null ? "Not Started" : prospects[editingIndex]?.callStatus,
     callNotes: editingIndex === null ? "" : prospects[editingIndex]?.callNotes,
+    meetingDate: editingIndex === null ? "" : prospects[editingIndex]?.meetingDate,
+    meetingOutcome: editingIndex === null ? "Not Scheduled" : prospects[editingIndex]?.meetingOutcome,
+    assessmentNotes: editingIndex === null ? "" : prospects[editingIndex]?.assessmentNotes,
     aiBrief: editingIndex === null ? "" : prospects[editingIndex]?.aiBrief,
     aiEmail: editingIndex === null ? "" : prospects[editingIndex]?.aiEmail
   });
@@ -1880,7 +1961,7 @@ function saveProspectFromForm(event) {
 }
 
 function exportCsv() {
-  const headers = ["company", "industry", "size", "website", "decisionMaker", "contactEmail", "contactLinkedIn", "contactPhone", "score", "trigger", "fit", "stage", "bookingLink", "responseStatus", "lastTouch", "nextTouch", "responseNotes", "linkedInStatus", "linkedInNotes", "callStatus", "callNotes"];
+  const headers = ["company", "industry", "size", "website", "decisionMaker", "contactEmail", "contactLinkedIn", "contactPhone", "score", "trigger", "fit", "stage", "bookingLink", "responseStatus", "lastTouch", "nextTouch", "responseNotes", "linkedInStatus", "linkedInNotes", "callStatus", "callNotes", "meetingDate", "meetingOutcome", "assessmentNotes"];
   const rows = prospects.map((prospect) => headers.map((header) => csvCell(prospect[header])).join(","));
   const csv = [headers.join(","), ...rows].join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
@@ -1969,7 +2050,10 @@ function prospectFromCsvRow(headers, row) {
     linkedInStatus: values.linkedinstatus || values.linkedinworkflowstatus || values.connectionstatus,
     linkedInNotes: values.linkedinnotes || values.linkedinworkflownotes || values.connectionnotes,
     callStatus: values.callstatus || values.phonestatus || values.dialstatus,
-    callNotes: values.callnotes || values.phonenotes || values.dialnotes
+    callNotes: values.callnotes || values.phonenotes || values.dialnotes,
+    meetingDate: values.meetingdate || values.meetingdatetime || values.meetingtime,
+    meetingOutcome: values.meetingoutcome || values.outcome,
+    assessmentNotes: values.assessmentnotes || values.assessment || values.meetingnotes
   });
 }
 
@@ -2107,6 +2191,7 @@ discoveryList.addEventListener("click", (event) => {
 prospectForm.addEventListener("submit", saveProspectFromForm);
 responseForm.addEventListener("submit", saveResponseFromForm);
 workflowForm.addEventListener("submit", saveWorkflowFromForm);
+assessmentForm.addEventListener("submit", saveAssessmentFromForm);
 clearFormButton.addEventListener("click", resetForm);
 importInput.addEventListener("change", importCsv);
 exportButton.addEventListener("click", exportCsv);
