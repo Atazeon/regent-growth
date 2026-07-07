@@ -360,6 +360,50 @@ button:disabled {
   line-height: 1.5;
 }
 
+.source-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.source-links a {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: #f9fafc;
+  color: var(--blue);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.source-links a:hover {
+  background: #eef2f7;
+}
+
+.source-controls {
+  display: grid;
+  grid-template-columns: 180px 1fr auto;
+  gap: 12px;
+  align-items: end;
+  margin-top: 14px;
+}
+
+.source-controls label {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.source-controls textarea {
+  min-height: 72px;
+  margin: 0;
+  font: 0.95rem/1.5 Arial, Helvetica, sans-serif;
+}
+
 .reminder-item {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -625,6 +669,7 @@ textarea {
   .prospect-card,
   .discovery-card,
   .discovery-title,
+  .source-controls,
   .reminder-item,
   .reminder-title,
   .reminder-actions {

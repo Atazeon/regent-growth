@@ -7,6 +7,7 @@ const stageOrder = ["Research", "Email Drafted", "Sequence", "LinkedIn", "Call",
 const responseStatuses = ["Not Contacted", "Contacted", "Replied", "Interested", "Meeting Booked", "Not Interested", "No Response"];
 const linkedInStatuses = ["Not Started", "Connection Sent", "Connected", "Messaged", "No Profile", "Not Relevant"];
 const callStatuses = ["Not Started", "Planned", "Called", "Left Voicemail", "Connected", "No Answer", "Bad Number"];
+const sourceStatuses = ["Needs Review", "Sources Opened", "Evidence Found", "Rejected"];
 const defaultPromptTemplates = {
   brief: `You are Regent Growth's local AI sales researcher.
 
@@ -266,6 +267,8 @@ function normalizeDiscoveryCandidate(candidate) {
     trigger: candidate.trigger || "",
     fit: candidate.fit || "",
     sourceReason: candidate.sourceReason || candidate.source || "",
+    sourceStatus: sourceStatuses.includes(candidate.sourceStatus) ? candidate.sourceStatus : "Needs Review",
+    sourceNotes: candidate.sourceNotes || "",
     generatedAt: candidate.generatedAt || new Date().toISOString()
   };
 }
@@ -342,7 +345,7 @@ function renderDiscoveryQueue() {
   }
 
   discoveryList.innerHTML = discoveryQueue.map((candidate) => `
-    <article class="discovery-card">
+    <article class="discovery-card" data-id="${escapeHtml(candidate.id)}">
       <div>
         <div class="discovery-title">
           <h3>${escapeHtml(candidate.company)}</h3>
@@ -353,6 +356,22 @@ function renderDiscoveryQueue() {
         <p><strong>Trigger:</strong> ${escapeHtml(candidate.trigger || "No trigger generated.")}</p>
         <p>${escapeHtml(candidate.fit || "No fit reason generated.")}</p>
         <p class="source-reason">${escapeHtml(candidate.sourceReason || "Generated from your discovery criteria.")}</p>
+        <div class="source-links">
+          ${renderSourceLinks(candidate)}
+        </div>
+        <div class="source-controls">
+          <label>
+            Source status
+            <select data-source-status>
+              ${sourceStatuses.map((status) => `<option value="${escapeHtml(status)}" ${candidate.sourceStatus === status ? "selected" : ""}>${escapeHtml(status)}</option>`).join("")}
+            </select>
+          </label>
+          <label>
+            Evidence notes
+            <textarea data-source-notes placeholder="Paste proof from company site, LinkedIn, jobs page, news, or directory listing.">${escapeHtml(candidate.sourceNotes)}</textarea>
+          </label>
+          <button class="secondary-button" type="button" data-action="save-source" data-id="${escapeHtml(candidate.id)}">Save evidence</button>
+        </div>
       </div>
       <div class="card-actions">
         <button type="button" data-action="add-discovery" data-id="${escapeHtml(candidate.id)}">Add prospect</button>
@@ -360,6 +379,26 @@ function renderDiscoveryQueue() {
       </div>
     </article>
   `).join("");
+}
+
+function buildSearchUrl(query) {
+  return `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+}
+
+function renderSourceLinks(candidate) {
+  const company = candidate.company || "";
+  const location = discoveryForm.elements.location?.value || "";
+  const industry = candidate.industry || discoveryForm.elements.industries?.value || "";
+  const websiteUrl = toExternalUrl(candidate.website || "");
+  const links = [
+    websiteUrl ? { label: "Website", url: websiteUrl } : null,
+    { label: "Company search", url: buildSearchUrl(`${company} ${industry} ${location}`) },
+    { label: "Hiring signal", url: buildSearchUrl(`${company} hiring expansion sales operations`) },
+    { label: "LinkedIn", url: buildSearchUrl(`${company} LinkedIn company`) },
+    { label: "News", url: buildSearchUrl(`${company} growth funding new location launch`) }
+  ].filter(Boolean);
+
+  return links.map((link) => `<a href="${escapeHtml(link.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(link.label)}</a>`).join("");
 }
 
 function matchesSavedView(prospect, selectedView) {
@@ -1252,6 +1291,12 @@ function addDuplicateKeys(keySet, prospect) {
 }
 
 function discoveryCandidateToProspect(candidate) {
+  const sourceDetails = [
+    candidate.sourceReason ? `Discovery source: ${candidate.sourceReason}` : "",
+    candidate.sourceStatus ? `Source status: ${candidate.sourceStatus}` : "",
+    candidate.sourceNotes ? `Evidence: ${candidate.sourceNotes}` : ""
+  ].filter(Boolean).join("\n");
+
   return normalizeProspect({
     company: candidate.company,
     industry: candidate.industry,
@@ -1263,9 +1308,22 @@ function discoveryCandidateToProspect(candidate) {
     fit: candidate.fit,
     stage: "Research",
     responseStatus: "Not Contacted",
-    responseNotes: candidate.sourceReason ? `Discovery source: ${candidate.sourceReason}` : "",
-    aiBrief: candidate.sourceReason ? `Discovery source\n${candidate.sourceReason}` : ""
+    responseNotes: sourceDetails,
+    aiBrief: sourceDetails ? `Discovery evidence\n${sourceDetails}` : ""
   });
+}
+
+function saveDiscoveryEvidence(id) {
+  const card = Array.from(discoveryList.querySelectorAll("[data-id]")).find((item) => item.dataset.id === id);
+  const candidate = discoveryQueue.find((item) => item.id === id);
+  if (!card || !candidate) return;
+
+  const sourceStatus = card.querySelector("[data-source-status]")?.value || "Needs Review";
+  candidate.sourceStatus = sourceStatuses.includes(sourceStatus) ? sourceStatus : "Needs Review";
+  candidate.sourceNotes = card.querySelector("[data-source-notes]")?.value.trim() || "";
+  saveDiscoveryQueue();
+  renderDiscoveryQueue();
+  setDataStatus(`Source evidence saved for ${candidate.company}.`);
 }
 
 function addDiscoveryCandidate(id) {
@@ -1564,6 +1622,10 @@ discoveryList.addEventListener("click", (event) => {
 
   if (button.dataset.action === "dismiss-discovery") {
     dismissDiscoveryCandidate(button.dataset.id);
+  }
+
+  if (button.dataset.action === "save-source") {
+    saveDiscoveryEvidence(button.dataset.id);
   }
 });
 prospectForm.addEventListener("submit", saveProspectFromForm);
