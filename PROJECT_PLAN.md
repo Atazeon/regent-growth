@@ -25,7 +25,7 @@ The first useful version should help with daily execution before trying to autom
 - Sequence stage tracking
 - Manual task list for LinkedIn, phone, meeting, and assessment
 
-Current status: the local prototype now supports saved browser-based prospect management, including add, edit, delete, reset, stage advancement, contact-level fields, booking link tracking, duplicate detection, response outcome filters, saved response outcome views, CSV import/export, selected account details, response tracking, follow-up reminder tasks, manual LinkedIn and call task tracking, local AI company discovery queues, source review links and evidence notes, local website source fetching through the research server, configurable search API source discovery, in-app search provider setup checks, saved AI outputs, editable AI prompt templates, local Ollama account research, and local Ollama generation for company briefs and personalized emails.
+Current status: the local prototype now supports saved browser-based prospect management, including add, edit, delete, reset, stage advancement, contact-level fields, booking link tracking, duplicate detection, response outcome filters, saved response outcome views, CSV import/export, selected account details, response tracking, follow-up reminder tasks, manual LinkedIn and call task tracking, local AI company discovery queues, source review links and evidence notes, local website source fetching through the research server, configurable search API source discovery, in-app search provider setup checks, saved AI outputs, editable AI prompt templates, local Ollama account research, local Ollama generation for company briefs and personalized emails, and Gmail/Outlook/mail-app draft handoff.
 
 AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI backend. `qwen3:8b` is installed and verified, and the dashboard uses it as the default quality model. `qwen2.5:0.5b` remains available as a fast rough-draft fallback. Available local models include `qwen3:8b`, `llama3:latest`, `qwen2.5:0.5b`, and `phi3:mini`.
 
@@ -36,7 +36,6 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 
 ### Later
 
-- Ollama email writer
 - Gmail/Outlook sending
 - CRM sync
 - Multi-user handoff workflow
@@ -96,4 +95,4 @@ Suggested branch names:
 
 ## First Issues To Create
 
-1. Add email sending handoff for Gmail or Outlook drafts.
+1. Add CRM export or sync handoff for warm leads.

@@ -177,6 +177,12 @@ const modelSelect = document.querySelector("#modelSelect");
 const researchAccountButton = document.querySelector("#researchAccountButton");
 const generateBriefButton = document.querySelector("#generateBriefButton");
 const generateEmailButton = document.querySelector("#generateEmailButton");
+const saveEmailDraftButton = document.querySelector("#saveEmailDraftButton");
+const openMailClientButton = document.querySelector("#openMailClientButton");
+const openGmailButton = document.querySelector("#openGmailButton");
+const openOutlookButton = document.querySelector("#openOutlookButton");
+const copyEmailDraftButton = document.querySelector("#copyEmailDraftButton");
+const markEmailSentButton = document.querySelector("#markEmailSentButton");
 const aiStatus = document.querySelector("#aiStatus");
 const dataStatus = document.querySelector("#dataStatus");
 
@@ -1133,6 +1139,107 @@ async function generatePersonalizedEmail() {
   }
 }
 
+function getDraftParts(rawDraft) {
+  const draft = rawDraft.trim();
+  const lines = draft.split(/\r?\n/);
+  const subjectLine = lines.find((line) => /^subject:/i.test(line));
+  const subject = subjectLine
+    ? subjectLine.replace(/^subject:\s*/i, "").trim()
+    : "Quick idea from Regent Growth";
+  const body = subjectLine
+    ? lines.filter((line) => line !== subjectLine).join("\n").trim()
+    : draft;
+
+  return {
+    subject,
+    body
+  };
+}
+
+function getEmailRecipient(prospect) {
+  return prospect.contactEmail || "";
+}
+
+function saveCurrentEmailDraft() {
+  const prospect = getSelectedProspect();
+  if (!prospect) return null;
+
+  prospect.aiEmail = emailDraft.value.trim();
+  saveProspects();
+  renderSelectedDetail();
+  setDataStatus(`Email draft saved for ${prospect.company}.`);
+  return prospect;
+}
+
+function buildEmailHandoffUrl(provider, prospect) {
+  const { subject, body } = getDraftParts(emailDraft.value);
+  const to = getEmailRecipient(prospect);
+
+  if (provider === "gmail") {
+    const url = new URL("https://mail.google.com/mail/");
+    url.searchParams.set("view", "cm");
+    url.searchParams.set("fs", "1");
+    url.searchParams.set("to", to);
+    url.searchParams.set("su", subject);
+    url.searchParams.set("body", body);
+    return url.href;
+  }
+
+  if (provider === "outlook") {
+    const url = new URL("https://outlook.office.com/mail/deeplink/compose");
+    url.searchParams.set("to", to);
+    url.searchParams.set("subject", subject);
+    url.searchParams.set("body", body);
+    return url.href;
+  }
+
+  const params = new URLSearchParams();
+  params.set("subject", subject);
+  params.set("body", body);
+  return `mailto:${encodeURIComponent(to)}?${params.toString()}`;
+}
+
+function openEmailHandoff(provider) {
+  const prospect = saveCurrentEmailDraft();
+  if (!prospect) return;
+
+  if (!emailDraft.value.trim()) {
+    setDataStatus("Generate or write an email draft before opening a sending handoff.", "error");
+    return;
+  }
+
+  window.open(buildEmailHandoffUrl(provider, prospect), "_blank", "noopener,noreferrer");
+  setDataStatus(`${provider === "mailto" ? "Mail app" : provider} draft opened for ${prospect.company}.`);
+}
+
+async function copyEmailDraft() {
+  const prospect = saveCurrentEmailDraft();
+  if (!prospect) return;
+
+  try {
+    await navigator.clipboard.writeText(emailDraft.value.trim());
+    setDataStatus(`Email draft copied for ${prospect.company}.`);
+  } catch {
+    emailDraft.select();
+    document.execCommand("copy");
+    setDataStatus(`Email draft selected for ${prospect.company}.`);
+  }
+}
+
+function markEmailSent() {
+  const prospect = saveCurrentEmailDraft();
+  if (!prospect) return;
+
+  prospect.lastTouch = getTodayString();
+  prospect.nextTouch = addDays(prospect.lastTouch, 2);
+  prospect.responseStatus = prospect.responseStatus === "Not Contacted" ? "Contacted" : prospect.responseStatus;
+  prospect.stage = stageOrder.indexOf(prospect.stage) < stageOrder.indexOf("Sequence") ? "Sequence" : prospect.stage;
+  prospect.responseNotes = [prospect.responseNotes, "First email handoff marked sent."].filter(Boolean).join("\n");
+  saveProspects();
+  renderProspects();
+  setDataStatus(`${prospect.company} marked contacted. Next touch scheduled for ${formatDate(prospect.nextTouch)}.`);
+}
+
 function advanceStage(index) {
   const prospect = prospects[index];
   const currentStage = stageOrder.indexOf(prospect.stage);
@@ -1860,6 +1967,12 @@ modelSelect.addEventListener("change", () => setAiStatus(`Local AI ready: ${mode
 researchAccountButton.addEventListener("click", researchSelectedAccount);
 generateBriefButton.addEventListener("click", generateCompanyBrief);
 generateEmailButton.addEventListener("click", generatePersonalizedEmail);
+saveEmailDraftButton.addEventListener("click", saveCurrentEmailDraft);
+openMailClientButton.addEventListener("click", () => openEmailHandoff("mailto"));
+openGmailButton.addEventListener("click", () => openEmailHandoff("gmail"));
+openOutlookButton.addEventListener("click", () => openEmailHandoff("outlook"));
+copyEmailDraftButton.addEventListener("click", copyEmailDraft);
+markEmailSentButton.addEventListener("click", markEmailSent);
 
 renderPromptTemplates();
 renderDiscoveryQueue();

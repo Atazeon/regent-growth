@@ -651,6 +651,18 @@ button:disabled {
   gap: 24px;
 }
 
+.email-handoff {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.email-handoff button {
+  min-height: 38px;
+  padding: 0 12px;
+}
+
 textarea {
   width: 100%;
   min-height: 260px;
@@ -719,6 +731,7 @@ textarea {
   .search-setup,
   .setup-actions,
   .source-controls,
+  .email-handoff,
   .reminder-item,
   .reminder-title,
   .reminder-actions {

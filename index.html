@@ -387,9 +387,19 @@ $env:REGENT_SEARCH_API_KEY="your_api_key"
               <p class="eyebrow">Personalized Email</p>
               <h2>Draft</h2>
             </div>
-            <button id="generateEmailButton" type="button">Generate email</button>
+            <div class="action-row">
+              <button id="generateEmailButton" type="button">Generate email</button>
+              <button id="saveEmailDraftButton" class="secondary-button" type="button">Save draft</button>
+            </div>
           </div>
           <textarea id="emailDraft"></textarea>
+          <div class="email-handoff">
+            <button id="openMailClientButton" class="secondary-button" type="button">Mail app</button>
+            <button id="openGmailButton" class="secondary-button" type="button">Gmail</button>
+            <button id="openOutlookButton" class="secondary-button" type="button">Outlook</button>
+            <button id="copyEmailDraftButton" class="secondary-button" type="button">Copy draft</button>
+            <button id="markEmailSentButton" type="button">Mark sent</button>
+          </div>
         </article>
       </section>
 
