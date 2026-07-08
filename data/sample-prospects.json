@@ -23,7 +23,11 @@
     "callNotes": "",
     "meetingDate": "",
     "meetingOutcome": "Not Scheduled",
-    "assessmentNotes": ""
+    "assessmentNotes": "",
+    "handoffOwner": "",
+    "handoffStatus": "Unassigned",
+    "handoffDue": "",
+    "handoffNotes": ""
   },
   {
     "company": "CivicStone Roofing",
@@ -49,7 +53,11 @@
     "callNotes": "",
     "meetingDate": "",
     "meetingOutcome": "Not Scheduled",
-    "assessmentNotes": ""
+    "assessmentNotes": "",
+    "handoffOwner": "",
+    "handoffStatus": "Unassigned",
+    "handoffDue": "",
+    "handoffNotes": ""
   },
   {
     "company": "Atlas Managed IT",
@@ -75,6 +83,10 @@
     "callNotes": "Call after the next sequence touch if no reply.",
     "meetingDate": "",
     "meetingOutcome": "Not Scheduled",
-    "assessmentNotes": ""
+    "assessmentNotes": "",
+    "handoffOwner": "",
+    "handoffStatus": "Unassigned",
+    "handoffDue": "",
+    "handoffNotes": ""
   }
 ]

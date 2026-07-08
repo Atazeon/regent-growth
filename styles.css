@@ -683,6 +683,31 @@ button:disabled {
   margin-top: 14px;
 }
 
+.handoff-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.handoff-form label {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.handoff-form textarea {
+  min-height: 84px;
+  margin: 0;
+  font: 0.95rem/1.5 Arial, Helvetica, sans-serif;
+}
+
+.handoff-form button {
+  align-self: end;
+}
+
 #handoff h3 {
   margin: 22px 0 0;
 }
@@ -763,6 +788,7 @@ textarea {
   .email-handoff,
   .handoff-tools,
   .handoff-actions,
+  .handoff-form,
   .reminder-item,
   .reminder-title,
   .reminder-actions {

@@ -12,6 +12,7 @@ const linkedInStatuses = ["Not Started", "Connection Sent", "Connected", "Messag
 const callStatuses = ["Not Started", "Planned", "Called", "Left Voicemail", "Connected", "No Answer", "Bad Number"];
 const sourceStatuses = ["Needs Review", "Sources Opened", "Evidence Found", "Rejected"];
 const meetingOutcomes = ["Not Scheduled", "Scheduled", "Completed", "No Show", "Rescheduled", "Closed Won", "Closed Lost"];
+const handoffStatuses = ["Unassigned", "Assigned", "In Review", "Handed Off", "Accepted", "Blocked"];
 const defaultPromptTemplates = {
   brief: `You are Regent Growth's local AI sales researcher.
 
@@ -81,7 +82,11 @@ const sampleProspects = [
     callNotes: "",
     meetingDate: "",
     meetingOutcome: "Not Scheduled",
-    assessmentNotes: ""
+    assessmentNotes: "",
+    handoffOwner: "",
+    handoffStatus: "Unassigned",
+    handoffDue: "",
+    handoffNotes: ""
   },
   {
     company: "CivicStone Roofing",
@@ -107,7 +112,11 @@ const sampleProspects = [
     callNotes: "",
     meetingDate: "",
     meetingOutcome: "Not Scheduled",
-    assessmentNotes: ""
+    assessmentNotes: "",
+    handoffOwner: "",
+    handoffStatus: "Unassigned",
+    handoffDue: "",
+    handoffNotes: ""
   },
   {
     company: "Atlas Managed IT",
@@ -133,7 +142,11 @@ const sampleProspects = [
     callNotes: "Call after the next sequence touch if no reply.",
     meetingDate: "",
     meetingOutcome: "Not Scheduled",
-    assessmentNotes: ""
+    assessmentNotes: "",
+    handoffOwner: "",
+    handoffStatus: "Unassigned",
+    handoffDue: "",
+    handoffNotes: ""
   }
 ];
 
@@ -203,6 +216,11 @@ const copyHandoffPacketButton = document.querySelector("#copyHandoffPacketButton
 const markCrmReadyButton = document.querySelector("#markCrmReadyButton");
 const handoffSummary = document.querySelector("#handoffSummary");
 const handoffPacket = document.querySelector("#handoffPacket");
+const handoffForm = document.querySelector("#handoffForm");
+const handoffOwnerInput = document.querySelector("#handoffOwnerInput");
+const handoffStatusInput = document.querySelector("#handoffStatusInput");
+const handoffDueInput = document.querySelector("#handoffDueInput");
+const handoffNotesInput = document.querySelector("#handoffNotesInput");
 const aiStatus = document.querySelector("#aiStatus");
 const dataStatus = document.querySelector("#dataStatus");
 
@@ -282,6 +300,10 @@ function normalizeProspect(prospect) {
     meetingDate: prospect.meetingDate || "",
     meetingOutcome: meetingOutcomes.includes(prospect.meetingOutcome) ? prospect.meetingOutcome : "Not Scheduled",
     assessmentNotes: prospect.assessmentNotes || "",
+    handoffOwner: prospect.handoffOwner || "",
+    handoffStatus: handoffStatuses.includes(prospect.handoffStatus) ? prospect.handoffStatus : "Unassigned",
+    handoffDue: prospect.handoffDue || "",
+    handoffNotes: prospect.handoffNotes || "",
     aiBrief: prospect.aiBrief || "",
     aiEmail: prospect.aiEmail || ""
   };
@@ -773,6 +795,18 @@ function renderSelectedDetail() {
       <span>Meeting Outcome</span>
       <strong>${escapeHtml(prospect.meetingOutcome)}</strong>
     </article>
+    <article>
+      <span>Handoff Owner</span>
+      <strong>${escapeHtml(prospect.handoffOwner || "Unassigned")}</strong>
+    </article>
+    <article>
+      <span>Handoff Status</span>
+      <strong>${escapeHtml(prospect.handoffStatus)}</strong>
+    </article>
+    <article>
+      <span>Handoff Due</span>
+      <strong>${escapeHtml(formatDate(prospect.handoffDue))}</strong>
+    </article>
     <article class="detail-wide">
       <span>Booking Link</span>
       <p>${renderBookingLink(prospect.bookingLink)}</p>
@@ -804,6 +838,10 @@ function renderSelectedDetail() {
     <article class="detail-wide">
       <span>Assessment Notes</span>
       <p>${previewText(prospect.assessmentNotes, "No assessment notes recorded yet.")}</p>
+    </article>
+    <article class="detail-wide">
+      <span>Handoff Notes</span>
+      <p>${previewText(prospect.handoffNotes, "No handoff notes recorded yet.")}</p>
     </article>
     <article class="detail-wide">
       <span>Saved AI Brief</span>
@@ -1317,6 +1355,10 @@ function getCrmRecord(prospect) {
     meetingDate: prospect.meetingDate,
     meetingOutcome: prospect.meetingOutcome,
     assessmentNotes: prospect.assessmentNotes,
+    handoffOwner: prospect.handoffOwner,
+    handoffStatus: prospect.handoffStatus,
+    handoffDue: prospect.handoffDue,
+    handoffNotes: prospect.handoffNotes,
     lastTouch: prospect.lastTouch,
     nextTouch: prospect.nextTouch,
     linkedInStatus: prospect.linkedInStatus,
@@ -1347,6 +1389,9 @@ function formatHandoffPacket(prospect) {
     `Booking link: ${record.bookingLink || "Not set"}`,
     `Meeting date: ${formatDateTime(record.meetingDate)}`,
     `Meeting outcome: ${record.meetingOutcome}`,
+    `Handoff owner: ${record.handoffOwner || "Unassigned"}`,
+    `Handoff status: ${record.handoffStatus}`,
+    `Handoff due: ${formatDate(record.handoffDue)}`,
     "",
     "Why this is warm",
     record.buyingTrigger || "No buying trigger recorded.",
@@ -1364,6 +1409,9 @@ function formatHandoffPacket(prospect) {
     "Assessment",
     record.assessmentNotes || "No assessment notes recorded.",
     "",
+    "Handoff notes",
+    record.handoffNotes || "No handoff notes recorded.",
+    "",
     "AI brief",
     record.aiBrief || "No AI brief saved.",
     "",
@@ -1378,6 +1426,11 @@ function renderHandoff() {
   const selectedIsWarm = selectedProspect ? isWarmLead(selectedProspect) : false;
   handoffSummary.textContent = `${warmLeads.length} warm lead${warmLeads.length === 1 ? "" : "s"} ready for CRM export.${selectedIsWarm ? ` Selected: ${selectedProspect.company}.` : " Select or mark a warm lead to build its packet."}`;
   handoffPacket.value = formatHandoffPacket(selectedProspect);
+  handoffOwnerInput.value = selectedProspect?.handoffOwner || "";
+  handoffStatusInput.value = selectedProspect?.handoffStatus || "Unassigned";
+  handoffDueInput.value = selectedProspect?.handoffDue || "";
+  handoffNotesInput.value = selectedProspect?.handoffNotes || "";
+  handoffForm.hidden = !selectedProspect;
 }
 
 function downloadFile(filename, content, type) {
@@ -1397,7 +1450,7 @@ function exportWarmLeadCsv() {
     return;
   }
 
-  const headers = ["company", "website", "industry", "companySize", "decisionMaker", "email", "linkedIn", "phone", "stage", "responseStatus", "fitScore", "buyingTrigger", "fitReason", "bookingLink", "meetingDate", "meetingOutcome", "assessmentNotes", "lastTouch", "nextTouch", "linkedInStatus", "callStatus", "notes"];
+  const headers = ["company", "website", "industry", "companySize", "decisionMaker", "email", "linkedIn", "phone", "stage", "responseStatus", "fitScore", "buyingTrigger", "fitReason", "bookingLink", "meetingDate", "meetingOutcome", "assessmentNotes", "handoffOwner", "handoffStatus", "handoffDue", "handoffNotes", "lastTouch", "nextTouch", "linkedInStatus", "callStatus", "notes"];
   const rows = warmLeads.map((prospect) => {
     const record = getCrmRecord(prospect);
     return headers.map((header) => csvCell(record[header])).join(",");
@@ -1438,10 +1491,33 @@ function markSelectedCrmReady() {
 
   prospect.stage = "Assessment";
   prospect.responseStatus = prospect.responseStatus === "Not Contacted" ? "Interested" : prospect.responseStatus;
+  prospect.handoffStatus = prospect.handoffOwner ? "Assigned" : "Unassigned";
   prospect.responseNotes = [prospect.responseNotes, "Marked CRM ready for warm-lead handoff."].filter(Boolean).join("\n");
   saveProspects();
   renderProspects();
   setDataStatus(`${prospect.company} marked CRM ready.`);
+}
+
+function saveHandoffFromForm(event) {
+  event.preventDefault();
+  const prospect = getSelectedProspect();
+  if (!prospect) return;
+
+  const formData = new FormData(handoffForm);
+  const handoffStatus = formData.get("handoffStatus");
+  prospect.handoffOwner = formData.get("handoffOwner").trim();
+  prospect.handoffStatus = handoffStatuses.includes(handoffStatus) ? handoffStatus : "Unassigned";
+  prospect.handoffDue = formData.get("handoffDue");
+  prospect.handoffNotes = formData.get("handoffNotes").trim();
+
+  if (prospect.handoffStatus === "Handed Off" || prospect.handoffStatus === "Accepted") {
+    prospect.stage = "Assessment";
+    prospect.responseStatus = prospect.responseStatus === "Not Contacted" ? "Interested" : prospect.responseStatus;
+  }
+
+  saveProspects();
+  renderProspects();
+  setDataStatus(`Handoff saved for ${prospect.company}.`);
 }
 
 function advanceStage(index) {
@@ -1936,6 +2012,10 @@ function saveProspectFromForm(event) {
     meetingDate: editingIndex === null ? "" : prospects[editingIndex]?.meetingDate,
     meetingOutcome: editingIndex === null ? "Not Scheduled" : prospects[editingIndex]?.meetingOutcome,
     assessmentNotes: editingIndex === null ? "" : prospects[editingIndex]?.assessmentNotes,
+    handoffOwner: editingIndex === null ? "" : prospects[editingIndex]?.handoffOwner,
+    handoffStatus: editingIndex === null ? "Unassigned" : prospects[editingIndex]?.handoffStatus,
+    handoffDue: editingIndex === null ? "" : prospects[editingIndex]?.handoffDue,
+    handoffNotes: editingIndex === null ? "" : prospects[editingIndex]?.handoffNotes,
     aiBrief: editingIndex === null ? "" : prospects[editingIndex]?.aiBrief,
     aiEmail: editingIndex === null ? "" : prospects[editingIndex]?.aiEmail
   });
@@ -1961,7 +2041,7 @@ function saveProspectFromForm(event) {
 }
 
 function exportCsv() {
-  const headers = ["company", "industry", "size", "website", "decisionMaker", "contactEmail", "contactLinkedIn", "contactPhone", "score", "trigger", "fit", "stage", "bookingLink", "responseStatus", "lastTouch", "nextTouch", "responseNotes", "linkedInStatus", "linkedInNotes", "callStatus", "callNotes", "meetingDate", "meetingOutcome", "assessmentNotes"];
+  const headers = ["company", "industry", "size", "website", "decisionMaker", "contactEmail", "contactLinkedIn", "contactPhone", "score", "trigger", "fit", "stage", "bookingLink", "responseStatus", "lastTouch", "nextTouch", "responseNotes", "linkedInStatus", "linkedInNotes", "callStatus", "callNotes", "meetingDate", "meetingOutcome", "assessmentNotes", "handoffOwner", "handoffStatus", "handoffDue", "handoffNotes"];
   const rows = prospects.map((prospect) => headers.map((header) => csvCell(prospect[header])).join(","));
   const csv = [headers.join(","), ...rows].join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
@@ -2053,7 +2133,11 @@ function prospectFromCsvRow(headers, row) {
     callNotes: values.callnotes || values.phonenotes || values.dialnotes,
     meetingDate: values.meetingdate || values.meetingdatetime || values.meetingtime,
     meetingOutcome: values.meetingoutcome || values.outcome,
-    assessmentNotes: values.assessmentnotes || values.assessment || values.meetingnotes
+    assessmentNotes: values.assessmentnotes || values.assessment || values.meetingnotes,
+    handoffOwner: values.handoffowner || values.owner || values.assignedto,
+    handoffStatus: values.handoffstatus || values.handoffstate || values.ownerstatus,
+    handoffDue: values.handoffdue || values.duedate || values.ownerduedate,
+    handoffNotes: values.handoffnotes || values.handoffnote || values.ownernotes
   });
 }
 
@@ -2192,6 +2276,7 @@ prospectForm.addEventListener("submit", saveProspectFromForm);
 responseForm.addEventListener("submit", saveResponseFromForm);
 workflowForm.addEventListener("submit", saveWorkflowFromForm);
 assessmentForm.addEventListener("submit", saveAssessmentFromForm);
+handoffForm.addEventListener("submit", saveHandoffFromForm);
 clearFormButton.addEventListener("click", resetForm);
 importInput.addEventListener("change", importCsv);
 exportButton.addEventListener("click", exportCsv);

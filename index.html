@@ -447,6 +447,32 @@ $env:REGENT_SEARCH_API_KEY="your_api_key"
               <button id="copyHandoffPacketButton" class="secondary-button" type="button">Copy selected packet</button>
               <button id="markCrmReadyButton" type="button">Mark CRM ready</button>
             </div>
+            <form id="handoffForm" class="handoff-form">
+              <label>
+                Owner
+                <input id="handoffOwnerInput" name="handoffOwner" placeholder="Ibrahim, closer, ops lead">
+              </label>
+              <label>
+                Handoff status
+                <select id="handoffStatusInput" name="handoffStatus">
+                  <option value="Unassigned">Unassigned</option>
+                  <option value="Assigned">Assigned</option>
+                  <option value="In Review">In Review</option>
+                  <option value="Handed Off">Handed Off</option>
+                  <option value="Accepted">Accepted</option>
+                  <option value="Blocked">Blocked</option>
+                </select>
+              </label>
+              <label>
+                Due date
+                <input id="handoffDueInput" name="handoffDue" type="date">
+              </label>
+              <label class="full-span">
+                Handoff notes
+                <textarea id="handoffNotesInput" name="handoffNotes" placeholder="Who owns next steps, context for teammate, blockers, or acceptance notes"></textarea>
+              </label>
+              <button type="submit">Save handoff</button>
+            </form>
           </div>
           <textarea id="handoffPacket" readonly></textarea>
         </div>
