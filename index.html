@@ -68,6 +68,34 @@
           <span>Meetings</span>
           <strong id="meetingMetric">0</strong>
         </article>
+        <article>
+          <span>Assigned</span>
+          <strong id="assignedMetric">0</strong>
+        </article>
+        <article>
+          <span>Blocked</span>
+          <strong id="blockedMetric">0</strong>
+        </article>
+      </section>
+
+      <section id="teamDashboard" class="panel">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Team Handoff</p>
+            <h2>Owner Workload</h2>
+          </div>
+          <span id="ownerDashboardCount" class="reminder-count">0 active</span>
+        </div>
+        <div class="team-dashboard-grid">
+          <div>
+            <h3>Owners</h3>
+            <div id="ownerWorkloadList" class="owner-workload-list"></div>
+          </div>
+          <div>
+            <h3>Blocked Handoffs</h3>
+            <div id="blockedHandoffList" class="blocked-handoff-list"></div>
+          </div>
+        </div>
       </section>
 
       <section id="reminders" class="panel">
@@ -164,6 +192,8 @@ $env:REGENT_SEARCH_API_KEY="your_api_key"
           <button class="secondary-button" type="button" data-view="replied">Replied</button>
           <button class="secondary-button" type="button" data-view="interested">Interested</button>
           <button class="secondary-button" type="button" data-view="meetings">Meetings</button>
+          <button class="secondary-button" type="button" data-view="assigned">Assigned</button>
+          <button class="secondary-button" type="button" data-view="blocked">Blocked</button>
           <button class="secondary-button" type="button" data-view="not-interested">Not Interested</button>
           <button class="secondary-button" type="button" data-view="no-response">No Response</button>
           <button class="secondary-button" type="button" data-view="follow-up-due">Follow-up Due</button>

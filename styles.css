@@ -717,6 +717,74 @@ button:disabled {
   margin: 0;
 }
 
+.team-dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.team-dashboard-grid h3 {
+  margin: 0 0 12px;
+}
+
+.owner-workload-list,
+.blocked-handoff-list {
+  display: grid;
+  gap: 10px;
+}
+
+.owner-row,
+.blocked-item {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.owner-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 12px;
+  align-items: center;
+  width: 100%;
+  padding: 14px;
+  color: var(--ink);
+  text-align: left;
+}
+
+.owner-row:hover {
+  background: #eef2f7;
+}
+
+.owner-row span,
+.blocked-item h4 {
+  font-weight: 700;
+}
+
+.owner-row small {
+  grid-column: 1 / -1;
+  color: var(--muted);
+}
+
+.blocked-item {
+  padding: 14px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.blocked-item h4,
+.blocked-item p {
+  margin: 0;
+}
+
+.blocked-item p {
+  margin-top: 6px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
 textarea {
   width: 100%;
   min-height: 260px;
@@ -770,7 +838,8 @@ textarea {
   .detail-grid,
   .prompt-grid,
   .response-form,
-  .discovery-form {
+  .discovery-form,
+  .team-dashboard-grid {
     grid-template-columns: 1fr;
   }
 
@@ -791,7 +860,8 @@ textarea {
   .handoff-form,
   .reminder-item,
   .reminder-title,
-  .reminder-actions {
+  .reminder-actions,
+  .blocked-item {
     align-items: stretch;
     flex-direction: column;
     grid-template-columns: 1fr;

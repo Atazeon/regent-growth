@@ -184,6 +184,9 @@ const resetPromptsButton = document.querySelector("#resetPromptsButton");
 const stageFilter = document.querySelector("#stageFilter");
 const responseFilter = document.querySelector("#responseFilter");
 const savedViews = document.querySelector("#savedViews");
+const ownerDashboardCount = document.querySelector("#ownerDashboardCount");
+const ownerWorkloadList = document.querySelector("#ownerWorkloadList");
+const blockedHandoffList = document.querySelector("#blockedHandoffList");
 const discoveryForm = document.querySelector("#discoveryForm");
 const discoveryList = document.querySelector("#discoveryList");
 const generateDiscoveryButton = document.querySelector("#generateDiscoveryButton");
@@ -356,14 +359,16 @@ function renderProspects() {
   const selectedStage = stageFilter.value;
   const selectedResponse = responseFilter.value;
   const selectedView = savedViews.dataset.activeView || "all";
+  const selectedOwner = savedViews.dataset.activeOwner || "";
   const visibleProspects = prospects
     .map((prospect, index) => ({ prospect, index }))
     .filter((item) => selectedStage === "all" || item.prospect.stage === selectedStage)
     .filter((item) => selectedResponse === "all" || item.prospect.responseStatus === selectedResponse)
-    .filter((item) => matchesSavedView(item.prospect, selectedView));
+    .filter((item) => matchesSavedView(item.prospect, selectedView))
+    .filter((item) => !selectedOwner || getOwnerName(item.prospect) === selectedOwner);
 
   if (visibleProspects.length === 0) {
-    prospectList.innerHTML = `<p class="empty-state">${escapeHtml(getEmptyProspectMessage(selectedStage, selectedResponse, selectedView))}</p>`;
+    prospectList.innerHTML = `<p class="empty-state">${escapeHtml(getEmptyProspectMessage(selectedStage, selectedResponse, selectedView, selectedOwner))}</p>`;
   } else {
     prospectList.innerHTML = visibleProspects.map(({ prospect, index }) => `
       <article class="prospect-card ${index === selectedProspectIndex ? "selected-card" : ""}">
@@ -395,6 +400,7 @@ function renderProspects() {
   renderSelectedDetail();
   renderReminders();
   renderHandoff();
+  renderOwnerDashboard();
 }
 
 function renderDiscoveryQueue() {
@@ -468,6 +474,8 @@ function matchesSavedView(prospect, selectedView) {
     replied: (item) => item.responseStatus === "Replied",
     interested: (item) => item.responseStatus === "Interested",
     meetings: (item) => item.stage === "Meeting" || item.responseStatus === "Meeting Booked",
+    assigned: (item) => isAssignedHandoff(item),
+    blocked: (item) => isBlockedHandoff(item),
     "not-interested": (item) => item.responseStatus === "Not Interested",
     "no-response": (item) => item.responseStatus === "No Response",
     "follow-up-due": isFollowUpDue
@@ -482,6 +490,8 @@ function getSavedViewLabel(selectedView) {
     replied: "Replied",
     interested: "Interested",
     meetings: "Meetings",
+    assigned: "Assigned",
+    blocked: "Blocked",
     "not-interested": "Not Interested",
     "no-response": "No Response",
     "follow-up-due": "Follow-up Due"
@@ -490,10 +500,14 @@ function getSavedViewLabel(selectedView) {
   return labels[selectedView] || labels.all;
 }
 
-function getEmptyProspectMessage(selectedStage, selectedResponse, selectedView) {
+function getEmptyProspectMessage(selectedStage, selectedResponse, selectedView, selectedOwner = "") {
   const hasStageFilter = selectedStage !== "all";
   const hasResponseFilter = selectedResponse !== "all";
   const hasSavedView = selectedView !== "all";
+
+  if (selectedOwner) {
+    return `No companies match the ${getSavedViewLabel(selectedView)} view for ${selectedOwner}.`;
+  }
 
   if (hasSavedView) {
     return `No companies match the ${getSavedViewLabel(selectedView)} view with the current filters.`;
@@ -526,6 +540,8 @@ function updateMetrics() {
   document.querySelector("#emailMetric").textContent = prospects.filter((prospect) => prospect.stage !== "Research").length;
   document.querySelector("#followUpMetric").textContent = prospects.filter(isFollowUpDue).length;
   document.querySelector("#meetingMetric").textContent = prospects.filter((prospect) => prospect.stage === "Meeting" || prospect.responseStatus === "Meeting Booked").length;
+  document.querySelector("#assignedMetric").textContent = prospects.filter(isAssignedHandoff).length;
+  document.querySelector("#blockedMetric").textContent = prospects.filter(isBlockedHandoff).length;
 }
 
 function isWarmLead(prospect) {
@@ -533,6 +549,77 @@ function isWarmLead(prospect) {
     || prospect.responseStatus === "Meeting Booked"
     || prospect.stage === "Meeting"
     || prospect.stage === "Assessment";
+}
+
+function isAssignedHandoff(prospect) {
+  return Boolean(prospect.handoffOwner) || ["Assigned", "In Review", "Handed Off", "Accepted"].includes(prospect.handoffStatus);
+}
+
+function isBlockedHandoff(prospect) {
+  return prospect.handoffStatus === "Blocked";
+}
+
+function getOwnerName(prospect) {
+  return prospect.handoffOwner?.trim() || "Unassigned";
+}
+
+function getOwnerWorkloads() {
+  const workloads = new Map();
+
+  prospects.filter((prospect) => isWarmLead(prospect) || isAssignedHandoff(prospect)).forEach((prospect) => {
+    const owner = getOwnerName(prospect);
+    const workload = workloads.get(owner) || {
+      owner,
+      total: 0,
+      blocked: 0,
+      due: 0,
+      accepted: 0
+    };
+
+    workload.total += 1;
+    if (isBlockedHandoff(prospect)) workload.blocked += 1;
+    if (prospect.handoffDue && daysUntil(prospect.handoffDue) <= 0) workload.due += 1;
+    if (prospect.handoffStatus === "Accepted") workload.accepted += 1;
+    workloads.set(owner, workload);
+  });
+
+  return Array.from(workloads.values()).sort((first, second) => second.total - first.total || first.owner.localeCompare(second.owner));
+}
+
+function renderOwnerDashboard() {
+  const workloads = getOwnerWorkloads();
+  const blockedProspects = prospects
+    .map((prospect, index) => ({ prospect, index }))
+    .filter(({ prospect }) => isBlockedHandoff(prospect));
+
+  ownerDashboardCount.textContent = `${workloads.reduce((sum, item) => sum + item.total, 0)} active`;
+
+  if (workloads.length === 0) {
+    ownerWorkloadList.innerHTML = `<p class="empty-state">No assigned handoffs yet. Mark a warm lead CRM ready, then assign an owner.</p>`;
+  } else {
+    ownerWorkloadList.innerHTML = workloads.map((workload) => `
+      <button class="owner-row" type="button" data-owner="${escapeHtml(workload.owner)}">
+        <span>${escapeHtml(workload.owner)}</span>
+        <strong>${escapeHtml(workload.total)}</strong>
+        <small>${escapeHtml(workload.due)} due | ${escapeHtml(workload.blocked)} blocked | ${escapeHtml(workload.accepted)} accepted</small>
+      </button>
+    `).join("");
+  }
+
+  if (blockedProspects.length === 0) {
+    blockedHandoffList.innerHTML = `<p class="empty-state">No blocked handoffs.</p>`;
+  } else {
+    blockedHandoffList.innerHTML = blockedProspects.map(({ prospect, index }) => `
+      <article class="blocked-item">
+        <div>
+          <h4>${escapeHtml(prospect.company)}</h4>
+          <p>${escapeHtml(getOwnerName(prospect))} | Due ${escapeHtml(formatDate(prospect.handoffDue))}</p>
+          <p>${previewText(prospect.handoffNotes, "No blocker note recorded.")}</p>
+        </div>
+        <button class="secondary-button" type="button" data-action="select-blocked" data-index="${index}">Open</button>
+      </article>
+    `).join("");
+  }
 }
 
 function getSelectedProspect() {
@@ -2246,6 +2333,25 @@ savedViews.addEventListener("click", (event) => {
   if (!button) return;
 
   savedViews.dataset.activeView = button.dataset.view;
+  delete savedViews.dataset.activeOwner;
+  renderProspects();
+});
+ownerWorkloadList.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-owner]");
+  if (!button) return;
+
+  savedViews.dataset.activeView = "assigned";
+  savedViews.dataset.activeOwner = button.dataset.owner;
+  renderProspects();
+  setDataStatus(`Showing assigned handoffs for ${button.dataset.owner}.`);
+});
+blockedHandoffList.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-action='select-blocked']");
+  if (!button) return;
+
+  selectedProspectIndex = Number(button.dataset.index);
+  savedViews.dataset.activeView = "blocked";
+  delete savedViews.dataset.activeOwner;
   renderProspects();
 });
 discoveryList.addEventListener("click", (event) => {
