@@ -92,7 +92,8 @@ const sampleProspects = [
     handoffNotes: "",
     crmSyncStatus: "Not Synced",
     crmSyncedAt: "",
-    crmSyncNotes: ""
+    crmSyncNotes: "",
+    teamSyncNotes: ""
   },
   {
     company: "CivicStone Roofing",
@@ -125,7 +126,8 @@ const sampleProspects = [
     handoffNotes: "",
     crmSyncStatus: "Not Synced",
     crmSyncedAt: "",
-    crmSyncNotes: ""
+    crmSyncNotes: "",
+    teamSyncNotes: ""
   },
   {
     company: "Atlas Managed IT",
@@ -158,7 +160,8 @@ const sampleProspects = [
     handoffNotes: "",
     crmSyncStatus: "Not Synced",
     crmSyncedAt: "",
-    crmSyncNotes: ""
+    crmSyncNotes: "",
+    teamSyncNotes: ""
   }
 ];
 
@@ -330,6 +333,7 @@ function normalizeProspect(prospect) {
     crmSyncStatus: prospect.crmSyncStatus || "Not Synced",
     crmSyncedAt: prospect.crmSyncedAt || "",
     crmSyncNotes: prospect.crmSyncNotes || "",
+    teamSyncNotes: prospect.teamSyncNotes || "",
     aiBrief: prospect.aiBrief || "",
     aiEmail: prospect.aiEmail || ""
   };
@@ -359,6 +363,122 @@ function normalizeDiscoveryCandidate(candidate) {
 
 function saveProspects() {
   localStorage.setItem(storageKey, JSON.stringify(prospects));
+}
+
+function getProspectFieldNames() {
+  return Object.keys(normalizeProspect({}));
+}
+
+function isBlankValue(value) {
+  return value === undefined || value === null || String(value).trim() === "";
+}
+
+function combineNoteValues(first, second) {
+  const firstText = String(first || "").trim();
+  const secondText = String(second || "").trim();
+
+  if (!firstText) return secondText;
+  if (!secondText || firstText.includes(secondText)) return firstText;
+  if (secondText.includes(firstText)) return secondText;
+  return `${firstText}\n\n${secondText}`;
+}
+
+function mergeProspectRecords(localProspect, sharedProspect) {
+  const merged = normalizeProspect(localProspect);
+  const shared = normalizeProspect(sharedProspect);
+  const noteFields = new Set(["responseNotes", "linkedInNotes", "callNotes", "assessmentNotes", "handoffNotes", "crmSyncNotes", "teamSyncNotes"]);
+  let filled = 0;
+  let conflicts = 0;
+
+  getProspectFieldNames().forEach((field) => {
+    if (field === "teamSyncNotes") return;
+
+    const localValue = merged[field];
+    const sharedValue = shared[field];
+
+    if (isBlankValue(localValue) && !isBlankValue(sharedValue)) {
+      merged[field] = sharedValue;
+      filled += 1;
+      return;
+    }
+
+    if (noteFields.has(field)) {
+      const combined = combineNoteValues(localValue, sharedValue);
+      if (combined !== localValue) {
+        merged[field] = combined;
+        filled += 1;
+      }
+      return;
+    }
+
+    if (!isBlankValue(localValue) && !isBlankValue(sharedValue) && String(localValue) !== String(sharedValue)) {
+      conflicts += 1;
+    }
+  });
+
+  if (conflicts > 0) {
+    const conflictNote = `${new Date().toISOString()}: Team sync kept local values for ${conflicts} conflicting field${conflicts === 1 ? "" : "s"} from ${shared.company || "shared record"}.`;
+    merged.teamSyncNotes = combineNoteValues(merged.teamSyncNotes, conflictNote);
+  }
+
+  return {
+    prospect: normalizeProspect(merged),
+    filled,
+    conflicts
+  };
+}
+
+function mapProspectsByIdentity(records) {
+  const map = new Map();
+
+  records.forEach((record, index) => {
+    const keys = getDuplicateKeys(record);
+    const fallbackKey = `row:${index}:${record.company || record.website || "unknown"}`;
+    const identity = keys.find((key) => map.has(key)) || keys[0] || fallbackKey;
+    map.set(identity, {
+      index,
+      record
+    });
+    keys.forEach((key) => map.set(key, { index, record }));
+  });
+
+  return map;
+}
+
+function mergeProspectLists(localRecords, sharedRecords) {
+  const mergedRecords = localRecords.map(normalizeProspect);
+  const mergedIndex = mapProspectsByIdentity(mergedRecords);
+  const stats = {
+    added: 0,
+    merged: 0,
+    filled: 0,
+    conflicts: 0
+  };
+
+  sharedRecords.map(normalizeProspect).forEach((sharedRecord) => {
+    const match = getDuplicateKeys(sharedRecord).map((key) => mergedIndex.get(key)).find(Boolean);
+
+    if (!match) {
+      mergedRecords.push(sharedRecord);
+      const newIndex = mergedRecords.length - 1;
+      getDuplicateKeys(sharedRecord).forEach((key) => mergedIndex.set(key, { index: newIndex, record: sharedRecord }));
+      stats.added += 1;
+      return;
+    }
+
+    const result = mergeProspectRecords(match.record, sharedRecord);
+    mergedRecords[match.index] = result.prospect;
+    match.record = result.prospect;
+    getDuplicateKeys(result.prospect).forEach((key) => mergedIndex.set(key, { index: match.index, record: result.prospect }));
+    stats.merged += 1;
+    stats.filled += result.filled;
+    stats.conflicts += result.conflicts;
+  });
+
+  return {
+    prospects: mergedRecords,
+    stats
+  };
 }
 
 function setTeamSyncStatus(message, state = "") {
@@ -408,13 +528,14 @@ async function pullTeamProspects() {
       return;
     }
 
-    prospects = payload.records;
+    const result = mergeProspectLists(prospects, payload.records);
+    prospects = result.prospects;
     selectedProspectIndex = 0;
     saveProspects();
     resetForm();
     renderProspects();
-    setTeamSyncStatus(`Pulled ${payload.records.length} shared prospect${payload.records.length === 1 ? "" : "s"} into this browser.`);
-    setDataStatus("Local browser data replaced with shared team prospects.");
+    setTeamSyncStatus(`Merged shared store: ${result.stats.added} added, ${result.stats.merged} matched, ${result.stats.filled} fields filled, ${result.stats.conflicts} local conflicts preserved.`);
+    setDataStatus("Shared team prospects merged into this browser.");
   } catch (error) {
     setTeamSyncStatus(error.message, "error");
   } finally {
@@ -427,12 +548,14 @@ async function pushTeamProspects() {
   setTeamSyncStatus("Pushing local prospects to shared team store...", "working");
 
   try {
+    const shared = await readTeamProspects();
+    const result = mergeProspectLists(prospects, shared.records);
     const response = await fetch(teamProspectsEndpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ records: prospects })
+      body: JSON.stringify({ records: result.prospects })
     });
     const payload = await response.json().catch(() => ({}));
 
@@ -440,7 +563,10 @@ async function pushTeamProspects() {
       throw new Error(payload.message || `Team sync returned ${response.status}.`);
     }
 
-    setTeamSyncStatus(`Pushed ${prospects.length} prospect${prospects.length === 1 ? "" : "s"} to shared team store.`);
+    prospects = result.prospects;
+    saveProspects();
+    renderProspects();
+    setTeamSyncStatus(`Pushed merged team store: ${result.prospects.length} total, ${result.stats.added} shared-only added locally, ${result.stats.conflicts} local conflicts preserved.`);
     setDataStatus(`Shared team store updated at ${formatDateTime(payload.updatedAt)}.`);
   } catch (error) {
     setTeamSyncStatus(error.message, "error");
@@ -1054,6 +1180,10 @@ function renderSelectedDetail() {
       <p>${previewText(prospect.crmSyncNotes, "No CRM sync attempts recorded yet.")}</p>
     </article>
     <article class="detail-wide">
+      <span>Team Sync Notes</span>
+      <p>${previewText(prospect.teamSyncNotes, "No team sync conflicts recorded yet.")}</p>
+    </article>
+    <article class="detail-wide">
       <span>Saved AI Brief</span>
       <p>${previewText(prospect.aiBrief, "Generate a company brief to attach research to this account.")}</p>
     </article>
@@ -1572,6 +1702,7 @@ function getCrmRecord(prospect) {
     crmSyncStatus: prospect.crmSyncStatus,
     crmSyncedAt: prospect.crmSyncedAt,
     crmSyncNotes: prospect.crmSyncNotes,
+    teamSyncNotes: prospect.teamSyncNotes,
     lastTouch: prospect.lastTouch,
     nextTouch: prospect.nextTouch,
     linkedInStatus: prospect.linkedInStatus,
@@ -1630,6 +1761,9 @@ function formatHandoffPacket(prospect) {
     "CRM sync notes",
     record.crmSyncNotes || "No CRM sync attempts recorded.",
     "",
+    "Team sync notes",
+    record.teamSyncNotes || "No team sync conflicts recorded.",
+    "",
     "AI brief",
     record.aiBrief || "No AI brief saved.",
     "",
@@ -1668,7 +1802,7 @@ function exportWarmLeadCsv() {
     return;
   }
 
-  const headers = ["company", "website", "industry", "companySize", "decisionMaker", "email", "linkedIn", "phone", "stage", "responseStatus", "fitScore", "buyingTrigger", "fitReason", "bookingLink", "meetingDate", "meetingOutcome", "assessmentNotes", "handoffOwner", "handoffStatus", "handoffDue", "handoffNotes", "crmSyncStatus", "crmSyncedAt", "crmSyncNotes", "lastTouch", "nextTouch", "linkedInStatus", "callStatus", "notes"];
+  const headers = ["company", "website", "industry", "companySize", "decisionMaker", "email", "linkedIn", "phone", "stage", "responseStatus", "fitScore", "buyingTrigger", "fitReason", "bookingLink", "meetingDate", "meetingOutcome", "assessmentNotes", "handoffOwner", "handoffStatus", "handoffDue", "handoffNotes", "crmSyncStatus", "crmSyncedAt", "crmSyncNotes", "teamSyncNotes", "lastTouch", "nextTouch", "linkedInStatus", "callStatus", "notes"];
   const rows = warmLeads.map((prospect) => {
     const record = getCrmRecord(prospect);
     return headers.map((header) => csvCell(record[header])).join(",");
@@ -2373,7 +2507,7 @@ function saveProspectFromForm(event) {
 }
 
 function exportCsv() {
-  const headers = ["company", "industry", "size", "website", "decisionMaker", "contactEmail", "contactLinkedIn", "contactPhone", "score", "trigger", "fit", "stage", "bookingLink", "responseStatus", "lastTouch", "nextTouch", "responseNotes", "linkedInStatus", "linkedInNotes", "callStatus", "callNotes", "meetingDate", "meetingOutcome", "assessmentNotes", "handoffOwner", "handoffStatus", "handoffDue", "handoffNotes", "crmSyncStatus", "crmSyncedAt", "crmSyncNotes"];
+  const headers = ["company", "industry", "size", "website", "decisionMaker", "contactEmail", "contactLinkedIn", "contactPhone", "score", "trigger", "fit", "stage", "bookingLink", "responseStatus", "lastTouch", "nextTouch", "responseNotes", "linkedInStatus", "linkedInNotes", "callStatus", "callNotes", "meetingDate", "meetingOutcome", "assessmentNotes", "handoffOwner", "handoffStatus", "handoffDue", "handoffNotes", "crmSyncStatus", "crmSyncedAt", "crmSyncNotes", "teamSyncNotes"];
   const rows = prospects.map((prospect) => headers.map((header) => csvCell(prospect[header])).join(","));
   const csv = [headers.join(","), ...rows].join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
@@ -2472,7 +2606,8 @@ function prospectFromCsvRow(headers, row) {
     handoffNotes: values.handoffnotes || values.handoffnote || values.ownernotes,
     crmSyncStatus: values.crmsyncstatus || values.crmstatus,
     crmSyncedAt: values.crmsyncedat || values.crmsyncdate,
-    crmSyncNotes: values.crmsyncnotes || values.crmnotes
+    crmSyncNotes: values.crmsyncnotes || values.crmnotes,
+    teamSyncNotes: values.teamsyncnotes || values.teamnotes
   });
 }
 
