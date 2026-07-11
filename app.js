@@ -5,6 +5,8 @@ const ollamaEndpoint = "http://127.0.0.1:11434/api/generate";
 const sourceFetchEndpoint = "/api/fetch-source";
 const sourceSearchEndpoint = "/api/search-sources";
 const sourceSearchStatusEndpoint = "/api/search-status";
+const crmStatusEndpoint = "/api/crm-status";
+const crmSyncEndpoint = "/api/crm-sync";
 const ollamaTimeoutMs = 150000;
 const stageOrder = ["Research", "Email Drafted", "Sequence", "LinkedIn", "Call", "Meeting", "Assessment"];
 const responseStatuses = ["Not Contacted", "Contacted", "Replied", "Interested", "Meeting Booked", "Not Interested", "No Response"];
@@ -86,7 +88,10 @@ const sampleProspects = [
     handoffOwner: "",
     handoffStatus: "Unassigned",
     handoffDue: "",
-    handoffNotes: ""
+    handoffNotes: "",
+    crmSyncStatus: "Not Synced",
+    crmSyncedAt: "",
+    crmSyncNotes: ""
   },
   {
     company: "CivicStone Roofing",
@@ -116,7 +121,10 @@ const sampleProspects = [
     handoffOwner: "",
     handoffStatus: "Unassigned",
     handoffDue: "",
-    handoffNotes: ""
+    handoffNotes: "",
+    crmSyncStatus: "Not Synced",
+    crmSyncedAt: "",
+    crmSyncNotes: ""
   },
   {
     company: "Atlas Managed IT",
@@ -146,7 +154,10 @@ const sampleProspects = [
     handoffOwner: "",
     handoffStatus: "Unassigned",
     handoffDue: "",
-    handoffNotes: ""
+    handoffNotes: "",
+    crmSyncStatus: "Not Synced",
+    crmSyncedAt: "",
+    crmSyncNotes: ""
   }
 ];
 
@@ -215,6 +226,10 @@ const copyEmailDraftButton = document.querySelector("#copyEmailDraftButton");
 const markEmailSentButton = document.querySelector("#markEmailSentButton");
 const exportWarmCsvButton = document.querySelector("#exportWarmCsvButton");
 const exportWarmJsonButton = document.querySelector("#exportWarmJsonButton");
+const checkCrmSetupButton = document.querySelector("#checkCrmSetupButton");
+const syncSelectedCrmButton = document.querySelector("#syncSelectedCrmButton");
+const syncWarmCrmButton = document.querySelector("#syncWarmCrmButton");
+const crmSetupStatus = document.querySelector("#crmSetupStatus");
 const copyHandoffPacketButton = document.querySelector("#copyHandoffPacketButton");
 const markCrmReadyButton = document.querySelector("#markCrmReadyButton");
 const handoffSummary = document.querySelector("#handoffSummary");
@@ -307,6 +322,9 @@ function normalizeProspect(prospect) {
     handoffStatus: handoffStatuses.includes(prospect.handoffStatus) ? prospect.handoffStatus : "Unassigned",
     handoffDue: prospect.handoffDue || "",
     handoffNotes: prospect.handoffNotes || "",
+    crmSyncStatus: prospect.crmSyncStatus || "Not Synced",
+    crmSyncedAt: prospect.crmSyncedAt || "",
+    crmSyncNotes: prospect.crmSyncNotes || "",
     aiBrief: prospect.aiBrief || "",
     aiEmail: prospect.aiEmail || ""
   };
@@ -894,6 +912,14 @@ function renderSelectedDetail() {
       <span>Handoff Due</span>
       <strong>${escapeHtml(formatDate(prospect.handoffDue))}</strong>
     </article>
+    <article>
+      <span>CRM Sync</span>
+      <strong>${escapeHtml(prospect.crmSyncStatus || "Not Synced")}</strong>
+    </article>
+    <article>
+      <span>CRM Synced At</span>
+      <strong>${escapeHtml(formatDateTime(prospect.crmSyncedAt))}</strong>
+    </article>
     <article class="detail-wide">
       <span>Booking Link</span>
       <p>${renderBookingLink(prospect.bookingLink)}</p>
@@ -929,6 +955,10 @@ function renderSelectedDetail() {
     <article class="detail-wide">
       <span>Handoff Notes</span>
       <p>${previewText(prospect.handoffNotes, "No handoff notes recorded yet.")}</p>
+    </article>
+    <article class="detail-wide">
+      <span>CRM Sync Notes</span>
+      <p>${previewText(prospect.crmSyncNotes, "No CRM sync attempts recorded yet.")}</p>
     </article>
     <article class="detail-wide">
       <span>Saved AI Brief</span>
@@ -1446,6 +1476,9 @@ function getCrmRecord(prospect) {
     handoffStatus: prospect.handoffStatus,
     handoffDue: prospect.handoffDue,
     handoffNotes: prospect.handoffNotes,
+    crmSyncStatus: prospect.crmSyncStatus,
+    crmSyncedAt: prospect.crmSyncedAt,
+    crmSyncNotes: prospect.crmSyncNotes,
     lastTouch: prospect.lastTouch,
     nextTouch: prospect.nextTouch,
     linkedInStatus: prospect.linkedInStatus,
@@ -1479,6 +1512,8 @@ function formatHandoffPacket(prospect) {
     `Handoff owner: ${record.handoffOwner || "Unassigned"}`,
     `Handoff status: ${record.handoffStatus}`,
     `Handoff due: ${formatDate(record.handoffDue)}`,
+    `CRM sync: ${record.crmSyncStatus || "Not Synced"}`,
+    `CRM synced at: ${formatDateTime(record.crmSyncedAt)}`,
     "",
     "Why this is warm",
     record.buyingTrigger || "No buying trigger recorded.",
@@ -1498,6 +1533,9 @@ function formatHandoffPacket(prospect) {
     "",
     "Handoff notes",
     record.handoffNotes || "No handoff notes recorded.",
+    "",
+    "CRM sync notes",
+    record.crmSyncNotes || "No CRM sync attempts recorded.",
     "",
     "AI brief",
     record.aiBrief || "No AI brief saved.",
@@ -1537,7 +1575,7 @@ function exportWarmLeadCsv() {
     return;
   }
 
-  const headers = ["company", "website", "industry", "companySize", "decisionMaker", "email", "linkedIn", "phone", "stage", "responseStatus", "fitScore", "buyingTrigger", "fitReason", "bookingLink", "meetingDate", "meetingOutcome", "assessmentNotes", "handoffOwner", "handoffStatus", "handoffDue", "handoffNotes", "lastTouch", "nextTouch", "linkedInStatus", "callStatus", "notes"];
+  const headers = ["company", "website", "industry", "companySize", "decisionMaker", "email", "linkedIn", "phone", "stage", "responseStatus", "fitScore", "buyingTrigger", "fitReason", "bookingLink", "meetingDate", "meetingOutcome", "assessmentNotes", "handoffOwner", "handoffStatus", "handoffDue", "handoffNotes", "crmSyncStatus", "crmSyncedAt", "crmSyncNotes", "lastTouch", "nextTouch", "linkedInStatus", "callStatus", "notes"];
   const rows = warmLeads.map((prospect) => {
     const record = getCrmRecord(prospect);
     return headers.map((header) => csvCell(record[header])).join(",");
@@ -1555,6 +1593,120 @@ function exportWarmLeadJson() {
 
   downloadFile("regent-growth-warm-leads.json", JSON.stringify(warmLeads.map(getCrmRecord), null, 2), "application/json;charset=utf-8");
   setDataStatus(`Exported ${warmLeads.length} warm lead${warmLeads.length === 1 ? "" : "s"} as JSON.`);
+}
+
+function setCrmSetupStatus(message, state = "") {
+  crmSetupStatus.textContent = message;
+  crmSetupStatus.dataset.state = state;
+}
+
+async function checkCrmSetup() {
+  setCrmSetupStatus("Checking CRM connector...", "working");
+
+  try {
+    const response = await fetch(crmStatusEndpoint);
+
+    if (!response.ok) {
+      throw new Error(`CRM setup check returned ${response.status}.`);
+    }
+
+    const status = await response.json();
+    setCrmSetupStatus(
+      status.configured
+        ? `CRM connector ready: ${status.endpoint}${status.keyConfigured ? " with API key" : " without API key"}.`
+        : "CRM connector is not configured. Set REGENT_CRM_API_URL before starting the local server.",
+      status.configured ? "" : "error"
+    );
+  } catch (error) {
+    setCrmSetupStatus(isLocalFile()
+      ? "CRM setup check needs the local research server. Run local-research-server.js and open the local URL."
+      : error.message,
+    "error");
+  }
+}
+
+async function syncCrmRecords(records, prospectsToUpdate) {
+  const response = await fetch(crmSyncEndpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ records })
+  });
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(payload.message || `CRM sync returned ${response.status}.`);
+  }
+
+  const syncedAt = payload.syncedAt || new Date().toISOString();
+  prospectsToUpdate.forEach((prospect) => {
+    prospect.crmSyncStatus = "Synced";
+    prospect.crmSyncedAt = syncedAt;
+    prospect.crmSyncNotes = [`Synced through local CRM connector.`, prospect.crmSyncNotes].filter(Boolean).join("\n");
+    if (prospect.handoffStatus === "Assigned" || prospect.handoffStatus === "In Review") {
+      prospect.handoffStatus = "Handed Off";
+    }
+  });
+  saveProspects();
+  renderProspects();
+
+  return payload;
+}
+
+async function syncSelectedCrmLead() {
+  const prospect = getSelectedProspect();
+
+  if (!prospect || !isWarmLead(prospect)) {
+    setCrmSetupStatus("Select or mark a warm lead before syncing the selected account.", "error");
+    return;
+  }
+
+  syncSelectedCrmButton.disabled = true;
+  setCrmSetupStatus(`Syncing ${prospect.company} to CRM...`, "working");
+
+  try {
+    await syncCrmRecords([getCrmRecord(prospect)], [prospect]);
+    setCrmSetupStatus(`${prospect.company} synced to CRM.`);
+    setDataStatus(`${prospect.company} synced to CRM.`);
+  } catch (error) {
+    prospect.crmSyncStatus = "Sync Failed";
+    prospect.crmSyncNotes = [`${new Date().toISOString()}: ${error.message}`, prospect.crmSyncNotes].filter(Boolean).join("\n");
+    saveProspects();
+    renderProspects();
+    setCrmSetupStatus(error.message, "error");
+  } finally {
+    syncSelectedCrmButton.disabled = false;
+  }
+}
+
+async function syncWarmCrmLeads() {
+  const warmLeads = getWarmLeads();
+
+  if (warmLeads.length === 0) {
+    setCrmSetupStatus("No warm leads to sync yet.", "error");
+    return;
+  }
+
+  syncWarmCrmButton.disabled = true;
+  setCrmSetupStatus(`Syncing ${warmLeads.length} warm lead${warmLeads.length === 1 ? "" : "s"} to CRM...`, "working");
+
+  try {
+    await syncCrmRecords(warmLeads.map(getCrmRecord), warmLeads);
+    setCrmSetupStatus(`Synced ${warmLeads.length} warm lead${warmLeads.length === 1 ? "" : "s"} to CRM.`);
+    setDataStatus(`Synced ${warmLeads.length} warm lead${warmLeads.length === 1 ? "" : "s"} to CRM.`);
+  } catch (error) {
+    const failedAt = new Date().toISOString();
+    warmLeads.forEach((prospect) => {
+      prospect.crmSyncStatus = "Sync Failed";
+      prospect.crmSyncNotes = [`${failedAt}: ${error.message}`, prospect.crmSyncNotes].filter(Boolean).join("\n");
+    });
+    saveProspects();
+    renderProspects();
+    setCrmSetupStatus(error.message, "error");
+  } finally {
+    syncWarmCrmButton.disabled = false;
+  }
 }
 
 async function copySelectedHandoffPacket() {
@@ -2128,7 +2280,7 @@ function saveProspectFromForm(event) {
 }
 
 function exportCsv() {
-  const headers = ["company", "industry", "size", "website", "decisionMaker", "contactEmail", "contactLinkedIn", "contactPhone", "score", "trigger", "fit", "stage", "bookingLink", "responseStatus", "lastTouch", "nextTouch", "responseNotes", "linkedInStatus", "linkedInNotes", "callStatus", "callNotes", "meetingDate", "meetingOutcome", "assessmentNotes", "handoffOwner", "handoffStatus", "handoffDue", "handoffNotes"];
+  const headers = ["company", "industry", "size", "website", "decisionMaker", "contactEmail", "contactLinkedIn", "contactPhone", "score", "trigger", "fit", "stage", "bookingLink", "responseStatus", "lastTouch", "nextTouch", "responseNotes", "linkedInStatus", "linkedInNotes", "callStatus", "callNotes", "meetingDate", "meetingOutcome", "assessmentNotes", "handoffOwner", "handoffStatus", "handoffDue", "handoffNotes", "crmSyncStatus", "crmSyncedAt", "crmSyncNotes"];
   const rows = prospects.map((prospect) => headers.map((header) => csvCell(prospect[header])).join(","));
   const csv = [headers.join(","), ...rows].join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
@@ -2224,7 +2376,10 @@ function prospectFromCsvRow(headers, row) {
     handoffOwner: values.handoffowner || values.owner || values.assignedto,
     handoffStatus: values.handoffstatus || values.handoffstate || values.ownerstatus,
     handoffDue: values.handoffdue || values.duedate || values.ownerduedate,
-    handoffNotes: values.handoffnotes || values.handoffnote || values.ownernotes
+    handoffNotes: values.handoffnotes || values.handoffnote || values.ownernotes,
+    crmSyncStatus: values.crmsyncstatus || values.crmstatus,
+    crmSyncedAt: values.crmsyncedat || values.crmsyncdate,
+    crmSyncNotes: values.crmsyncnotes || values.crmnotes
   });
 }
 
@@ -2407,6 +2562,9 @@ copyEmailDraftButton.addEventListener("click", copyEmailDraft);
 markEmailSentButton.addEventListener("click", markEmailSent);
 exportWarmCsvButton.addEventListener("click", exportWarmLeadCsv);
 exportWarmJsonButton.addEventListener("click", exportWarmLeadJson);
+checkCrmSetupButton.addEventListener("click", checkCrmSetup);
+syncSelectedCrmButton.addEventListener("click", syncSelectedCrmLead);
+syncWarmCrmButton.addEventListener("click", syncWarmCrmLeads);
 copyHandoffPacketButton.addEventListener("click", copySelectedHandoffPacket);
 markCrmReadyButton.addEventListener("click", markSelectedCrmReady);
 
@@ -2414,3 +2572,4 @@ renderPromptTemplates();
 renderDiscoveryQueue();
 renderProspects();
 checkSearchSetup();
+checkCrmSetup();

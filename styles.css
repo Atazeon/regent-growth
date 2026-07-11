@@ -360,7 +360,8 @@ button:disabled {
   line-height: 1.5;
 }
 
-.search-setup {
+.search-setup,
+.crm-setup {
   border: 1px solid var(--line);
   border-radius: 8px;
   display: grid;
@@ -372,18 +373,31 @@ button:disabled {
   background: #f9fafc;
 }
 
-.search-setup p {
+.crm-setup {
+  grid-template-columns: 1fr auto;
+}
+
+.search-setup p,
+.crm-setup p {
   margin: 0;
   color: var(--muted);
   line-height: 1.5;
 }
 
-.search-setup p[data-state="error"] {
+.search-setup p[data-state="working"],
+.crm-setup p[data-state="working"] {
+  color: var(--blue);
+  font-weight: 700;
+}
+
+.search-setup p[data-state="error"],
+.crm-setup p[data-state="error"] {
   color: #a73535;
   font-weight: 700;
 }
 
-.search-setup pre {
+.search-setup pre,
+.crm-setup pre {
   overflow-x: auto;
   margin: 10px 0 0;
   border: 1px solid var(--line);
@@ -394,7 +408,8 @@ button:disabled {
   font: 0.85rem/1.45 Consolas, Monaco, monospace;
 }
 
-.search-setup label {
+.search-setup label,
+.crm-setup label {
   display: grid;
   gap: 8px;
   color: var(--muted);
@@ -852,6 +867,7 @@ textarea {
   .discovery-card,
   .discovery-title,
   .search-setup,
+  .crm-setup,
   .setup-actions,
   .source-controls,
   .email-handoff,

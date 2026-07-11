@@ -10,6 +10,9 @@ const searchTimeoutMs = 12000;
 const searchApiUrl = process.env.REGENT_SEARCH_API_URL || "";
 const searchApiKey = process.env.REGENT_SEARCH_API_KEY || "";
 const searchApiKeyHeader = process.env.REGENT_SEARCH_API_KEY_HEADER || "Authorization";
+const crmApiUrl = process.env.REGENT_CRM_API_URL || "";
+const crmApiKey = process.env.REGENT_CRM_API_KEY || "";
+const crmApiKeyHeader = process.env.REGENT_CRM_API_KEY_HEADER || "Authorization";
 const contentTypes = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
@@ -57,6 +60,25 @@ function cleanText(value) {
     .replace(/&gt;/gi, ">")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function getCrmStatus() {
+  let endpoint = "";
+
+  if (crmApiUrl) {
+    try {
+      endpoint = new URL(crmApiUrl).origin;
+    } catch {
+      endpoint = "Invalid CRM URL";
+    }
+  }
+
+  return {
+    configured: Boolean(crmApiUrl),
+    endpoint,
+    keyConfigured: Boolean(crmApiKey),
+    keyHeader: crmApiKeyHeader
+  };
 }
 
 function extractFirst(html, patterns) {
@@ -252,6 +274,56 @@ async function fetchSourceEvidence(sourceUrl) {
   }
 }
 
+async function syncCrmRecords(records) {
+  if (!crmApiUrl) {
+    throw new Error("CRM API is not configured. Set REGENT_CRM_API_URL and optional REGENT_CRM_API_KEY before starting the server.");
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), sourceTimeoutMs);
+  const headers = {
+    "Accept": "application/json",
+    "Content-Type": "application/json"
+  };
+
+  if (crmApiKey) {
+    headers[crmApiKeyHeader] = crmApiKeyHeader.toLowerCase() === "authorization"
+      ? `Bearer ${crmApiKey}`
+      : crmApiKey;
+  }
+
+  try {
+    const response = await fetch(crmApiUrl, {
+      method: "POST",
+      headers,
+      signal: controller.signal,
+      body: JSON.stringify({
+        source: "regent-growth",
+        syncedAt: new Date().toISOString(),
+        records
+      })
+    });
+    const contentType = response.headers.get("content-type") || "";
+    const responseBody = await response.text();
+    const payload = contentType.includes("application/json") && responseBody
+      ? JSON.parse(responseBody)
+      : { message: responseBody };
+
+    if (!response.ok) {
+      throw new Error(payload.message || `CRM API returned ${response.status}`);
+    }
+
+    return {
+      ok: true,
+      status: response.status,
+      syncedAt: new Date().toISOString(),
+      result: payload
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 function serveStatic(request, response) {
   const requestUrl = new URL(request.url, `http://127.0.0.1:${port}`);
   const pathname = requestUrl.pathname === "/" ? "/index.html" : decodeURIComponent(requestUrl.pathname);
@@ -288,6 +360,11 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "GET" && requestUrl.pathname === "/api/crm-status") {
+    sendJson(response, 200, getCrmStatus());
+    return;
+  }
+
   if (request.method === "POST" && requestUrl.pathname === "/api/fetch-source") {
     try {
       const body = await readJsonBody(request);
@@ -317,6 +394,23 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "POST" && requestUrl.pathname === "/api/crm-sync") {
+    try {
+      const body = await readJsonBody(request);
+      const records = Array.isArray(body.records) ? body.records : [];
+
+      if (records.length === 0) {
+        throw new Error("At least one CRM record is required.");
+      }
+
+      const result = await syncCrmRecords(records);
+      sendJson(response, 200, result);
+    } catch (error) {
+      sendJson(response, 400, { message: error.name === "AbortError" ? "CRM API timed out." : error.message });
+    }
+    return;
+  }
+
   if (request.method === "GET") {
     serveStatic(request, response);
     return;
@@ -334,6 +428,8 @@ if (require.main === module) {
 
 module.exports = {
   firstArrayFromPayload,
+  getCrmStatus,
   getSearchStatus,
-  normalizeSearchResult
+  normalizeSearchResult,
+  syncCrmRecords
 };
