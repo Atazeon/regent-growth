@@ -209,6 +209,8 @@ const teamActorInput = document.querySelector("#teamActorInput");
 const checkTeamSyncButton = document.querySelector("#checkTeamSyncButton");
 const pullTeamProspectsButton = document.querySelector("#pullTeamProspectsButton");
 const pushTeamProspectsButton = document.querySelector("#pushTeamProspectsButton");
+const exportTeamBackupButton = document.querySelector("#exportTeamBackupButton");
+const restoreTeamBackupInput = document.querySelector("#restoreTeamBackupInput");
 const discoveryForm = document.querySelector("#discoveryForm");
 const discoveryList = document.querySelector("#discoveryList");
 const generateDiscoveryButton = document.querySelector("#generateDiscoveryButton");
@@ -620,6 +622,81 @@ async function pushTeamProspects() {
     setTeamSyncStatus(error.message, "error");
   } finally {
     pushTeamProspectsButton.disabled = false;
+  }
+}
+
+async function exportTeamBackup() {
+  exportTeamBackupButton.disabled = true;
+  setTeamSyncStatus("Preparing shared team backup...", "working");
+
+  try {
+    const payload = await readTeamProspects();
+    const backup = {
+      source: "regent-growth-team-sync-backup",
+      exportedAt: new Date().toISOString(),
+      updatedAt: payload.updatedAt,
+      actor: getTeamSyncActor(),
+      records: payload.records,
+      history: payload.history
+    };
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+    downloadFile(`regent-growth-team-sync-backup-${stamp}.json`, JSON.stringify(backup, null, 2), "application/json;charset=utf-8");
+    renderTeamSyncHistory(payload.history);
+    setTeamSyncStatus(`Exported shared team backup with ${payload.records.length} prospect${payload.records.length === 1 ? "" : "s"}.`);
+  } catch (error) {
+    setTeamSyncStatus(error.message, "error");
+  } finally {
+    exportTeamBackupButton.disabled = false;
+  }
+}
+
+async function restoreTeamBackup(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  setTeamSyncStatus(`Restoring shared team backup from ${file.name}...`, "working");
+
+  try {
+    const backup = JSON.parse(await file.text());
+    if (!Array.isArray(backup.records)) {
+      throw new Error("Backup file does not contain a records array.");
+    }
+
+    const records = backup.records.map(normalizeProspect);
+    const history = Array.isArray(backup.history) ? backup.history : [];
+
+    const response = await fetch(teamProspectsEndpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        records,
+        history,
+        activity: {
+          type: "restore",
+          actor: getTeamSyncActor(),
+          summary: `Restored shared team backup from ${file.name}.`,
+          stats: {
+            restored: records.length,
+            history: history.length
+          }
+        }
+      })
+    });
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(payload.message || `Team backup restore returned ${response.status}.`);
+    }
+
+    renderTeamSyncHistory(payload.history);
+    setTeamSyncStatus(`Restored shared team backup with ${records.length} prospect${records.length === 1 ? "" : "s"}.`);
+    setDataStatus("Shared team store restored from backup. Merge shared to update this browser.");
+  } catch (error) {
+    setTeamSyncStatus(`Restore failed: ${error.message}`, "error");
+  } finally {
+    restoreTeamBackupInput.value = "";
   }
 }
 
@@ -2822,6 +2899,8 @@ teamActorForm.addEventListener("submit", saveTeamSyncActor);
 checkTeamSyncButton.addEventListener("click", checkTeamSync);
 pullTeamProspectsButton.addEventListener("click", pullTeamProspects);
 pushTeamProspectsButton.addEventListener("click", pushTeamProspects);
+exportTeamBackupButton.addEventListener("click", exportTeamBackup);
+restoreTeamBackupInput.addEventListener("change", restoreTeamBackup);
 generateDiscoveryButton.addEventListener("click", generateDiscoveryCandidates);
 clearDiscoveryButton.addEventListener("click", clearDiscoveryQueue);
 checkSearchSetupButton.addEventListener("click", checkSearchSetup);

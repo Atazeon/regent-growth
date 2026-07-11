@@ -53,8 +53,11 @@ function readSharedProspects() {
   }
 }
 
-function writeSharedProspects(records, activity = {}) {
+function writeSharedProspects(records, activity = {}, restoredHistory = null) {
   const current = readSharedProspects();
+  const existingHistory = Array.isArray(restoredHistory)
+    ? restoredHistory.slice(0, maxTeamHistoryItems)
+    : current.history;
   const updatedAt = new Date().toISOString();
   const historyEntry = {
     id: `${updatedAt}-${Math.random().toString(16).slice(2)}`,
@@ -69,7 +72,7 @@ function writeSharedProspects(records, activity = {}) {
     source: "team-sync",
     updatedAt,
     records,
-    history: [historyEntry, ...current.history].slice(0, maxTeamHistoryItems)
+    history: [historyEntry, ...existingHistory].slice(0, maxTeamHistoryItems)
   };
 
   fs.mkdirSync(path.dirname(sharedProspectsPath), { recursive: true });
@@ -475,7 +478,8 @@ const server = http.createServer(async (request, response) => {
     try {
       const body = await readJsonBody(request);
       const records = Array.isArray(body.records) ? body.records : [];
-      const payload = writeSharedProspects(records, body.activity || {});
+      const restoredHistory = Array.isArray(body.history) ? body.history : null;
+      const payload = writeSharedProspects(records, body.activity || {}, restoredHistory);
       sendJson(response, 200, payload);
     } catch (error) {
       sendJson(response, 400, { message: error.message });
