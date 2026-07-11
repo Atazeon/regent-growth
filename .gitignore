@@ -13,3 +13,6 @@ coverage/
 # Local secrets
 .env
 .env.*
+
+# Local shared runtime data
+data/shared-prospects.json

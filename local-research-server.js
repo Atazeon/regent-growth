@@ -4,6 +4,7 @@ const path = require("path");
 
 const root = process.cwd();
 const port = Number(process.env.PORT || 5193);
+const sharedProspectsPath = path.join(root, "data", "shared-prospects.json");
 const maxBodyBytes = 1024 * 1024;
 const sourceTimeoutMs = 12000;
 const searchTimeoutMs = 12000;
@@ -24,6 +25,41 @@ const contentTypes = {
 function sendJson(response, status, payload) {
   response.writeHead(status, { "Content-Type": "application/json; charset=utf-8" });
   response.end(JSON.stringify(payload));
+}
+
+function readSharedProspects() {
+  try {
+    const raw = fs.readFileSync(sharedProspectsPath, "utf8");
+    const payload = JSON.parse(raw);
+
+    return {
+      updatedAt: payload.updatedAt || "",
+      source: payload.source || "team-sync",
+      records: Array.isArray(payload.records) ? payload.records : []
+    };
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      return {
+        updatedAt: "",
+        source: "team-sync",
+        records: []
+      };
+    }
+
+    throw error;
+  }
+}
+
+function writeSharedProspects(records) {
+  const payload = {
+    source: "team-sync",
+    updatedAt: new Date().toISOString(),
+    records
+  };
+
+  fs.mkdirSync(path.dirname(sharedProspectsPath), { recursive: true });
+  fs.writeFileSync(sharedProspectsPath, `${JSON.stringify(payload, null, 2)}\n`);
+  return payload;
 }
 
 function readJsonBody(request) {
@@ -365,6 +401,15 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "GET" && requestUrl.pathname === "/api/team-prospects") {
+    try {
+      sendJson(response, 200, readSharedProspects());
+    } catch (error) {
+      sendJson(response, 500, { message: error.message });
+    }
+    return;
+  }
+
   if (request.method === "POST" && requestUrl.pathname === "/api/fetch-source") {
     try {
       const body = await readJsonBody(request);
@@ -411,6 +456,18 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "POST" && requestUrl.pathname === "/api/team-prospects") {
+    try {
+      const body = await readJsonBody(request);
+      const records = Array.isArray(body.records) ? body.records : [];
+      const payload = writeSharedProspects(records);
+      sendJson(response, 200, payload);
+    } catch (error) {
+      sendJson(response, 400, { message: error.message });
+    }
+    return;
+  }
+
   if (request.method === "GET") {
     serveStatic(request, response);
     return;
@@ -431,5 +488,7 @@ module.exports = {
   getCrmStatus,
   getSearchStatus,
   normalizeSearchResult,
-  syncCrmRecords
+  readSharedProspects,
+  syncCrmRecords,
+  writeSharedProspects
 };

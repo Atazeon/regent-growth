@@ -7,6 +7,7 @@ const sourceSearchEndpoint = "/api/search-sources";
 const sourceSearchStatusEndpoint = "/api/search-status";
 const crmStatusEndpoint = "/api/crm-status";
 const crmSyncEndpoint = "/api/crm-sync";
+const teamProspectsEndpoint = "/api/team-prospects";
 const ollamaTimeoutMs = 150000;
 const stageOrder = ["Research", "Email Drafted", "Sequence", "LinkedIn", "Call", "Meeting", "Assessment"];
 const responseStatuses = ["Not Contacted", "Contacted", "Replied", "Interested", "Meeting Booked", "Not Interested", "No Response"];
@@ -198,6 +199,10 @@ const savedViews = document.querySelector("#savedViews");
 const ownerDashboardCount = document.querySelector("#ownerDashboardCount");
 const ownerWorkloadList = document.querySelector("#ownerWorkloadList");
 const blockedHandoffList = document.querySelector("#blockedHandoffList");
+const teamSyncStatus = document.querySelector("#teamSyncStatus");
+const checkTeamSyncButton = document.querySelector("#checkTeamSyncButton");
+const pullTeamProspectsButton = document.querySelector("#pullTeamProspectsButton");
+const pushTeamProspectsButton = document.querySelector("#pushTeamProspectsButton");
 const discoveryForm = document.querySelector("#discoveryForm");
 const discoveryList = document.querySelector("#discoveryList");
 const generateDiscoveryButton = document.querySelector("#generateDiscoveryButton");
@@ -354,6 +359,94 @@ function normalizeDiscoveryCandidate(candidate) {
 
 function saveProspects() {
   localStorage.setItem(storageKey, JSON.stringify(prospects));
+}
+
+function setTeamSyncStatus(message, state = "") {
+  teamSyncStatus.textContent = message;
+  teamSyncStatus.dataset.state = state;
+}
+
+async function readTeamProspects() {
+  const response = await fetch(teamProspectsEndpoint);
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(payload.message || `Team sync returned ${response.status}.`);
+  }
+
+  return {
+    updatedAt: payload.updatedAt || "",
+    records: Array.isArray(payload.records) ? payload.records.map(normalizeProspect) : []
+  };
+}
+
+async function checkTeamSync() {
+  setTeamSyncStatus("Checking shared team store...", "working");
+
+  try {
+    const payload = await readTeamProspects();
+    setTeamSyncStatus(payload.records.length === 0
+      ? "Shared team store is ready but empty. Push local prospects to seed it."
+      : `Shared team store has ${payload.records.length} prospect${payload.records.length === 1 ? "" : "s"}${payload.updatedAt ? `, updated ${formatDateTime(payload.updatedAt)}` : ""}.`);
+  } catch (error) {
+    setTeamSyncStatus(isLocalFile()
+      ? "Team sync needs the local research server. Run local-research-server.js and open the local URL."
+      : error.message,
+    "error");
+  }
+}
+
+async function pullTeamProspects() {
+  pullTeamProspectsButton.disabled = true;
+  setTeamSyncStatus("Pulling shared team prospects...", "working");
+
+  try {
+    const payload = await readTeamProspects();
+
+    if (payload.records.length === 0) {
+      setTeamSyncStatus("Shared team store is empty. Push local prospects first.", "error");
+      return;
+    }
+
+    prospects = payload.records;
+    selectedProspectIndex = 0;
+    saveProspects();
+    resetForm();
+    renderProspects();
+    setTeamSyncStatus(`Pulled ${payload.records.length} shared prospect${payload.records.length === 1 ? "" : "s"} into this browser.`);
+    setDataStatus("Local browser data replaced with shared team prospects.");
+  } catch (error) {
+    setTeamSyncStatus(error.message, "error");
+  } finally {
+    pullTeamProspectsButton.disabled = false;
+  }
+}
+
+async function pushTeamProspects() {
+  pushTeamProspectsButton.disabled = true;
+  setTeamSyncStatus("Pushing local prospects to shared team store...", "working");
+
+  try {
+    const response = await fetch(teamProspectsEndpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ records: prospects })
+    });
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(payload.message || `Team sync returned ${response.status}.`);
+    }
+
+    setTeamSyncStatus(`Pushed ${prospects.length} prospect${prospects.length === 1 ? "" : "s"} to shared team store.`);
+    setDataStatus(`Shared team store updated at ${formatDateTime(payload.updatedAt)}.`);
+  } catch (error) {
+    setTeamSyncStatus(error.message, "error");
+  } finally {
+    pushTeamProspectsButton.disabled = false;
+  }
 }
 
 function savePromptTemplates() {
@@ -2542,6 +2635,9 @@ clearFormButton.addEventListener("click", resetForm);
 importInput.addEventListener("change", importCsv);
 exportButton.addEventListener("click", exportCsv);
 resetButton.addEventListener("click", resetSamples);
+checkTeamSyncButton.addEventListener("click", checkTeamSync);
+pullTeamProspectsButton.addEventListener("click", pullTeamProspects);
+pushTeamProspectsButton.addEventListener("click", pushTeamProspects);
 generateDiscoveryButton.addEventListener("click", generateDiscoveryCandidates);
 clearDiscoveryButton.addEventListener("click", clearDiscoveryQueue);
 checkSearchSetupButton.addEventListener("click", checkSearchSetup);
@@ -2573,3 +2669,4 @@ renderDiscoveryQueue();
 renderProspects();
 checkSearchSetup();
 checkCrmSetup();
+checkTeamSync();
