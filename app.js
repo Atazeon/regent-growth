@@ -204,6 +204,8 @@ const ownerWorkloadList = document.querySelector("#ownerWorkloadList");
 const blockedHandoffList = document.querySelector("#blockedHandoffList");
 const teamSyncStatus = document.querySelector("#teamSyncStatus");
 const teamSyncHistory = document.querySelector("#teamSyncHistory");
+const teamActorForm = document.querySelector("#teamActorForm");
+const teamActorInput = document.querySelector("#teamActorInput");
 const checkTeamSyncButton = document.querySelector("#checkTeamSyncButton");
 const pullTeamProspectsButton = document.querySelector("#pullTeamProspectsButton");
 const pushTeamProspectsButton = document.querySelector("#pushTeamProspectsButton");
@@ -491,6 +493,18 @@ function getTeamSyncActor() {
   return localStorage.getItem("regent-growth-team-sync-actor") || "Local browser";
 }
 
+function renderTeamSyncActor() {
+  teamActorInput.value = getTeamSyncActor();
+}
+
+function saveTeamSyncActor(event) {
+  event.preventDefault();
+  const actor = teamActorInput.value.trim() || "Local browser";
+  localStorage.setItem("regent-growth-team-sync-actor", actor);
+  renderTeamSyncActor();
+  setTeamSyncStatus(`Team sync name saved as ${actor}.`);
+}
+
 function renderTeamSyncHistory(history = []) {
   if (!Array.isArray(history) || history.length === 0) {
     teamSyncHistory.innerHTML = `<p class="empty-state">No shared sync activity yet.</p>`;
@@ -530,8 +544,8 @@ async function checkTeamSync() {
     const payload = await readTeamProspects();
     renderTeamSyncHistory(payload.history);
     setTeamSyncStatus(payload.records.length === 0
-      ? "Shared team store is ready but empty. Push local prospects to seed it."
-      : `Shared team store has ${payload.records.length} prospect${payload.records.length === 1 ? "" : "s"}${payload.updatedAt ? `, updated ${formatDateTime(payload.updatedAt)}` : ""}.`);
+      ? `Shared team store is ready but empty. Push local prospects as ${getTeamSyncActor()} to seed it.`
+      : `Shared team store has ${payload.records.length} prospect${payload.records.length === 1 ? "" : "s"}${payload.updatedAt ? `, updated ${formatDateTime(payload.updatedAt)}` : ""}. Pushes will be logged as ${getTeamSyncActor()}.`);
   } catch (error) {
     setTeamSyncStatus(isLocalFile()
       ? "Team sync needs the local research server. Run local-research-server.js and open the local URL."
@@ -2804,6 +2818,7 @@ clearFormButton.addEventListener("click", resetForm);
 importInput.addEventListener("change", importCsv);
 exportButton.addEventListener("click", exportCsv);
 resetButton.addEventListener("click", resetSamples);
+teamActorForm.addEventListener("submit", saveTeamSyncActor);
 checkTeamSyncButton.addEventListener("click", checkTeamSync);
 pullTeamProspectsButton.addEventListener("click", pullTeamProspects);
 pushTeamProspectsButton.addEventListener("click", pushTeamProspects);
@@ -2835,6 +2850,7 @@ markCrmReadyButton.addEventListener("click", markSelectedCrmReady);
 
 renderPromptTemplates();
 renderDiscoveryQueue();
+renderTeamSyncActor();
 renderProspects();
 checkSearchSetup();
 checkCrmSetup();

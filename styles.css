@@ -676,6 +676,22 @@ button:disabled {
   font-weight: 700;
 }
 
+.team-actor-form {
+  display: grid;
+  grid-template-columns: minmax(220px, 360px) auto;
+  gap: 10px;
+  align-items: end;
+  margin-top: 14px;
+}
+
+.team-actor-form label {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
 .sync-history-list {
   display: grid;
   gap: 10px;
@@ -923,6 +939,7 @@ textarea {
   .reminder-item,
   .reminder-title,
   .reminder-actions,
+  .team-actor-form,
   .sync-history-item,
   .blocked-item {
     align-items: stretch;
