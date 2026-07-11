@@ -203,6 +203,7 @@ const ownerDashboardCount = document.querySelector("#ownerDashboardCount");
 const ownerWorkloadList = document.querySelector("#ownerWorkloadList");
 const blockedHandoffList = document.querySelector("#blockedHandoffList");
 const teamSyncStatus = document.querySelector("#teamSyncStatus");
+const teamSyncHistory = document.querySelector("#teamSyncHistory");
 const checkTeamSyncButton = document.querySelector("#checkTeamSyncButton");
 const pullTeamProspectsButton = document.querySelector("#pullTeamProspectsButton");
 const pushTeamProspectsButton = document.querySelector("#pushTeamProspectsButton");
@@ -486,6 +487,27 @@ function setTeamSyncStatus(message, state = "") {
   teamSyncStatus.dataset.state = state;
 }
 
+function getTeamSyncActor() {
+  return localStorage.getItem("regent-growth-team-sync-actor") || "Local browser";
+}
+
+function renderTeamSyncHistory(history = []) {
+  if (!Array.isArray(history) || history.length === 0) {
+    teamSyncHistory.innerHTML = `<p class="empty-state">No shared sync activity yet.</p>`;
+    return;
+  }
+
+  teamSyncHistory.innerHTML = history.slice(0, 6).map((item) => `
+    <article class="sync-history-item">
+      <div>
+        <strong>${escapeHtml(item.summary || "Shared store updated.")}</strong>
+        <p>${escapeHtml(item.actor || "Local user")} | ${escapeHtml(formatDateTime(item.createdAt))}</p>
+      </div>
+      <span>${escapeHtml(item.recordCount ?? 0)} records</span>
+    </article>
+  `).join("");
+}
+
 async function readTeamProspects() {
   const response = await fetch(teamProspectsEndpoint);
   const payload = await response.json().catch(() => ({}));
@@ -496,7 +518,8 @@ async function readTeamProspects() {
 
   return {
     updatedAt: payload.updatedAt || "",
-    records: Array.isArray(payload.records) ? payload.records.map(normalizeProspect) : []
+    records: Array.isArray(payload.records) ? payload.records.map(normalizeProspect) : [],
+    history: Array.isArray(payload.history) ? payload.history : []
   };
 }
 
@@ -505,6 +528,7 @@ async function checkTeamSync() {
 
   try {
     const payload = await readTeamProspects();
+    renderTeamSyncHistory(payload.history);
     setTeamSyncStatus(payload.records.length === 0
       ? "Shared team store is ready but empty. Push local prospects to seed it."
       : `Shared team store has ${payload.records.length} prospect${payload.records.length === 1 ? "" : "s"}${payload.updatedAt ? `, updated ${formatDateTime(payload.updatedAt)}` : ""}.`);
@@ -522,6 +546,7 @@ async function pullTeamProspects() {
 
   try {
     const payload = await readTeamProspects();
+    renderTeamSyncHistory(payload.history);
 
     if (payload.records.length === 0) {
       setTeamSyncStatus("Shared team store is empty. Push local prospects first.", "error");
@@ -555,7 +580,15 @@ async function pushTeamProspects() {
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ records: result.prospects })
+      body: JSON.stringify({
+        records: result.prospects,
+        activity: {
+          type: "push",
+          actor: getTeamSyncActor(),
+          summary: `Pushed merged team store with ${result.prospects.length} prospect${result.prospects.length === 1 ? "" : "s"}.`,
+          stats: result.stats
+        }
+      })
     });
     const payload = await response.json().catch(() => ({}));
 
@@ -566,6 +599,7 @@ async function pushTeamProspects() {
     prospects = result.prospects;
     saveProspects();
     renderProspects();
+    renderTeamSyncHistory(payload.history);
     setTeamSyncStatus(`Pushed merged team store: ${result.prospects.length} total, ${result.stats.added} shared-only added locally, ${result.stats.conflicts} local conflicts preserved.`);
     setDataStatus(`Shared team store updated at ${formatDateTime(payload.updatedAt)}.`);
   } catch (error) {

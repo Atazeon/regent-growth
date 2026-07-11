@@ -6,6 +6,7 @@ const root = process.cwd();
 const port = Number(process.env.PORT || 5193);
 const sharedProspectsPath = path.join(root, "data", "shared-prospects.json");
 const maxBodyBytes = 1024 * 1024;
+const maxTeamHistoryItems = 25;
 const sourceTimeoutMs = 12000;
 const searchTimeoutMs = 12000;
 const searchApiUrl = process.env.REGENT_SEARCH_API_URL || "";
@@ -35,14 +36,16 @@ function readSharedProspects() {
     return {
       updatedAt: payload.updatedAt || "",
       source: payload.source || "team-sync",
-      records: Array.isArray(payload.records) ? payload.records : []
+      records: Array.isArray(payload.records) ? payload.records : [],
+      history: Array.isArray(payload.history) ? payload.history.slice(0, maxTeamHistoryItems) : []
     };
   } catch (error) {
     if (error.code === "ENOENT") {
       return {
         updatedAt: "",
         source: "team-sync",
-        records: []
+        records: [],
+        history: []
       };
     }
 
@@ -50,11 +53,23 @@ function readSharedProspects() {
   }
 }
 
-function writeSharedProspects(records) {
+function writeSharedProspects(records, activity = {}) {
+  const current = readSharedProspects();
+  const updatedAt = new Date().toISOString();
+  const historyEntry = {
+    id: `${updatedAt}-${Math.random().toString(16).slice(2)}`,
+    type: activity.type || "push",
+    actor: cleanText(activity.actor) || "Local user",
+    summary: cleanText(activity.summary) || `Updated ${records.length} shared prospect${records.length === 1 ? "" : "s"}.`,
+    recordCount: records.length,
+    stats: activity.stats && typeof activity.stats === "object" ? activity.stats : {},
+    createdAt: updatedAt
+  };
   const payload = {
     source: "team-sync",
-    updatedAt: new Date().toISOString(),
-    records
+    updatedAt,
+    records,
+    history: [historyEntry, ...current.history].slice(0, maxTeamHistoryItems)
   };
 
   fs.mkdirSync(path.dirname(sharedProspectsPath), { recursive: true });
@@ -460,7 +475,7 @@ const server = http.createServer(async (request, response) => {
     try {
       const body = await readJsonBody(request);
       const records = Array.isArray(body.records) ? body.records : [];
-      const payload = writeSharedProspects(records);
+      const payload = writeSharedProspects(records, body.activity || {});
       sendJson(response, 200, payload);
     } catch (error) {
       sendJson(response, 400, { message: error.message });

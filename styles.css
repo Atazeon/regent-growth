@@ -676,6 +676,36 @@ button:disabled {
   font-weight: 700;
 }
 
+.sync-history-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.sync-history-item {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  background: #fff;
+}
+
+.sync-history-item p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.sync-history-item span {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .split {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -893,6 +923,7 @@ textarea {
   .reminder-item,
   .reminder-title,
   .reminder-actions,
+  .sync-history-item,
   .blocked-item {
     align-items: stretch;
     flex-direction: column;
