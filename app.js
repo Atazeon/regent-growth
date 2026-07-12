@@ -674,7 +674,7 @@ function renderTeamBackupList(backups = []) {
       <div>
         <strong>${escapeHtml(getTeamBackupDisplayName(backup))}</strong>
         <p>${escapeHtml(backup.filename)}</p>
-        <p>${backup.protected ? "Protected favorite | " : ""}${escapeHtml(backup.recordCount ?? 0)} records | ${escapeHtml(backup.historyCount ?? 0)} history items | ${escapeHtml(formatFileSize(backup.sizeBytes))}</p>
+        ${renderBackupMetadataChips(backup)}
         <p>${escapeHtml(backup.reason || "Automatic safety backup")} | ${escapeHtml(formatDateTime(backup.createdAt))}</p>
         ${renderTeamBackupIntegritySummary(backup.integrity)}
         ${renderTeamBackupAuditSummary(backup.audit)}
@@ -688,6 +688,39 @@ function renderTeamBackupList(backups = []) {
       </div>
     </article>
   `).join("");
+}
+
+function renderBackupMetadataChips(backup) {
+  const integrityStatus = backup.integrity?.status || "warning";
+  const trigger = backup.audit?.triggerType || "manual";
+  const chips = [
+    {
+      label: backup.protected ? "Protected" : "Standard",
+      state: backup.protected ? "protected" : "standard"
+    },
+    {
+      label: `Integrity: ${integrityStatus === "warning" ? "Warnings" : integrityStatus}`,
+      state: integrityStatus
+    },
+    {
+      label: `${backup.recordCount ?? 0} records`
+    },
+    {
+      label: `${backup.historyCount ?? 0} history`
+    },
+    {
+      label: formatFileSize(backup.sizeBytes)
+    },
+    {
+      label: `Trigger: ${trigger}`
+    }
+  ];
+
+  return `
+    <div class="backup-chip-row">
+      ${chips.map((chip) => `<span class="backup-chip" ${chip.state ? `data-state="${escapeHtml(chip.state)}"` : ""}>${escapeHtml(chip.label)}</span>`).join("")}
+    </div>
+  `;
 }
 
 function formatFileSize(bytes) {
