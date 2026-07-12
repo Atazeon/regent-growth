@@ -492,6 +492,63 @@ function mergeProspectLists(localRecords, sharedRecords) {
   };
 }
 
+function recordsHaveRestoreDifference(currentRecord, restoreRecord) {
+  const current = normalizeProspect(currentRecord);
+  const restore = normalizeProspect(restoreRecord);
+
+  return getProspectFieldNames().some((field) => String(current[field] || "") !== String(restore[field] || ""));
+}
+
+function getDryRunLabel(record) {
+  return record.company || record.website || record.decisionMaker || "Unnamed record";
+}
+
+function buildTeamRestoreDryRunReport(currentRecords = [], restoreRecords = [], currentHistory = [], restoreHistory = []) {
+  const current = currentRecords.map(normalizeProspect);
+  const restore = restoreRecords.map(normalizeProspect);
+  const currentIndex = mapProspectsByIdentity(current);
+  const restoreIndex = mapProspectsByIdentity(restore);
+  const seenCurrentIndexes = new Set();
+  const report = {
+    status: "ready",
+    currentCount: current.length,
+    restoreCount: restore.length,
+    historyCurrentCount: Array.isArray(currentHistory) ? currentHistory.length : 0,
+    historyRestoreCount: Array.isArray(restoreHistory) ? restoreHistory.length : 0,
+    added: [],
+    removed: [],
+    changed: [],
+    unchanged: []
+  };
+
+  restore.forEach((restoreRecord) => {
+    const match = getDuplicateKeys(restoreRecord).map((key) => currentIndex.get(key)).find(Boolean);
+
+    if (!match) {
+      report.added.push(getDryRunLabel(restoreRecord));
+      return;
+    }
+
+    seenCurrentIndexes.add(match.index);
+    if (recordsHaveRestoreDifference(match.record, restoreRecord)) {
+      report.changed.push(getDryRunLabel(restoreRecord));
+    } else {
+      report.unchanged.push(getDryRunLabel(restoreRecord));
+    }
+  });
+
+  current.forEach((currentRecord, index) => {
+    if (seenCurrentIndexes.has(index)) return;
+    const match = getDuplicateKeys(currentRecord).map((key) => restoreIndex.get(key)).find(Boolean);
+
+    if (!match) {
+      report.removed.push(getDryRunLabel(currentRecord));
+    }
+  });
+
+  return report;
+}
+
 function setTeamSyncStatus(message, state = "") {
   teamSyncStatus.textContent = message;
   teamSyncStatus.dataset.state = state;
@@ -662,6 +719,31 @@ function renderTeamBackupIntegritySummary(integrity) {
   return `<p class="backup-integrity" data-state="${escapeHtml(status)}">Integrity: ${escapeHtml(label)}${detail ? ` | ${escapeHtml(detail)}` : ""}</p>`;
 }
 
+function formatDryRunNames(names) {
+  return names.slice(0, 4).map(escapeHtml).join(", ") || "None";
+}
+
+function renderTeamRestoreDryRunReport(report) {
+  if (!report) {
+    return `<div class="restore-dry-run" data-state="warning"><strong>Dry run unavailable</strong><p>Shared store comparison has not run yet.</p></div>`;
+  }
+
+  if (report.status === "unavailable") {
+    return `<div class="restore-dry-run" data-state="warning"><strong>Dry run unavailable</strong><p>${escapeHtml(report.message || "Could not compare against the current shared store.")}</p></div>`;
+  }
+
+  return `
+    <div class="restore-dry-run">
+      <strong>Dry Run Report</strong>
+      <p>Shared store: ${escapeHtml(report.currentCount)} records now -> ${escapeHtml(report.restoreCount)} after restore.</p>
+      <p>${escapeHtml(report.added.length)} added | ${escapeHtml(report.changed.length)} changed | ${escapeHtml(report.removed.length)} removed | ${escapeHtml(report.unchanged.length)} unchanged</p>
+      <p>History: ${escapeHtml(report.historyCurrentCount)} items now -> ${escapeHtml(report.historyRestoreCount)} from backup.</p>
+      <p><strong>Added:</strong> ${formatDryRunNames(report.added)} | <strong>Changed:</strong> ${formatDryRunNames(report.changed)}</p>
+      <p><strong>Removed:</strong> ${formatDryRunNames(report.removed)}</p>
+    </div>
+  `;
+}
+
 function renderTeamBackupAuditSummary(audit) {
   if (!audit || typeof audit !== "object") {
     return `<p>Audit details unavailable for this backup.</p>`;
@@ -724,14 +806,29 @@ async function previewAutomaticTeamBackup(filename) {
       throw new Error(`Backup integrity check failed: ${(integrity.issues || []).join(" ")}`);
     }
 
+    const records = backup.records.map(normalizeProspect);
+    const history = Array.isArray(backup.history) ? backup.history : [];
+    let dryRun = null;
+
+    try {
+      const shared = await readTeamProspects();
+      dryRun = buildTeamRestoreDryRunReport(shared.records, records, shared.history, history);
+    } catch (error) {
+      dryRun = {
+        status: "unavailable",
+        message: error.message
+      };
+    }
+
     pendingTeamRestore = {
       fileName: backup.filename || filename,
-      records: backup.records.map(normalizeProspect),
-      history: Array.isArray(backup.history) ? backup.history : [],
+      records,
+      history,
       exportedAt: backup.exportedAt || backup.createdAt || "",
       updatedAt: backup.updatedAt || "",
       audit: backup.audit || null,
-      integrity
+      integrity,
+      dryRun
     };
     renderTeamRestorePreview();
     setTeamSyncStatus(`Preview loaded for ${pendingTeamRestore.fileName}. Confirm restore to replace the shared team store.`);
@@ -905,7 +1002,7 @@ function renderTeamRestorePreview() {
     return;
   }
 
-  const { fileName, records, history, exportedAt, updatedAt, audit, integrity } = pendingTeamRestore;
+  const { fileName, records, history, exportedAt, updatedAt, audit, integrity, dryRun } = pendingTeamRestore;
   const restoreDisabled = integrity?.status === "invalid";
   teamRestorePreview.hidden = false;
   teamRestorePreview.innerHTML = `
@@ -916,6 +1013,7 @@ function renderTeamRestorePreview() {
       <p>Exported ${escapeHtml(formatDateTime(exportedAt))}${updatedAt ? ` | Store updated ${escapeHtml(formatDateTime(updatedAt))}` : ""}</p>
       ${renderTeamBackupIntegritySummary(integrity)}
       ${renderTeamBackupAuditSummary(audit)}
+      ${renderTeamRestoreDryRunReport(dryRun)}
     </div>
     <div class="restore-preview-actions">
       <button id="confirmTeamRestoreButton" type="button" ${restoreDisabled ? "disabled" : ""}>Restore now</button>
@@ -938,6 +1036,17 @@ async function restoreTeamBackup(event) {
 
     const records = backup.records.map(normalizeProspect);
     const history = Array.isArray(backup.history) ? backup.history : [];
+    let dryRun = null;
+
+    try {
+      const shared = await readTeamProspects();
+      dryRun = buildTeamRestoreDryRunReport(shared.records, records, shared.history, history);
+    } catch (error) {
+      dryRun = {
+        status: "unavailable",
+        message: error.message
+      };
+    }
 
     pendingTeamRestore = {
       fileName: file.name,
@@ -946,7 +1055,8 @@ async function restoreTeamBackup(event) {
       exportedAt: backup.exportedAt || "",
       updatedAt: backup.updatedAt || "",
       audit: backup.audit || buildTeamBackupAudit(records, history, `Imported ${file.name}`, backup.exportedAt || "", backup.updatedAt || ""),
-      integrity
+      integrity,
+      dryRun
     };
     renderTeamRestorePreview();
     setTeamSyncStatus(`Preview loaded for ${file.name}. Confirm restore to replace the shared team store.`);

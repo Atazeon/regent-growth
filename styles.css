@@ -710,6 +710,21 @@ button:disabled {
   line-height: 1.45;
 }
 
+.restore-dry-run {
+  border-top: 1px solid var(--line);
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+.restore-dry-run strong {
+  display: inline-block;
+  margin-bottom: 2px;
+}
+
+.restore-dry-run[data-state="warning"] {
+  color: #8a5a00;
+}
+
 .restore-preview-actions {
   display: flex;
   gap: 8px;
