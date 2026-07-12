@@ -747,7 +747,8 @@ async function confirmTeamBackupRestore() {
 
     renderTeamSyncHistory(payload.history);
     clearTeamRestorePreview();
-    setTeamSyncStatus(`Restored shared team backup with ${records.length} prospect${records.length === 1 ? "" : "s"}.`);
+    const backupText = payload.backup?.filename ? ` Safety backup saved as ${payload.backup.filename}.` : "";
+    setTeamSyncStatus(`Restored shared team backup with ${records.length} prospect${records.length === 1 ? "" : "s"}.${backupText}`);
     setDataStatus("Shared team store restored from backup. Merge shared to update this browser.");
   } catch (error) {
     setTeamSyncStatus(`Restore failed: ${error.message}`, "error");

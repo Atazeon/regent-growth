@@ -5,6 +5,7 @@ const path = require("path");
 const root = process.cwd();
 const port = Number(process.env.PORT || 5193);
 const sharedProspectsPath = path.join(root, "data", "shared-prospects.json");
+const sharedBackupsDir = path.join(root, "data", "backups");
 const maxBodyBytes = 1024 * 1024;
 const maxTeamHistoryItems = 25;
 const sourceTimeoutMs = 12000;
@@ -53,8 +54,35 @@ function readSharedProspects() {
   }
 }
 
+function createSharedProspectsBackup(reason = "manual") {
+  const current = readSharedProspects();
+  const createdAt = new Date().toISOString();
+  const safeReason = cleanText(reason).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "backup";
+  const filename = `shared-prospects-${createdAt.slice(0, 19).replace(/[:T]/g, "-")}-${safeReason}.json`;
+  const filePath = path.join(sharedBackupsDir, filename);
+  const payload = {
+    source: "regent-growth-auto-backup",
+    reason,
+    createdAt,
+    ...current
+  };
+
+  fs.mkdirSync(sharedBackupsDir, { recursive: true });
+  fs.writeFileSync(filePath, `${JSON.stringify(payload, null, 2)}\n`);
+
+  return {
+    filename,
+    path: filePath,
+    createdAt,
+    recordCount: current.records.length,
+    historyCount: current.history.length
+  };
+}
+
 function writeSharedProspects(records, activity = {}, restoredHistory = null) {
   const current = readSharedProspects();
+  const isRestore = activity.type === "restore";
+  const backup = isRestore ? createSharedProspectsBackup(activity.summary || "restore") : null;
   const existingHistory = Array.isArray(restoredHistory)
     ? restoredHistory.slice(0, maxTeamHistoryItems)
     : current.history;
@@ -77,7 +105,7 @@ function writeSharedProspects(records, activity = {}, restoredHistory = null) {
 
   fs.mkdirSync(path.dirname(sharedProspectsPath), { recursive: true });
   fs.writeFileSync(sharedProspectsPath, `${JSON.stringify(payload, null, 2)}\n`);
-  return payload;
+  return backup ? { ...payload, backup } : payload;
 }
 
 function readJsonBody(request) {
@@ -504,6 +532,7 @@ if (require.main === module) {
 
 module.exports = {
   firstArrayFromPayload,
+  createSharedProspectsBackup,
   getCrmStatus,
   getSearchStatus,
   normalizeSearchResult,

@@ -16,3 +16,4 @@ coverage/
 
 # Local shared runtime data
 data/shared-prospects.json
+data/backups/
