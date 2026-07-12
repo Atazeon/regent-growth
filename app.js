@@ -542,6 +542,7 @@ function renderTeamBackupList(backups = []) {
         <strong>${escapeHtml(backup.filename)}</strong>
         <p>${escapeHtml(backup.recordCount ?? 0)} records | ${escapeHtml(backup.historyCount ?? 0)} history items | ${escapeHtml(formatFileSize(backup.sizeBytes))}</p>
         <p>${escapeHtml(backup.reason || "Automatic safety backup")} | ${escapeHtml(formatDateTime(backup.createdAt))}</p>
+        ${renderTeamBackupAuditSummary(backup.audit)}
       </div>
       <div class="backup-actions">
         <button class="secondary-button" type="button" data-action="preview-backup" data-filename="${escapeHtml(backup.filename)}">Preview restore</button>
@@ -563,6 +564,64 @@ function formatFileSize(bytes) {
   }
 
   return `${(size / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function countBackupValues(records, fieldName, fallback) {
+  return records.reduce((counts, record) => {
+    const value = record?.[fieldName]?.trim?.() || fallback;
+    counts[value] = (counts[value] || 0) + 1;
+    return counts;
+  }, {});
+}
+
+function buildTeamBackupAudit(records, history, reason, createdAt, sourceUpdatedAt = "") {
+  const latestActivity = Array.isArray(history) && history.length > 0 ? history[0] : null;
+
+  return {
+    reason: reason || "Manual team backup export",
+    triggerType: "manual-export",
+    createdBy: getTeamSyncActor(),
+    createdAt,
+    sourceUpdatedAt,
+    recordCount: records.length,
+    historyCount: history.length,
+    latestActivity: latestActivity ? {
+      actor: latestActivity.actor || "Local user",
+      summary: latestActivity.summary || "Shared store updated.",
+      createdAt: latestActivity.createdAt || ""
+    } : null,
+    stageCounts: countBackupValues(records, "stage", "Research"),
+    responseCounts: countBackupValues(records, "responseStatus", "Not Contacted"),
+    ownerCounts: countBackupValues(records, "handoffOwner", "Unassigned"),
+    blockedCount: records.filter(isBlockedHandoff).length,
+    meetingCount: records.filter((record) => record.stage === "Meeting" || record.responseStatus === "Meeting Booked").length
+  };
+}
+
+function formatAuditCounts(counts, limit = 3) {
+  const entries = Object.entries(counts || {})
+    .sort((first, second) => second[1] - first[1] || first[0].localeCompare(second[0]))
+    .slice(0, limit);
+
+  return entries.length > 0
+    ? entries.map(([label, count]) => `${label}: ${count}`).join(", ")
+    : "None";
+}
+
+function renderTeamBackupAuditSummary(audit) {
+  if (!audit || typeof audit !== "object") {
+    return `<p>Audit details unavailable for this backup.</p>`;
+  }
+
+  const latest = audit.latestActivity?.summary
+    ? ` | Latest: ${audit.latestActivity.summary}`
+    : "";
+
+  return `
+    <p>By ${escapeHtml(audit.createdBy || "Local user")} | Trigger: ${escapeHtml(audit.triggerType || "manual")}${escapeHtml(latest)}</p>
+    <p>Stages: ${escapeHtml(formatAuditCounts(audit.stageCounts))} | Responses: ${escapeHtml(formatAuditCounts(audit.responseCounts))}</p>
+    <p>${escapeHtml(audit.blockedCount ?? 0)} blocked | ${escapeHtml(audit.meetingCount ?? 0)} meetings | Owners: ${escapeHtml(formatAuditCounts(audit.ownerCounts, 2))}</p>
+  `;
 }
 
 async function refreshTeamBackups() {
@@ -611,7 +670,8 @@ async function previewAutomaticTeamBackup(filename) {
       records: backup.records.map(normalizeProspect),
       history: Array.isArray(backup.history) ? backup.history : [],
       exportedAt: backup.exportedAt || backup.createdAt || "",
-      updatedAt: backup.updatedAt || ""
+      updatedAt: backup.updatedAt || "",
+      audit: backup.audit || null
     };
     renderTeamRestorePreview();
     setTeamSyncStatus(`Preview loaded for ${pendingTeamRestore.fileName}. Confirm restore to replace the shared team store.`);
@@ -752,15 +812,17 @@ async function exportTeamBackup() {
 
   try {
     const payload = await readTeamProspects();
+    const exportedAt = new Date().toISOString();
     const backup = {
       source: "regent-growth-team-sync-backup",
-      exportedAt: new Date().toISOString(),
+      exportedAt,
       updatedAt: payload.updatedAt,
       actor: getTeamSyncActor(),
       records: payload.records,
-      history: payload.history
+      history: payload.history,
+      audit: buildTeamBackupAudit(payload.records, payload.history, "Manual team backup export", exportedAt, payload.updatedAt)
     };
-    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+    const stamp = exportedAt.slice(0, 19).replace(/[:T]/g, "-");
     downloadFile(`regent-growth-team-sync-backup-${stamp}.json`, JSON.stringify(backup, null, 2), "application/json;charset=utf-8");
     renderTeamSyncHistory(payload.history);
     setTeamSyncStatus(`Exported shared team backup with ${payload.records.length} prospect${payload.records.length === 1 ? "" : "s"}.`);
@@ -783,7 +845,7 @@ function renderTeamRestorePreview() {
     return;
   }
 
-  const { fileName, records, history, exportedAt, updatedAt } = pendingTeamRestore;
+  const { fileName, records, history, exportedAt, updatedAt, audit } = pendingTeamRestore;
   teamRestorePreview.hidden = false;
   teamRestorePreview.innerHTML = `
     <div>
@@ -791,6 +853,7 @@ function renderTeamRestorePreview() {
       <strong>${escapeHtml(fileName)}</strong>
       <p>${escapeHtml(records.length)} prospect${records.length === 1 ? "" : "s"} | ${escapeHtml(history.length)} history item${history.length === 1 ? "" : "s"}</p>
       <p>Exported ${escapeHtml(formatDateTime(exportedAt))}${updatedAt ? ` | Store updated ${escapeHtml(formatDateTime(updatedAt))}` : ""}</p>
+      ${renderTeamBackupAuditSummary(audit)}
     </div>
     <div class="restore-preview-actions">
       <button id="confirmTeamRestoreButton" type="button">Restore now</button>
@@ -817,7 +880,8 @@ async function restoreTeamBackup(event) {
       records,
       history,
       exportedAt: backup.exportedAt || "",
-      updatedAt: backup.updatedAt || ""
+      updatedAt: backup.updatedAt || "",
+      audit: backup.audit || buildTeamBackupAudit(records, history, `Imported ${file.name}`, backup.exportedAt || "", backup.updatedAt || "")
     };
     renderTeamRestorePreview();
     setTeamSyncStatus(`Preview loaded for ${file.name}. Confirm restore to replace the shared team store.`);

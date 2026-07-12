@@ -58,16 +58,53 @@ function readSharedProspects() {
   }
 }
 
-function createSharedProspectsBackup(reason = "manual") {
+function countValues(records, fieldName, fallback = "Unassigned") {
+  return records.reduce((counts, record) => {
+    const value = cleanText(record?.[fieldName]) || fallback;
+    counts[value] = (counts[value] || 0) + 1;
+    return counts;
+  }, {});
+}
+
+function createSharedProspectsBackupAudit(records, history, reason, createdAt, activity = {}) {
+  const latestActivity = Array.isArray(history) && history.length > 0 ? history[0] : null;
+
+  return {
+    reason: cleanText(reason) || "Automatic safety backup",
+    triggerType: cleanText(activity.type) || "manual",
+    createdBy: cleanText(activity.actor) || "Local user",
+    createdAt,
+    sourceUpdatedAt: "",
+    recordCount: records.length,
+    historyCount: Array.isArray(history) ? history.length : 0,
+    latestActivity: latestActivity ? {
+      actor: cleanText(latestActivity.actor) || "Local user",
+      summary: cleanText(latestActivity.summary) || "Shared store updated.",
+      createdAt: latestActivity.createdAt || ""
+    } : null,
+    stageCounts: countValues(records, "stage", "Research"),
+    responseCounts: countValues(records, "responseStatus", "Not Contacted"),
+    ownerCounts: countValues(records, "handoffOwner", "Unassigned"),
+    blockedCount: records.filter((record) => record?.handoffStatus === "Blocked").length,
+    meetingCount: records.filter((record) => record?.stage === "Meeting" || record?.responseStatus === "Meeting Booked").length
+  };
+}
+
+function createSharedProspectsBackup(reason = "manual", activity = {}) {
   const current = readSharedProspects();
   const createdAt = new Date().toISOString();
   const safeReason = cleanText(reason).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "backup";
   const filename = `shared-prospects-${createdAt.slice(0, 19).replace(/[:T]/g, "-")}-${safeReason}.json`;
   const filePath = path.join(sharedBackupsDir, filename);
+  const audit = {
+    ...createSharedProspectsBackupAudit(current.records, current.history, reason, createdAt, activity),
+    sourceUpdatedAt: current.updatedAt || ""
+  };
   const payload = {
     source: "regent-growth-auto-backup",
     reason,
     createdAt,
+    audit,
     ...current
   };
 
@@ -82,6 +119,7 @@ function createSharedProspectsBackup(reason = "manual") {
     createdAt,
     recordCount: current.records.length,
     historyCount: current.history.length,
+    audit,
     retention
   };
 }
@@ -97,6 +135,7 @@ function readSharedProspectsBackupSummaries() {
         let historyCount = 0;
         let reason = "";
         let createdAt = stats.mtime.toISOString();
+        let audit = null;
 
         try {
           const payload = JSON.parse(fs.readFileSync(filePath, "utf8"));
@@ -104,6 +143,7 @@ function readSharedProspectsBackupSummaries() {
           historyCount = Array.isArray(payload.history) ? payload.history.length : 0;
           reason = payload.reason || "";
           createdAt = payload.createdAt || createdAt;
+          audit = payload.audit && typeof payload.audit === "object" ? payload.audit : null;
         } catch {
           reason = "Unreadable backup metadata";
         }
@@ -114,6 +154,7 @@ function readSharedProspectsBackupSummaries() {
           reason,
           recordCount,
           historyCount,
+          audit,
           sizeBytes: stats.size
         };
       })
@@ -191,7 +232,7 @@ function deleteSharedProspectsBackup(filename) {
 function writeSharedProspects(records, activity = {}, restoredHistory = null) {
   const current = readSharedProspects();
   const isRestore = activity.type === "restore";
-  const backup = isRestore ? createSharedProspectsBackup(activity.summary || "restore") : null;
+  const backup = isRestore ? createSharedProspectsBackup(activity.summary || "restore", activity) : null;
   const existingHistory = Array.isArray(restoredHistory)
     ? restoredHistory.slice(0, maxTeamHistoryItems)
     : current.history;
