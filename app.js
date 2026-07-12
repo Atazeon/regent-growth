@@ -603,6 +603,7 @@ function renderTeamBackupList(backups = []) {
         ${renderTeamBackupAuditSummary(backup.audit)}
       </div>
       <div class="backup-actions">
+        <button class="secondary-button" type="button" data-action="download-backup" data-filename="${escapeHtml(backup.filename)}">Download</button>
         <button class="secondary-button" type="button" data-action="preview-backup" data-filename="${escapeHtml(backup.filename)}" ${backup.integrity?.status === "invalid" ? "disabled" : ""}>Preview restore</button>
         <button class="danger-button" type="button" data-action="delete-backup" data-filename="${escapeHtml(backup.filename)}">Delete</button>
       </div>
@@ -859,6 +860,29 @@ async function previewAutomaticTeamBackup(filename) {
   } catch (error) {
     clearTeamRestorePreview();
     setTeamSyncStatus(`Backup preview failed: ${error.message}`, "error");
+  }
+}
+
+async function downloadAutomaticTeamBackup(filename) {
+  setTeamSyncStatus(`Downloading backup ${filename}...`, "working");
+
+  try {
+    const response = await fetch(`${teamBackupEndpoint}?filename=${encodeURIComponent(filename)}`);
+    const backup = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(backup.message || `Backup download returned ${response.status}.`);
+    }
+
+    if (!Array.isArray(backup.records)) {
+      throw new Error("Backup file does not contain a records array.");
+    }
+
+    const downloadName = backup.filename || filename;
+    downloadFile(downloadName, `${JSON.stringify(backup, null, 2)}\n`, "application/json;charset=utf-8");
+    setTeamSyncStatus(`Downloaded backup ${downloadName}.`);
+  } catch (error) {
+    setTeamSyncStatus(`Backup download failed: ${error.message}`, "error");
   }
 }
 
@@ -3365,6 +3389,10 @@ teamBackupList.addEventListener("click", (event) => {
 
   if (button.dataset.action === "preview-backup") {
     previewAutomaticTeamBackup(button.dataset.filename);
+  }
+
+  if (button.dataset.action === "download-backup") {
+    downloadAutomaticTeamBackup(button.dataset.filename);
   }
 
   if (button.dataset.action === "delete-backup") {
