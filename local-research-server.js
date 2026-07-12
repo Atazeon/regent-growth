@@ -121,6 +121,24 @@ function listSharedProspectsBackups() {
   }
 }
 
+function getSharedProspectsBackup(filename) {
+  const safeFilename = path.basename(String(filename || ""));
+
+  if (!safeFilename || safeFilename !== filename || !safeFilename.endsWith(".json")) {
+    throw new Error("A valid backup filename is required.");
+  }
+
+  const filePath = path.join(sharedBackupsDir, safeFilename);
+  const payload = JSON.parse(fs.readFileSync(filePath, "utf8"));
+
+  return {
+    filename: safeFilename,
+    ...payload,
+    records: Array.isArray(payload.records) ? payload.records : [],
+    history: Array.isArray(payload.history) ? payload.history : []
+  };
+}
+
 function writeSharedProspects(records, activity = {}, restoredHistory = null) {
   const current = readSharedProspects();
   const isRestore = activity.type === "restore";
@@ -507,6 +525,16 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "GET" && requestUrl.pathname === "/api/team-backup") {
+    try {
+      const filename = requestUrl.searchParams.get("filename") || "";
+      sendJson(response, 200, getSharedProspectsBackup(filename));
+    } catch (error) {
+      sendJson(response, 404, { message: error.code === "ENOENT" ? "Backup file was not found." : error.message });
+    }
+    return;
+  }
+
   if (request.method === "POST" && requestUrl.pathname === "/api/fetch-source") {
     try {
       const body = await readJsonBody(request);
@@ -586,6 +614,7 @@ module.exports = {
   createSharedProspectsBackup,
   getCrmStatus,
   getSearchStatus,
+  getSharedProspectsBackup,
   listSharedProspectsBackups,
   normalizeSearchResult,
   readSharedProspects,

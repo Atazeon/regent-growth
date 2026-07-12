@@ -762,6 +762,10 @@ button:disabled {
 .backup-item {
   border: 1px solid var(--line);
   border-radius: 8px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
   padding: 12px 14px;
   background: #fff;
 }
@@ -993,6 +997,7 @@ textarea {
   .team-actor-form,
   .restore-preview,
   .restore-preview-actions,
+  .backup-item,
   .sync-history-item,
   .blocked-item {
     align-items: stretch;

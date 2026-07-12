@@ -9,6 +9,7 @@ const crmStatusEndpoint = "/api/crm-status";
 const crmSyncEndpoint = "/api/crm-sync";
 const teamProspectsEndpoint = "/api/team-prospects";
 const teamBackupsEndpoint = "/api/team-backups";
+const teamBackupEndpoint = "/api/team-backup";
 const ollamaTimeoutMs = 150000;
 const stageOrder = ["Research", "Email Drafted", "Sequence", "LinkedIn", "Call", "Meeting", "Assessment"];
 const responseStatuses = ["Not Contacted", "Contacted", "Replied", "Interested", "Meeting Booked", "Not Interested", "No Response"];
@@ -542,6 +543,7 @@ function renderTeamBackupList(backups = []) {
         <p>${escapeHtml(backup.recordCount ?? 0)} records | ${escapeHtml(backup.historyCount ?? 0)} history items | ${escapeHtml(formatFileSize(backup.sizeBytes))}</p>
         <p>${escapeHtml(backup.reason || "Automatic safety backup")} | ${escapeHtml(formatDateTime(backup.createdAt))}</p>
       </div>
+      <button class="secondary-button" type="button" data-action="preview-backup" data-filename="${escapeHtml(backup.filename)}">Preview restore</button>
     </article>
   `).join("");
 }
@@ -581,6 +583,36 @@ async function refreshTeamBackups() {
     "error");
   } finally {
     refreshTeamBackupsButton.disabled = false;
+  }
+}
+
+async function previewAutomaticTeamBackup(filename) {
+  setTeamSyncStatus(`Loading backup ${filename}...`, "working");
+
+  try {
+    const response = await fetch(`${teamBackupEndpoint}?filename=${encodeURIComponent(filename)}`);
+    const backup = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(backup.message || `Backup preview returned ${response.status}.`);
+    }
+
+    if (!Array.isArray(backup.records)) {
+      throw new Error("Backup file does not contain a records array.");
+    }
+
+    pendingTeamRestore = {
+      fileName: backup.filename || filename,
+      records: backup.records.map(normalizeProspect),
+      history: Array.isArray(backup.history) ? backup.history : [],
+      exportedAt: backup.exportedAt || backup.createdAt || "",
+      updatedAt: backup.updatedAt || ""
+    };
+    renderTeamRestorePreview();
+    setTeamSyncStatus(`Preview loaded for ${pendingTeamRestore.fileName}. Confirm restore to replace the shared team store.`);
+  } catch (error) {
+    clearTeamRestorePreview();
+    setTeamSyncStatus(`Backup preview failed: ${error.message}`, "error");
   }
 }
 
@@ -3013,6 +3045,12 @@ checkTeamSyncButton.addEventListener("click", checkTeamSync);
 pullTeamProspectsButton.addEventListener("click", pullTeamProspects);
 pushTeamProspectsButton.addEventListener("click", pushTeamProspects);
 refreshTeamBackupsButton.addEventListener("click", refreshTeamBackups);
+teamBackupList.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-action='preview-backup']");
+  if (!button) return;
+
+  previewAutomaticTeamBackup(button.dataset.filename);
+});
 exportTeamBackupButton.addEventListener("click", exportTeamBackup);
 restoreTeamBackupInput.addEventListener("change", restoreTeamBackup);
 teamRestorePreview.addEventListener("click", (event) => {
