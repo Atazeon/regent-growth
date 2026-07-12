@@ -745,6 +745,34 @@ button:disabled {
   white-space: nowrap;
 }
 
+.backup-browser {
+  margin-top: 18px;
+}
+
+.backup-browser h3 {
+  margin: 0;
+}
+
+.backup-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.backup-item {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: #fff;
+}
+
+.backup-item p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  line-height: 1.45;
+  word-break: break-word;
+}
+
 .split {
   display: grid;
   grid-template-columns: 1fr 1fr;

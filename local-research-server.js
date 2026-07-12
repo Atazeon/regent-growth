@@ -79,6 +79,48 @@ function createSharedProspectsBackup(reason = "manual") {
   };
 }
 
+function listSharedProspectsBackups() {
+  try {
+    return fs.readdirSync(sharedBackupsDir)
+      .filter((filename) => filename.endsWith(".json"))
+      .map((filename) => {
+        const filePath = path.join(sharedBackupsDir, filename);
+        const stats = fs.statSync(filePath);
+        let recordCount = 0;
+        let historyCount = 0;
+        let reason = "";
+        let createdAt = stats.mtime.toISOString();
+
+        try {
+          const payload = JSON.parse(fs.readFileSync(filePath, "utf8"));
+          recordCount = Array.isArray(payload.records) ? payload.records.length : 0;
+          historyCount = Array.isArray(payload.history) ? payload.history.length : 0;
+          reason = payload.reason || "";
+          createdAt = payload.createdAt || createdAt;
+        } catch {
+          reason = "Unreadable backup metadata";
+        }
+
+        return {
+          filename,
+          createdAt,
+          reason,
+          recordCount,
+          historyCount,
+          sizeBytes: stats.size
+        };
+      })
+      .sort((first, second) => second.createdAt.localeCompare(first.createdAt))
+      .slice(0, 20);
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      return [];
+    }
+
+    throw error;
+  }
+}
+
 function writeSharedProspects(records, activity = {}, restoredHistory = null) {
   const current = readSharedProspects();
   const isRestore = activity.type === "restore";
@@ -456,6 +498,15 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "GET" && requestUrl.pathname === "/api/team-backups") {
+    try {
+      sendJson(response, 200, { backups: listSharedProspectsBackups() });
+    } catch (error) {
+      sendJson(response, 500, { message: error.message });
+    }
+    return;
+  }
+
   if (request.method === "POST" && requestUrl.pathname === "/api/fetch-source") {
     try {
       const body = await readJsonBody(request);
@@ -535,6 +586,7 @@ module.exports = {
   createSharedProspectsBackup,
   getCrmStatus,
   getSearchStatus,
+  listSharedProspectsBackups,
   normalizeSearchResult,
   readSharedProspects,
   syncCrmRecords,

@@ -8,6 +8,7 @@ const sourceSearchStatusEndpoint = "/api/search-status";
 const crmStatusEndpoint = "/api/crm-status";
 const crmSyncEndpoint = "/api/crm-sync";
 const teamProspectsEndpoint = "/api/team-prospects";
+const teamBackupsEndpoint = "/api/team-backups";
 const ollamaTimeoutMs = 150000;
 const stageOrder = ["Research", "Email Drafted", "Sequence", "LinkedIn", "Call", "Meeting", "Assessment"];
 const responseStatuses = ["Not Contacted", "Contacted", "Replied", "Interested", "Meeting Booked", "Not Interested", "No Response"];
@@ -205,12 +206,14 @@ const ownerWorkloadList = document.querySelector("#ownerWorkloadList");
 const blockedHandoffList = document.querySelector("#blockedHandoffList");
 const teamSyncStatus = document.querySelector("#teamSyncStatus");
 const teamSyncHistory = document.querySelector("#teamSyncHistory");
+const teamBackupList = document.querySelector("#teamBackupList");
 const teamRestorePreview = document.querySelector("#teamRestorePreview");
 const teamActorForm = document.querySelector("#teamActorForm");
 const teamActorInput = document.querySelector("#teamActorInput");
 const checkTeamSyncButton = document.querySelector("#checkTeamSyncButton");
 const pullTeamProspectsButton = document.querySelector("#pullTeamProspectsButton");
 const pushTeamProspectsButton = document.querySelector("#pushTeamProspectsButton");
+const refreshTeamBackupsButton = document.querySelector("#refreshTeamBackupsButton");
 const exportTeamBackupButton = document.querySelector("#exportTeamBackupButton");
 const restoreTeamBackupInput = document.querySelector("#restoreTeamBackupInput");
 const discoveryForm = document.querySelector("#discoveryForm");
@@ -524,6 +527,61 @@ function renderTeamSyncHistory(history = []) {
       <span>${escapeHtml(item.recordCount ?? 0)} records</span>
     </article>
   `).join("");
+}
+
+function renderTeamBackupList(backups = []) {
+  if (!Array.isArray(backups) || backups.length === 0) {
+    teamBackupList.innerHTML = `<p class="empty-state">No automatic restore backups yet.</p>`;
+    return;
+  }
+
+  teamBackupList.innerHTML = backups.slice(0, 6).map((backup) => `
+    <article class="backup-item">
+      <div>
+        <strong>${escapeHtml(backup.filename)}</strong>
+        <p>${escapeHtml(backup.recordCount ?? 0)} records | ${escapeHtml(backup.historyCount ?? 0)} history items | ${escapeHtml(formatFileSize(backup.sizeBytes))}</p>
+        <p>${escapeHtml(backup.reason || "Automatic safety backup")} | ${escapeHtml(formatDateTime(backup.createdAt))}</p>
+      </div>
+    </article>
+  `).join("");
+}
+
+function formatFileSize(bytes) {
+  const size = Number(bytes) || 0;
+
+  if (size < 1024) {
+    return `${size} B`;
+  }
+
+  if (size < 1024 * 1024) {
+    return `${(size / 1024).toFixed(1)} KB`;
+  }
+
+  return `${(size / 1024 / 1024).toFixed(1)} MB`;
+}
+
+async function refreshTeamBackups() {
+  refreshTeamBackupsButton.disabled = true;
+
+  try {
+    const response = await fetch(teamBackupsEndpoint);
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(payload.message || `Team backups returned ${response.status}.`);
+    }
+
+    renderTeamBackupList(payload.backups);
+    setTeamSyncStatus(`Loaded ${Array.isArray(payload.backups) ? payload.backups.length : 0} shared-store backup${payload.backups?.length === 1 ? "" : "s"}.`);
+  } catch (error) {
+    renderTeamBackupList([]);
+    setTeamSyncStatus(isLocalFile()
+      ? "Backup browser needs the local research server. Run local-research-server.js and open the local URL."
+      : error.message,
+    "error");
+  } finally {
+    refreshTeamBackupsButton.disabled = false;
+  }
 }
 
 async function readTeamProspects() {
@@ -2954,6 +3012,7 @@ teamActorForm.addEventListener("submit", saveTeamSyncActor);
 checkTeamSyncButton.addEventListener("click", checkTeamSync);
 pullTeamProspectsButton.addEventListener("click", pullTeamProspects);
 pushTeamProspectsButton.addEventListener("click", pushTeamProspects);
+refreshTeamBackupsButton.addEventListener("click", refreshTeamBackups);
 exportTeamBackupButton.addEventListener("click", exportTeamBackup);
 restoreTeamBackupInput.addEventListener("change", restoreTeamBackup);
 teamRestorePreview.addEventListener("click", (event) => {
@@ -3002,3 +3061,4 @@ renderProspects();
 checkSearchSetup();
 checkCrmSetup();
 checkTeamSync();
+refreshTeamBackups();
