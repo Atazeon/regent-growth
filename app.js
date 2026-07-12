@@ -211,6 +211,7 @@ const teamSyncHistory = document.querySelector("#teamSyncHistory");
 const teamBackupList = document.querySelector("#teamBackupList");
 const teamBackupSearchInput = document.querySelector("#teamBackupSearchInput");
 const teamBackupIntegrityFilter = document.querySelector("#teamBackupIntegrityFilter");
+const teamBackupSortSelect = document.querySelector("#teamBackupSortSelect");
 const teamRestorePreview = document.querySelector("#teamRestorePreview");
 const teamActorForm = document.querySelector("#teamActorForm");
 const teamActorInput = document.querySelector("#teamActorInput");
@@ -603,21 +604,45 @@ function getTeamBackupSearchText(backup) {
   ].filter(Boolean).join(" ").toLowerCase();
 }
 
-function getFilteredTeamBackups(backups = teamBackupsCache) {
+function getTeamBackupDisplayName(backup) {
+  return backup.label || backup.reason || backup.filename || "";
+}
+
+function sortTeamBackups(backups) {
+  const sorted = [...backups];
+
+  switch (teamBackupSortSelect.value) {
+    case "oldest":
+      return sorted.sort((first, second) => String(first.createdAt || "").localeCompare(String(second.createdAt || "")));
+    case "label":
+      return sorted.sort((first, second) => getTeamBackupDisplayName(first).localeCompare(getTeamBackupDisplayName(second)) || String(second.createdAt || "").localeCompare(String(first.createdAt || "")));
+    case "records":
+      return sorted.sort((first, second) => (Number(second.recordCount) || 0) - (Number(first.recordCount) || 0) || String(second.createdAt || "").localeCompare(String(first.createdAt || "")));
+    case "size":
+      return sorted.sort((first, second) => (Number(second.sizeBytes) || 0) - (Number(first.sizeBytes) || 0) || String(second.createdAt || "").localeCompare(String(first.createdAt || "")));
+    case "newest":
+    default:
+      return sorted.sort((first, second) => String(second.createdAt || "").localeCompare(String(first.createdAt || "")));
+  }
+}
+
+function getVisibleTeamBackups(backups = teamBackupsCache) {
   const query = teamBackupSearchInput.value.trim().toLowerCase();
   const integrity = teamBackupIntegrityFilter.value;
 
-  return backups.filter((backup) => {
+  const filtered = backups.filter((backup) => {
     const matchesQuery = !query || getTeamBackupSearchText(backup).includes(query);
     const status = backup.integrity?.status || "warning";
     const matchesIntegrity = integrity === "all" || status === integrity;
 
     return matchesQuery && matchesIntegrity;
   });
+
+  return sortTeamBackups(filtered);
 }
 
 function applyTeamBackupFilters() {
-  renderTeamBackupList(getFilteredTeamBackups());
+  renderTeamBackupList(getVisibleTeamBackups());
 }
 
 function renderTeamBackupList(backups = []) {
@@ -630,7 +655,7 @@ function renderTeamBackupList(backups = []) {
   teamBackupList.innerHTML = backups.slice(0, 6).map((backup) => `
     <article class="backup-item">
       <div>
-        <strong>${escapeHtml(backup.label || backup.reason || backup.filename)}</strong>
+        <strong>${escapeHtml(getTeamBackupDisplayName(backup))}</strong>
         <p>${escapeHtml(backup.filename)}</p>
         <p>${escapeHtml(backup.recordCount ?? 0)} records | ${escapeHtml(backup.historyCount ?? 0)} history items | ${escapeHtml(formatFileSize(backup.sizeBytes))}</p>
         <p>${escapeHtml(backup.reason || "Automatic safety backup")} | ${escapeHtml(formatDateTime(backup.createdAt))}</p>
@@ -833,9 +858,9 @@ async function refreshTeamBackups() {
     }
 
     teamBackupsCache = Array.isArray(payload.backups) ? payload.backups : [];
-    renderTeamBackupList(getFilteredTeamBackups());
+    renderTeamBackupList(getVisibleTeamBackups());
     const backupCount = Array.isArray(payload.backups) ? payload.backups.length : 0;
-    const filteredCount = getFilteredTeamBackups().length;
+    const filteredCount = getVisibleTeamBackups().length;
     const retentionText = payload.retentionLimit ? ` Retention keeps the newest ${payload.retentionLimit}.` : "";
     const filterText = filteredCount === backupCount ? "" : ` Showing ${filteredCount} after filters.`;
     setTeamSyncStatus(`Loaded ${backupCount} shared-store backup${backupCount === 1 ? "" : "s"}.${filterText}${retentionText}`);
@@ -3458,6 +3483,7 @@ pushTeamProspectsButton.addEventListener("click", pushTeamProspects);
 refreshTeamBackupsButton.addEventListener("click", refreshTeamBackups);
 teamBackupSearchInput.addEventListener("input", applyTeamBackupFilters);
 teamBackupIntegrityFilter.addEventListener("change", applyTeamBackupFilters);
+teamBackupSortSelect.addEventListener("change", applyTeamBackupFilters);
 teamBackupList.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-action]");
   if (!button) return;
