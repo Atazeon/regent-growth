@@ -167,6 +167,7 @@ function createSharedProspectsBackup(reason = "manual", activity = {}) {
     source: "regent-growth-auto-backup",
     reason,
     label,
+    protected: false,
     createdAt,
     audit,
     ...current
@@ -202,6 +203,7 @@ function readSharedProspectsBackupSummaries() {
         let historyCount = 0;
         let reason = "";
         let label = "";
+        let isProtected = false;
         let createdAt = stats.mtime.toISOString();
         let audit = null;
         let integrity = {
@@ -218,6 +220,7 @@ function readSharedProspectsBackupSummaries() {
           historyCount = Array.isArray(payload.history) ? payload.history.length : 0;
           reason = payload.reason || "";
           label = payload.label || "";
+          isProtected = payload.protected === true;
           createdAt = payload.createdAt || createdAt;
           audit = payload.audit && typeof payload.audit === "object" ? payload.audit : null;
           integrity = validateSharedProspectsBackupPayload(payload);
@@ -230,6 +233,7 @@ function readSharedProspectsBackupSummaries() {
           createdAt,
           reason,
           label,
+          protected: isProtected,
           recordCount,
           historyCount,
           audit,
@@ -254,8 +258,20 @@ function listSharedProspectsBackups() {
 function pruneSharedProspectsBackups() {
   const backups = readSharedProspectsBackupSummaries();
   const deleted = [];
+  let keptUnprotected = 0;
+  let protectedCount = 0;
 
-  backups.slice(maxSharedProspectsBackups).forEach((backup) => {
+  backups.forEach((backup) => {
+    if (backup.protected) {
+      protectedCount += 1;
+      return;
+    }
+
+    keptUnprotected += 1;
+    if (keptUnprotected <= maxSharedProspectsBackups) {
+      return;
+    }
+
     try {
       fs.unlinkSync(path.join(sharedBackupsDir, backup.filename));
       deleted.push(backup.filename);
@@ -268,7 +284,8 @@ function pruneSharedProspectsBackups() {
 
   return {
     limit: maxSharedProspectsBackups,
-    keptCount: Math.min(backups.length, maxSharedProspectsBackups),
+    keptCount: backups.length - deleted.length,
+    protectedCount,
     deletedCount: deleted.length,
     deleted
   };
@@ -294,21 +311,38 @@ function getSharedProspectsBackup(filename) {
   };
 }
 
-function labelSharedProspectsBackup(filename, label) {
+function updateSharedProspectsBackupMetadata(filename, updates = {}) {
   const safeFilename = path.basename(String(filename || ""));
 
   if (!safeFilename || safeFilename !== filename || !safeFilename.endsWith(".json")) {
     throw new Error("A valid backup filename is required.");
   }
 
-  const cleanLabel = cleanText(label).slice(0, 80);
   const filePath = path.join(sharedBackupsDir, safeFilename);
   const payload = JSON.parse(fs.readFileSync(filePath, "utf8"));
-  payload.label = cleanLabel;
-  payload.labelUpdatedAt = new Date().toISOString();
+  const updatedAt = new Date().toISOString();
+
+  if (Object.hasOwn(updates, "label")) {
+    payload.label = cleanText(updates.label).slice(0, 80);
+    payload.labelUpdatedAt = updatedAt;
+  }
+
+  if (Object.hasOwn(updates, "protected")) {
+    payload.protected = updates.protected === true;
+    payload.protectedUpdatedAt = updatedAt;
+  }
+
   fs.writeFileSync(filePath, `${JSON.stringify(payload, null, 2)}\n`);
 
   return getSharedProspectsBackup(safeFilename);
+}
+
+function labelSharedProspectsBackup(filename, label) {
+  return updateSharedProspectsBackupMetadata(filename, { label });
+}
+
+function protectSharedProspectsBackup(filename, isProtected) {
+  return updateSharedProspectsBackupMetadata(filename, { protected: isProtected === true });
 }
 
 function deleteSharedProspectsBackup(filename) {
@@ -319,6 +353,20 @@ function deleteSharedProspectsBackup(filename) {
   }
 
   const filePath = path.join(sharedBackupsDir, safeFilename);
+  try {
+    const payload = JSON.parse(fs.readFileSync(filePath, "utf8"));
+
+    if (payload.protected === true) {
+      const error = new Error("Protected backups must be unprotected before deletion.");
+      error.code = "EPROTECTED";
+      throw error;
+    }
+  } catch (error) {
+    if (error.code === "EPROTECTED" || error.code === "ENOENT") {
+      throw error;
+    }
+  }
+
   fs.unlinkSync(filePath);
 
   return {
@@ -334,6 +382,7 @@ function deleteSharedProspectsBackups(filenames = []) {
 
   const deleted = [];
   const missing = [];
+  const protectedFiles = [];
 
   filenames.forEach((filename) => {
     try {
@@ -344,6 +393,11 @@ function deleteSharedProspectsBackups(filenames = []) {
         return;
       }
 
+      if (error.code === "EPROTECTED") {
+        protectedFiles.push(filename);
+        return;
+      }
+
       throw error;
     }
   });
@@ -351,8 +405,10 @@ function deleteSharedProspectsBackups(filenames = []) {
   return {
     deletedCount: deleted.length,
     missingCount: missing.length,
+    protectedCount: protectedFiles.length,
     deleted,
-    missing
+    missing,
+    protected: protectedFiles
   };
 }
 
@@ -759,7 +815,7 @@ const server = http.createServer(async (request, response) => {
     try {
       const body = await readJsonBody(request);
       const filename = requestUrl.searchParams.get("filename") || body.filename || "";
-      sendJson(response, 200, labelSharedProspectsBackup(filename, body.label || ""));
+      sendJson(response, 200, updateSharedProspectsBackupMetadata(filename, body));
     } catch (error) {
       sendJson(response, 400, { message: error.code === "ENOENT" ? "Backup file was not found." : error.message });
     }
@@ -781,7 +837,7 @@ const server = http.createServer(async (request, response) => {
       const filename = requestUrl.searchParams.get("filename") || "";
       sendJson(response, 200, deleteSharedProspectsBackup(filename));
     } catch (error) {
-      sendJson(response, 404, { message: error.code === "ENOENT" ? "Backup file was not found." : error.message });
+      sendJson(response, error.code === "EPROTECTED" ? 400 : 404, { message: error.code === "ENOENT" ? "Backup file was not found." : error.message });
     }
     return;
   }
@@ -871,9 +927,11 @@ module.exports = {
   labelSharedProspectsBackup,
   listSharedProspectsBackups,
   normalizeSearchResult,
+  protectSharedProspectsBackup,
   pruneSharedProspectsBackups,
   readSharedProspects,
   syncCrmRecords,
+  updateSharedProspectsBackupMetadata,
   validateSharedProspectsBackupPayload,
   writeSharedProspects
 };

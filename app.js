@@ -597,6 +597,7 @@ function getTeamBackupSearchText(backup) {
     backup.filename,
     backup.label,
     backup.reason,
+    backup.protected ? "protected favorite" : "standard backup",
     backup.integrity?.status,
     backup.audit?.createdBy,
     backup.audit?.triggerType,
@@ -647,9 +648,10 @@ function applyTeamBackupFilters() {
 }
 
 function updateBackupBulkActions(visibleBackups = getVisibleTeamBackups()) {
-  deleteFilteredBackupsButton.disabled = visibleBackups.length === 0;
-  deleteFilteredBackupsButton.textContent = visibleBackups.length > 0
-    ? `Delete filtered (${visibleBackups.length})`
+  const deletableCount = visibleBackups.filter((backup) => !backup.protected).length;
+  deleteFilteredBackupsButton.disabled = deletableCount === 0;
+  deleteFilteredBackupsButton.textContent = deletableCount > 0
+    ? `Delete filtered (${deletableCount})`
     : "Delete filtered";
 }
 
@@ -667,16 +669,17 @@ function renderTeamBackupList(backups = []) {
       <div>
         <strong>${escapeHtml(getTeamBackupDisplayName(backup))}</strong>
         <p>${escapeHtml(backup.filename)}</p>
-        <p>${escapeHtml(backup.recordCount ?? 0)} records | ${escapeHtml(backup.historyCount ?? 0)} history items | ${escapeHtml(formatFileSize(backup.sizeBytes))}</p>
+        <p>${backup.protected ? "Protected favorite | " : ""}${escapeHtml(backup.recordCount ?? 0)} records | ${escapeHtml(backup.historyCount ?? 0)} history items | ${escapeHtml(formatFileSize(backup.sizeBytes))}</p>
         <p>${escapeHtml(backup.reason || "Automatic safety backup")} | ${escapeHtml(formatDateTime(backup.createdAt))}</p>
         ${renderTeamBackupIntegritySummary(backup.integrity)}
         ${renderTeamBackupAuditSummary(backup.audit)}
       </div>
       <div class="backup-actions">
         <button class="secondary-button" type="button" data-action="download-backup" data-filename="${escapeHtml(backup.filename)}">Download</button>
+        <button class="secondary-button" type="button" data-action="toggle-protected-backup" data-filename="${escapeHtml(backup.filename)}" data-protected="${backup.protected ? "true" : "false"}">${backup.protected ? "Unprotect" : "Protect"}</button>
         <button class="secondary-button" type="button" data-action="rename-backup" data-filename="${escapeHtml(backup.filename)}" data-label="${escapeHtml(backup.label || backup.reason || "")}">Rename</button>
         <button class="secondary-button" type="button" data-action="preview-backup" data-filename="${escapeHtml(backup.filename)}" ${backup.integrity?.status === "invalid" ? "disabled" : ""}>Preview restore</button>
-        <button class="danger-button" type="button" data-action="delete-backup" data-filename="${escapeHtml(backup.filename)}">Delete</button>
+        <button class="danger-button" type="button" data-action="delete-backup" data-filename="${escapeHtml(backup.filename)}" ${backup.protected ? "disabled" : ""}>Delete</button>
       </div>
     </article>
   `).join("");
@@ -994,16 +997,46 @@ async function renameAutomaticTeamBackup(filename, currentLabel = "") {
   }
 }
 
+async function toggleProtectedTeamBackup(filename, currentProtected) {
+  const nextProtected = !currentProtected;
+  setTeamSyncStatus(`${nextProtected ? "Protecting" : "Unprotecting"} backup ${filename}...`, "working");
+
+  try {
+    const response = await fetch(`${teamBackupEndpoint}?filename=${encodeURIComponent(filename)}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ protected: nextProtected })
+    });
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(payload.message || `Backup protection update returned ${response.status}.`);
+    }
+
+    setTeamSyncStatus(`${nextProtected ? "Protected" : "Unprotected"} backup ${filename}.`);
+    await refreshTeamBackups();
+  } catch (error) {
+    setTeamSyncStatus(`Backup protection update failed: ${error.message}`, "error");
+  }
+}
+
 async function deleteFilteredTeamBackups() {
   const visibleBackups = getVisibleTeamBackups();
-  const filenames = visibleBackups.map((backup) => backup.filename).filter(Boolean);
+  const protectedCount = visibleBackups.filter((backup) => backup.protected).length;
+  const filenames = visibleBackups
+    .filter((backup) => !backup.protected)
+    .map((backup) => backup.filename)
+    .filter(Boolean);
 
   if (filenames.length === 0) {
-    setTeamSyncStatus("No filtered backups to delete.", "error");
+    setTeamSyncStatus(protectedCount > 0 ? "All filtered backups are protected. Unprotect backups before bulk cleanup." : "No filtered backups to delete.", "error");
     return;
   }
 
-  const confirmed = window.confirm(`Delete ${filenames.length} filtered backup${filenames.length === 1 ? "" : "s"}? This cannot be undone.`);
+  const protectedText = protectedCount ? ` ${protectedCount} protected backup${protectedCount === 1 ? "" : "s"} will be skipped.` : "";
+  const confirmed = window.confirm(`Delete ${filenames.length} unprotected filtered backup${filenames.length === 1 ? "" : "s"}?${protectedText} This cannot be undone.`);
   if (!confirmed) {
     setTeamSyncStatus("Filtered backup cleanup canceled.");
     return;
@@ -1030,7 +1063,7 @@ async function deleteFilteredTeamBackups() {
       clearTeamRestorePreview();
     }
 
-    setTeamSyncStatus(`Deleted ${payload.deletedCount || 0} filtered backup${payload.deletedCount === 1 ? "" : "s"}${payload.missingCount ? `; ${payload.missingCount} already missing` : ""}.`);
+    setTeamSyncStatus(`Deleted ${payload.deletedCount || 0} filtered backup${payload.deletedCount === 1 ? "" : "s"}${payload.protectedCount ? `; ${payload.protectedCount} protected skipped` : ""}${payload.missingCount ? `; ${payload.missingCount} already missing` : ""}.`);
     await refreshTeamBackups();
   } catch (error) {
     setTeamSyncStatus(`Filtered backup cleanup failed: ${error.message}`, "error");
@@ -3553,6 +3586,10 @@ teamBackupList.addEventListener("click", (event) => {
 
   if (button.dataset.action === "rename-backup") {
     renameAutomaticTeamBackup(button.dataset.filename, button.dataset.label);
+  }
+
+  if (button.dataset.action === "toggle-protected-backup") {
+    toggleProtectedTeamBackup(button.dataset.filename, button.dataset.protected === "true");
   }
 
   if (button.dataset.action === "delete-backup") {
