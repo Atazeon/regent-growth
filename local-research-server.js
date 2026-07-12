@@ -327,6 +327,35 @@ function deleteSharedProspectsBackup(filename) {
   };
 }
 
+function deleteSharedProspectsBackups(filenames = []) {
+  if (!Array.isArray(filenames) || filenames.length === 0) {
+    throw new Error("At least one backup filename is required.");
+  }
+
+  const deleted = [];
+  const missing = [];
+
+  filenames.forEach((filename) => {
+    try {
+      deleted.push(deleteSharedProspectsBackup(filename).filename);
+    } catch (error) {
+      if (error.code === "ENOENT") {
+        missing.push(filename);
+        return;
+      }
+
+      throw error;
+    }
+  });
+
+  return {
+    deletedCount: deleted.length,
+    missingCount: missing.length,
+    deleted,
+    missing
+  };
+}
+
 function writeSharedProspects(records, activity = {}, restoredHistory = null) {
   const current = readSharedProspects();
   const isRestore = activity.type === "restore";
@@ -737,6 +766,16 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "DELETE" && requestUrl.pathname === "/api/team-backups") {
+    try {
+      const body = await readJsonBody(request);
+      sendJson(response, 200, deleteSharedProspectsBackups(body.filenames || []));
+    } catch (error) {
+      sendJson(response, 400, { message: error.message });
+    }
+    return;
+  }
+
   if (request.method === "DELETE" && requestUrl.pathname === "/api/team-backup") {
     try {
       const filename = requestUrl.searchParams.get("filename") || "";
@@ -825,6 +864,7 @@ module.exports = {
   firstArrayFromPayload,
   createSharedProspectsBackup,
   deleteSharedProspectsBackup,
+  deleteSharedProspectsBackups,
   getCrmStatus,
   getSearchStatus,
   getSharedProspectsBackup,

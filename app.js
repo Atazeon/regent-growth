@@ -219,6 +219,7 @@ const checkTeamSyncButton = document.querySelector("#checkTeamSyncButton");
 const pullTeamProspectsButton = document.querySelector("#pullTeamProspectsButton");
 const pushTeamProspectsButton = document.querySelector("#pushTeamProspectsButton");
 const refreshTeamBackupsButton = document.querySelector("#refreshTeamBackupsButton");
+const deleteFilteredBackupsButton = document.querySelector("#deleteFilteredBackupsButton");
 const exportTeamBackupButton = document.querySelector("#exportTeamBackupButton");
 const restoreTeamBackupInput = document.querySelector("#restoreTeamBackupInput");
 const discoveryForm = document.querySelector("#discoveryForm");
@@ -645,7 +646,16 @@ function applyTeamBackupFilters() {
   renderTeamBackupList(getVisibleTeamBackups());
 }
 
+function updateBackupBulkActions(visibleBackups = getVisibleTeamBackups()) {
+  deleteFilteredBackupsButton.disabled = visibleBackups.length === 0;
+  deleteFilteredBackupsButton.textContent = visibleBackups.length > 0
+    ? `Delete filtered (${visibleBackups.length})`
+    : "Delete filtered";
+}
+
 function renderTeamBackupList(backups = []) {
+  updateBackupBulkActions(backups);
+
   if (!Array.isArray(backups) || backups.length === 0) {
     const hasFilters = teamBackupSearchInput.value.trim() || teamBackupIntegrityFilter.value !== "all";
     teamBackupList.innerHTML = `<p class="empty-state">${hasFilters ? "No backups match the current filters." : "No automatic restore backups yet."}</p>`;
@@ -981,6 +991,50 @@ async function renameAutomaticTeamBackup(filename, currentLabel = "") {
     await refreshTeamBackups();
   } catch (error) {
     setTeamSyncStatus(`Backup rename failed: ${error.message}`, "error");
+  }
+}
+
+async function deleteFilteredTeamBackups() {
+  const visibleBackups = getVisibleTeamBackups();
+  const filenames = visibleBackups.map((backup) => backup.filename).filter(Boolean);
+
+  if (filenames.length === 0) {
+    setTeamSyncStatus("No filtered backups to delete.", "error");
+    return;
+  }
+
+  const confirmed = window.confirm(`Delete ${filenames.length} filtered backup${filenames.length === 1 ? "" : "s"}? This cannot be undone.`);
+  if (!confirmed) {
+    setTeamSyncStatus("Filtered backup cleanup canceled.");
+    return;
+  }
+
+  deleteFilteredBackupsButton.disabled = true;
+  setTeamSyncStatus(`Deleting ${filenames.length} filtered backup${filenames.length === 1 ? "" : "s"}...`, "working");
+
+  try {
+    const response = await fetch(teamBackupsEndpoint, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ filenames })
+    });
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(payload.message || `Bulk backup delete returned ${response.status}.`);
+    }
+
+    if (pendingTeamRestore && filenames.includes(pendingTeamRestore.fileName)) {
+      clearTeamRestorePreview();
+    }
+
+    setTeamSyncStatus(`Deleted ${payload.deletedCount || 0} filtered backup${payload.deletedCount === 1 ? "" : "s"}${payload.missingCount ? `; ${payload.missingCount} already missing` : ""}.`);
+    await refreshTeamBackups();
+  } catch (error) {
+    setTeamSyncStatus(`Filtered backup cleanup failed: ${error.message}`, "error");
+    updateBackupBulkActions();
   }
 }
 
@@ -3481,6 +3535,7 @@ checkTeamSyncButton.addEventListener("click", checkTeamSync);
 pullTeamProspectsButton.addEventListener("click", pullTeamProspects);
 pushTeamProspectsButton.addEventListener("click", pushTeamProspects);
 refreshTeamBackupsButton.addEventListener("click", refreshTeamBackups);
+deleteFilteredBackupsButton.addEventListener("click", deleteFilteredTeamBackups);
 teamBackupSearchInput.addEventListener("input", applyTeamBackupFilters);
 teamBackupIntegrityFilter.addEventListener("change", applyTeamBackupFilters);
 teamBackupSortSelect.addEventListener("change", applyTeamBackupFilters);
