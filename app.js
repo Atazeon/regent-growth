@@ -596,7 +596,8 @@ function renderTeamBackupList(backups = []) {
   teamBackupList.innerHTML = backups.slice(0, 6).map((backup) => `
     <article class="backup-item">
       <div>
-        <strong>${escapeHtml(backup.filename)}</strong>
+        <strong>${escapeHtml(backup.label || backup.reason || backup.filename)}</strong>
+        <p>${escapeHtml(backup.filename)}</p>
         <p>${escapeHtml(backup.recordCount ?? 0)} records | ${escapeHtml(backup.historyCount ?? 0)} history items | ${escapeHtml(formatFileSize(backup.sizeBytes))}</p>
         <p>${escapeHtml(backup.reason || "Automatic safety backup")} | ${escapeHtml(formatDateTime(backup.createdAt))}</p>
         ${renderTeamBackupIntegritySummary(backup.integrity)}
@@ -604,6 +605,7 @@ function renderTeamBackupList(backups = []) {
       </div>
       <div class="backup-actions">
         <button class="secondary-button" type="button" data-action="download-backup" data-filename="${escapeHtml(backup.filename)}">Download</button>
+        <button class="secondary-button" type="button" data-action="rename-backup" data-filename="${escapeHtml(backup.filename)}" data-label="${escapeHtml(backup.label || backup.reason || "")}">Rename</button>
         <button class="secondary-button" type="button" data-action="preview-backup" data-filename="${escapeHtml(backup.filename)}" ${backup.integrity?.status === "invalid" ? "disabled" : ""}>Preview restore</button>
         <button class="danger-button" type="button" data-action="delete-backup" data-filename="${escapeHtml(backup.filename)}">Delete</button>
       </div>
@@ -883,6 +885,39 @@ async function downloadAutomaticTeamBackup(filename) {
     setTeamSyncStatus(`Downloaded backup ${downloadName}.`);
   } catch (error) {
     setTeamSyncStatus(`Backup download failed: ${error.message}`, "error");
+  }
+}
+
+async function renameAutomaticTeamBackup(filename, currentLabel = "") {
+  const label = window.prompt("Backup label", currentLabel || "");
+
+  if (label === null) {
+    setTeamSyncStatus("Backup rename canceled.");
+    return;
+  }
+
+  setTeamSyncStatus(`Renaming backup ${filename}...`, "working");
+
+  try {
+    const response = await fetch(`${teamBackupEndpoint}?filename=${encodeURIComponent(filename)}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ label })
+    });
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(payload.message || `Backup rename returned ${response.status}.`);
+    }
+
+    setTeamSyncStatus(label.trim()
+      ? `Renamed backup ${filename} to "${label.trim()}".`
+      : `Cleared label for backup ${filename}.`);
+    await refreshTeamBackups();
+  } catch (error) {
+    setTeamSyncStatus(`Backup rename failed: ${error.message}`, "error");
   }
 }
 
@@ -3393,6 +3428,10 @@ teamBackupList.addEventListener("click", (event) => {
 
   if (button.dataset.action === "download-backup") {
     downloadAutomaticTeamBackup(button.dataset.filename);
+  }
+
+  if (button.dataset.action === "rename-backup") {
+    renameAutomaticTeamBackup(button.dataset.filename, button.dataset.label);
   }
 
   if (button.dataset.action === "delete-backup") {

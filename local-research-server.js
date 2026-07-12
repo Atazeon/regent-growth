@@ -155,6 +155,7 @@ function createSharedProspectsBackupAudit(records, history, reason, createdAt, a
 function createSharedProspectsBackup(reason = "manual", activity = {}) {
   const current = readSharedProspects();
   const createdAt = new Date().toISOString();
+  const label = cleanText(activity.label) || cleanText(reason) || "Automatic safety backup";
   const safeReason = cleanText(reason).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "backup";
   const filename = `shared-prospects-${createdAt.slice(0, 19).replace(/[:T]/g, "-")}-${safeReason}.json`;
   const filePath = path.join(sharedBackupsDir, filename);
@@ -165,6 +166,7 @@ function createSharedProspectsBackup(reason = "manual", activity = {}) {
   const payload = {
     source: "regent-growth-auto-backup",
     reason,
+    label,
     createdAt,
     audit,
     ...current
@@ -179,6 +181,7 @@ function createSharedProspectsBackup(reason = "manual", activity = {}) {
   return {
     filename,
     path: filePath,
+    label,
     createdAt,
     recordCount: current.records.length,
     historyCount: current.history.length,
@@ -198,6 +201,7 @@ function readSharedProspectsBackupSummaries() {
         let recordCount = 0;
         let historyCount = 0;
         let reason = "";
+        let label = "";
         let createdAt = stats.mtime.toISOString();
         let audit = null;
         let integrity = {
@@ -213,6 +217,7 @@ function readSharedProspectsBackupSummaries() {
           recordCount = Array.isArray(payload.records) ? payload.records.length : 0;
           historyCount = Array.isArray(payload.history) ? payload.history.length : 0;
           reason = payload.reason || "";
+          label = payload.label || "";
           createdAt = payload.createdAt || createdAt;
           audit = payload.audit && typeof payload.audit === "object" ? payload.audit : null;
           integrity = validateSharedProspectsBackupPayload(payload);
@@ -224,6 +229,7 @@ function readSharedProspectsBackupSummaries() {
           filename,
           createdAt,
           reason,
+          label,
           recordCount,
           historyCount,
           audit,
@@ -286,6 +292,23 @@ function getSharedProspectsBackup(filename) {
     records: Array.isArray(payload.records) ? payload.records : [],
     history: Array.isArray(payload.history) ? payload.history : []
   };
+}
+
+function labelSharedProspectsBackup(filename, label) {
+  const safeFilename = path.basename(String(filename || ""));
+
+  if (!safeFilename || safeFilename !== filename || !safeFilename.endsWith(".json")) {
+    throw new Error("A valid backup filename is required.");
+  }
+
+  const cleanLabel = cleanText(label).slice(0, 80);
+  const filePath = path.join(sharedBackupsDir, safeFilename);
+  const payload = JSON.parse(fs.readFileSync(filePath, "utf8"));
+  payload.label = cleanLabel;
+  payload.labelUpdatedAt = new Date().toISOString();
+  fs.writeFileSync(filePath, `${JSON.stringify(payload, null, 2)}\n`);
+
+  return getSharedProspectsBackup(safeFilename);
 }
 
 function deleteSharedProspectsBackup(filename) {
@@ -703,6 +726,17 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "PATCH" && requestUrl.pathname === "/api/team-backup") {
+    try {
+      const body = await readJsonBody(request);
+      const filename = requestUrl.searchParams.get("filename") || body.filename || "";
+      sendJson(response, 200, labelSharedProspectsBackup(filename, body.label || ""));
+    } catch (error) {
+      sendJson(response, 400, { message: error.code === "ENOENT" ? "Backup file was not found." : error.message });
+    }
+    return;
+  }
+
   if (request.method === "DELETE" && requestUrl.pathname === "/api/team-backup") {
     try {
       const filename = requestUrl.searchParams.get("filename") || "";
@@ -794,6 +828,7 @@ module.exports = {
   getCrmStatus,
   getSearchStatus,
   getSharedProspectsBackup,
+  labelSharedProspectsBackup,
   listSharedProspectsBackups,
   normalizeSearchResult,
   pruneSharedProspectsBackups,
