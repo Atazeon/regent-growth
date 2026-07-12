@@ -211,6 +211,7 @@ const teamSyncHistory = document.querySelector("#teamSyncHistory");
 const teamBackupList = document.querySelector("#teamBackupList");
 const teamBackupSearchInput = document.querySelector("#teamBackupSearchInput");
 const teamBackupIntegrityFilter = document.querySelector("#teamBackupIntegrityFilter");
+const teamBackupProtectionFilter = document.querySelector("#teamBackupProtectionFilter");
 const teamBackupSortSelect = document.querySelector("#teamBackupSortSelect");
 const teamRestorePreview = document.querySelector("#teamRestorePreview");
 const teamActorForm = document.querySelector("#teamActorForm");
@@ -631,13 +632,17 @@ function sortTeamBackups(backups) {
 function getVisibleTeamBackups(backups = teamBackupsCache) {
   const query = teamBackupSearchInput.value.trim().toLowerCase();
   const integrity = teamBackupIntegrityFilter.value;
+  const protection = teamBackupProtectionFilter.value;
 
   const filtered = backups.filter((backup) => {
     const matchesQuery = !query || getTeamBackupSearchText(backup).includes(query);
     const status = backup.integrity?.status || "warning";
     const matchesIntegrity = integrity === "all" || status === integrity;
+    const matchesProtection = protection === "all"
+      || (protection === "protected" && backup.protected)
+      || (protection === "unprotected" && !backup.protected);
 
-    return matchesQuery && matchesIntegrity;
+    return matchesQuery && matchesIntegrity && matchesProtection;
   });
 
   return sortTeamBackups(filtered);
@@ -659,7 +664,7 @@ function renderTeamBackupList(backups = []) {
   updateBackupBulkActions(backups);
 
   if (!Array.isArray(backups) || backups.length === 0) {
-    const hasFilters = teamBackupSearchInput.value.trim() || teamBackupIntegrityFilter.value !== "all";
+    const hasFilters = teamBackupSearchInput.value.trim() || teamBackupIntegrityFilter.value !== "all" || teamBackupProtectionFilter.value !== "all";
     teamBackupList.innerHTML = `<p class="empty-state">${hasFilters ? "No backups match the current filters." : "No automatic restore backups yet."}</p>`;
     return;
   }
@@ -3571,6 +3576,7 @@ refreshTeamBackupsButton.addEventListener("click", refreshTeamBackups);
 deleteFilteredBackupsButton.addEventListener("click", deleteFilteredTeamBackups);
 teamBackupSearchInput.addEventListener("input", applyTeamBackupFilters);
 teamBackupIntegrityFilter.addEventListener("change", applyTeamBackupFilters);
+teamBackupProtectionFilter.addEventListener("change", applyTeamBackupFilters);
 teamBackupSortSelect.addEventListener("change", applyTeamBackupFilters);
 teamBackupList.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-action]");
