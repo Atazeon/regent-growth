@@ -692,6 +692,29 @@ button:disabled {
   font-weight: 700;
 }
 
+.restore-preview {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 14px;
+  align-items: center;
+  margin-top: 14px;
+  padding: 14px;
+  background: #f9fafc;
+}
+
+.restore-preview p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.restore-preview-actions {
+  display: flex;
+  gap: 8px;
+}
+
 .sync-history-list {
   display: grid;
   gap: 10px;
@@ -940,6 +963,8 @@ textarea {
   .reminder-title,
   .reminder-actions,
   .team-actor-form,
+  .restore-preview,
+  .restore-preview-actions,
   .sync-history-item,
   .blocked-item {
     align-items: stretch;

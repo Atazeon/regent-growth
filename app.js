@@ -170,6 +170,7 @@ let promptTemplates = loadPromptTemplates();
 let discoveryQueue = loadDiscoveryQueue();
 let editingIndex = null;
 let selectedProspectIndex = 0;
+let pendingTeamRestore = null;
 
 const prospectList = document.querySelector("#prospectList");
 const selectedDetail = document.querySelector("#selectedDetail");
@@ -204,6 +205,7 @@ const ownerWorkloadList = document.querySelector("#ownerWorkloadList");
 const blockedHandoffList = document.querySelector("#blockedHandoffList");
 const teamSyncStatus = document.querySelector("#teamSyncStatus");
 const teamSyncHistory = document.querySelector("#teamSyncHistory");
+const teamRestorePreview = document.querySelector("#teamRestorePreview");
 const teamActorForm = document.querySelector("#teamActorForm");
 const teamActorInput = document.querySelector("#teamActorInput");
 const checkTeamSyncButton = document.querySelector("#checkTeamSyncButton");
@@ -650,11 +652,37 @@ async function exportTeamBackup() {
   }
 }
 
+function clearTeamRestorePreview() {
+  pendingTeamRestore = null;
+  teamRestorePreview.hidden = true;
+  teamRestorePreview.innerHTML = "";
+}
+
+function renderTeamRestorePreview() {
+  if (!pendingTeamRestore) {
+    clearTeamRestorePreview();
+    return;
+  }
+
+  const { fileName, records, history, exportedAt, updatedAt } = pendingTeamRestore;
+  teamRestorePreview.hidden = false;
+  teamRestorePreview.innerHTML = `
+    <div>
+      <p class="eyebrow">Restore Preview</p>
+      <strong>${escapeHtml(fileName)}</strong>
+      <p>${escapeHtml(records.length)} prospect${records.length === 1 ? "" : "s"} | ${escapeHtml(history.length)} history item${history.length === 1 ? "" : "s"}</p>
+      <p>Exported ${escapeHtml(formatDateTime(exportedAt))}${updatedAt ? ` | Store updated ${escapeHtml(formatDateTime(updatedAt))}` : ""}</p>
+    </div>
+    <div class="restore-preview-actions">
+      <button id="confirmTeamRestoreButton" type="button">Restore now</button>
+      <button id="cancelTeamRestoreButton" class="secondary-button" type="button">Cancel</button>
+    </div>
+  `;
+}
+
 async function restoreTeamBackup(event) {
   const file = event.target.files[0];
   if (!file) return;
-
-  setTeamSyncStatus(`Restoring shared team backup from ${file.name}...`, "working");
 
   try {
     const backup = JSON.parse(await file.text());
@@ -665,6 +693,33 @@ async function restoreTeamBackup(event) {
     const records = backup.records.map(normalizeProspect);
     const history = Array.isArray(backup.history) ? backup.history : [];
 
+    pendingTeamRestore = {
+      fileName: file.name,
+      records,
+      history,
+      exportedAt: backup.exportedAt || "",
+      updatedAt: backup.updatedAt || ""
+    };
+    renderTeamRestorePreview();
+    setTeamSyncStatus(`Preview loaded for ${file.name}. Confirm restore to replace the shared team store.`);
+  } catch (error) {
+    clearTeamRestorePreview();
+    setTeamSyncStatus(`Restore preview failed: ${error.message}`, "error");
+  } finally {
+    restoreTeamBackupInput.value = "";
+  }
+}
+
+async function confirmTeamBackupRestore() {
+  if (!pendingTeamRestore) {
+    setTeamSyncStatus("Choose a backup file before restoring.", "error");
+    return;
+  }
+
+  const { fileName, records, history } = pendingTeamRestore;
+  setTeamSyncStatus(`Restoring shared team backup from ${fileName}...`, "working");
+
+  try {
     const response = await fetch(teamProspectsEndpoint, {
       method: "POST",
       headers: {
@@ -676,7 +731,7 @@ async function restoreTeamBackup(event) {
         activity: {
           type: "restore",
           actor: getTeamSyncActor(),
-          summary: `Restored shared team backup from ${file.name}.`,
+          summary: `Restored shared team backup from ${fileName}.`,
           stats: {
             restored: records.length,
             history: history.length
@@ -691,12 +746,11 @@ async function restoreTeamBackup(event) {
     }
 
     renderTeamSyncHistory(payload.history);
+    clearTeamRestorePreview();
     setTeamSyncStatus(`Restored shared team backup with ${records.length} prospect${records.length === 1 ? "" : "s"}.`);
     setDataStatus("Shared team store restored from backup. Merge shared to update this browser.");
   } catch (error) {
     setTeamSyncStatus(`Restore failed: ${error.message}`, "error");
-  } finally {
-    restoreTeamBackupInput.value = "";
   }
 }
 
@@ -2901,6 +2955,19 @@ pullTeamProspectsButton.addEventListener("click", pullTeamProspects);
 pushTeamProspectsButton.addEventListener("click", pushTeamProspects);
 exportTeamBackupButton.addEventListener("click", exportTeamBackup);
 restoreTeamBackupInput.addEventListener("change", restoreTeamBackup);
+teamRestorePreview.addEventListener("click", (event) => {
+  const button = event.target.closest("button");
+  if (!button) return;
+
+  if (button.id === "confirmTeamRestoreButton") {
+    confirmTeamBackupRestore();
+  }
+
+  if (button.id === "cancelTeamRestoreButton") {
+    clearTeamRestorePreview();
+    setTeamSyncStatus("Team restore canceled.");
+  }
+});
 generateDiscoveryButton.addEventListener("click", generateDiscoveryCandidates);
 clearDiscoveryButton.addEventListener("click", clearDiscoveryQueue);
 checkSearchSetupButton.addEventListener("click", checkSearchSetup);
