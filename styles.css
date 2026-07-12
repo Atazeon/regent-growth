@@ -777,6 +777,11 @@ button:disabled {
   word-break: break-word;
 }
 
+.backup-actions {
+  display: flex;
+  gap: 8px;
+}
+
 .split {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -998,6 +1003,7 @@ textarea {
   .restore-preview,
   .restore-preview-actions,
   .backup-item,
+  .backup-actions,
   .sync-history-item,
   .blocked-item {
     align-items: stretch;

@@ -543,7 +543,10 @@ function renderTeamBackupList(backups = []) {
         <p>${escapeHtml(backup.recordCount ?? 0)} records | ${escapeHtml(backup.historyCount ?? 0)} history items | ${escapeHtml(formatFileSize(backup.sizeBytes))}</p>
         <p>${escapeHtml(backup.reason || "Automatic safety backup")} | ${escapeHtml(formatDateTime(backup.createdAt))}</p>
       </div>
-      <button class="secondary-button" type="button" data-action="preview-backup" data-filename="${escapeHtml(backup.filename)}">Preview restore</button>
+      <div class="backup-actions">
+        <button class="secondary-button" type="button" data-action="preview-backup" data-filename="${escapeHtml(backup.filename)}">Preview restore</button>
+        <button class="danger-button" type="button" data-action="delete-backup" data-filename="${escapeHtml(backup.filename)}">Delete</button>
+      </div>
     </article>
   `).join("");
 }
@@ -613,6 +616,30 @@ async function previewAutomaticTeamBackup(filename) {
   } catch (error) {
     clearTeamRestorePreview();
     setTeamSyncStatus(`Backup preview failed: ${error.message}`, "error");
+  }
+}
+
+async function deleteAutomaticTeamBackup(filename) {
+  setTeamSyncStatus(`Deleting backup ${filename}...`, "working");
+
+  try {
+    const response = await fetch(`${teamBackupEndpoint}?filename=${encodeURIComponent(filename)}`, {
+      method: "DELETE"
+    });
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(payload.message || `Backup delete returned ${response.status}.`);
+    }
+
+    if (pendingTeamRestore?.fileName === filename) {
+      clearTeamRestorePreview();
+    }
+
+    setTeamSyncStatus(`Deleted backup ${filename}.`);
+    await refreshTeamBackups();
+  } catch (error) {
+    setTeamSyncStatus(`Backup delete failed: ${error.message}`, "error");
   }
 }
 
@@ -3046,10 +3073,16 @@ pullTeamProspectsButton.addEventListener("click", pullTeamProspects);
 pushTeamProspectsButton.addEventListener("click", pushTeamProspects);
 refreshTeamBackupsButton.addEventListener("click", refreshTeamBackups);
 teamBackupList.addEventListener("click", (event) => {
-  const button = event.target.closest("button[data-action='preview-backup']");
+  const button = event.target.closest("button[data-action]");
   if (!button) return;
 
-  previewAutomaticTeamBackup(button.dataset.filename);
+  if (button.dataset.action === "preview-backup") {
+    previewAutomaticTeamBackup(button.dataset.filename);
+  }
+
+  if (button.dataset.action === "delete-backup") {
+    deleteAutomaticTeamBackup(button.dataset.filename);
+  }
 });
 exportTeamBackupButton.addEventListener("click", exportTeamBackup);
 restoreTeamBackupInput.addEventListener("change", restoreTeamBackup);
