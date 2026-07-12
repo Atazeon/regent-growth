@@ -744,6 +744,30 @@ function renderTeamRestoreDryRunReport(report) {
   `;
 }
 
+function renderTeamRestoreConfirmationSummary(summary) {
+  const dryRun = summary.dryRun?.status === "ready" ? summary.dryRun : null;
+  const safetyBackup = summary.safetyBackup?.filename || "";
+  const retentionDeleted = summary.safetyBackup?.retention?.deletedCount || 0;
+
+  teamRestorePreview.hidden = false;
+  teamRestorePreview.innerHTML = `
+    <div>
+      <p class="eyebrow">Restore Complete</p>
+      <strong>${escapeHtml(summary.fileName)}</strong>
+      <p>${escapeHtml(summary.recordCount)} prospect${summary.recordCount === 1 ? "" : "s"} restored | ${escapeHtml(summary.historyCount)} history item${summary.historyCount === 1 ? "" : "s"} carried over.</p>
+      ${dryRun ? `
+        <p>Applied dry run: ${escapeHtml(dryRun.added.length)} added | ${escapeHtml(dryRun.changed.length)} changed | ${escapeHtml(dryRun.removed.length)} removed | ${escapeHtml(dryRun.unchanged.length)} unchanged.</p>
+      ` : `<p>Dry-run comparison was unavailable when this restore was confirmed.</p>`}
+      <p>${safetyBackup ? `Safety backup saved as ${escapeHtml(safetyBackup)}.` : "No safety backup filename was returned."}</p>
+      ${retentionDeleted ? `<p>Retention pruned ${escapeHtml(retentionDeleted)} old backup${retentionDeleted === 1 ? "" : "s"}.</p>` : ""}
+      <p>Completed ${escapeHtml(formatDateTime(summary.completedAt))} by ${escapeHtml(summary.actor)}.</p>
+    </div>
+    <div class="restore-preview-actions">
+      <button id="dismissTeamRestoreSummaryButton" class="secondary-button" type="button">Dismiss</button>
+    </div>
+  `;
+}
+
 function renderTeamBackupAuditSummary(audit) {
   if (!audit || typeof audit !== "object") {
     return `<p>Audit details unavailable for this backup.</p>`;
@@ -1079,7 +1103,16 @@ async function confirmTeamBackupRestore() {
     return;
   }
 
-  const { fileName, records, history } = pendingTeamRestore;
+  const { fileName, records, history, dryRun } = pendingTeamRestore;
+  const restoreSummary = {
+    fileName,
+    recordCount: records.length,
+    historyCount: history.length,
+    dryRun,
+    actor: getTeamSyncActor(),
+    completedAt: new Date().toISOString(),
+    safetyBackup: null
+  };
   setTeamSyncStatus(`Restoring shared team backup from ${fileName}...`, "working");
 
   try {
@@ -1109,12 +1142,17 @@ async function confirmTeamBackupRestore() {
     }
 
     renderTeamSyncHistory(payload.history);
-    clearTeamRestorePreview();
+    restoreSummary.safetyBackup = payload.backup || null;
+    pendingTeamRestore = null;
+    renderTeamRestoreConfirmationSummary(restoreSummary);
     const backupText = payload.backup?.filename ? ` Safety backup saved as ${payload.backup.filename}.` : "";
     const retentionText = payload.backup?.retention?.deletedCount
       ? ` Retention pruned ${payload.backup.retention.deletedCount} old backup${payload.backup.retention.deletedCount === 1 ? "" : "s"}.`
       : "";
-    setTeamSyncStatus(`Restored shared team backup with ${records.length} prospect${records.length === 1 ? "" : "s"}.${backupText}${retentionText}`);
+    const dryRunText = dryRun?.status === "ready"
+      ? ` Applied dry run: ${dryRun.added.length} added, ${dryRun.changed.length} changed, ${dryRun.removed.length} removed, ${dryRun.unchanged.length} unchanged.`
+      : "";
+    setTeamSyncStatus(`Restored shared team backup with ${records.length} prospect${records.length === 1 ? "" : "s"}.${dryRunText}${backupText}${retentionText}`);
     setDataStatus("Shared team store restored from backup. Merge shared to update this browser.");
   } catch (error) {
     setTeamSyncStatus(`Restore failed: ${error.message}`, "error");
@@ -3346,6 +3384,11 @@ teamRestorePreview.addEventListener("click", (event) => {
   if (button.id === "cancelTeamRestoreButton") {
     clearTeamRestorePreview();
     setTeamSyncStatus("Team restore canceled.");
+  }
+
+  if (button.id === "dismissTeamRestoreSummaryButton") {
+    clearTeamRestorePreview();
+    setTeamSyncStatus("Restore confirmation dismissed.");
   }
 });
 generateDiscoveryButton.addEventListener("click", generateDiscoveryCandidates);
