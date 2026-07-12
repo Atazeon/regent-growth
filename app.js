@@ -577,7 +577,9 @@ async function refreshTeamBackups() {
     }
 
     renderTeamBackupList(payload.backups);
-    setTeamSyncStatus(`Loaded ${Array.isArray(payload.backups) ? payload.backups.length : 0} shared-store backup${payload.backups?.length === 1 ? "" : "s"}.`);
+    const backupCount = Array.isArray(payload.backups) ? payload.backups.length : 0;
+    const retentionText = payload.retentionLimit ? ` Retention keeps the newest ${payload.retentionLimit}.` : "";
+    setTeamSyncStatus(`Loaded ${backupCount} shared-store backup${backupCount === 1 ? "" : "s"}.${retentionText}`);
   } catch (error) {
     renderTeamBackupList([]);
     setTeamSyncStatus(isLocalFile()
@@ -865,7 +867,10 @@ async function confirmTeamBackupRestore() {
     renderTeamSyncHistory(payload.history);
     clearTeamRestorePreview();
     const backupText = payload.backup?.filename ? ` Safety backup saved as ${payload.backup.filename}.` : "";
-    setTeamSyncStatus(`Restored shared team backup with ${records.length} prospect${records.length === 1 ? "" : "s"}.${backupText}`);
+    const retentionText = payload.backup?.retention?.deletedCount
+      ? ` Retention pruned ${payload.backup.retention.deletedCount} old backup${payload.backup.retention.deletedCount === 1 ? "" : "s"}.`
+      : "";
+    setTeamSyncStatus(`Restored shared team backup with ${records.length} prospect${records.length === 1 ? "" : "s"}.${backupText}${retentionText}`);
     setDataStatus("Shared team store restored from backup. Merge shared to update this browser.");
   } catch (error) {
     setTeamSyncStatus(`Restore failed: ${error.message}`, "error");

@@ -8,6 +8,10 @@ const sharedProspectsPath = path.join(root, "data", "shared-prospects.json");
 const sharedBackupsDir = path.join(root, "data", "backups");
 const maxBodyBytes = 1024 * 1024;
 const maxTeamHistoryItems = 25;
+const configuredTeamBackupLimit = Number(process.env.REGENT_TEAM_BACKUP_LIMIT || 12);
+const maxSharedProspectsBackups = Number.isFinite(configuredTeamBackupLimit)
+  ? Math.max(1, Math.floor(configuredTeamBackupLimit))
+  : 12;
 const sourceTimeoutMs = 12000;
 const searchTimeoutMs = 12000;
 const searchApiUrl = process.env.REGENT_SEARCH_API_URL || "";
@@ -70,16 +74,19 @@ function createSharedProspectsBackup(reason = "manual") {
   fs.mkdirSync(sharedBackupsDir, { recursive: true });
   fs.writeFileSync(filePath, `${JSON.stringify(payload, null, 2)}\n`);
 
+  const retention = pruneSharedProspectsBackups();
+
   return {
     filename,
     path: filePath,
     createdAt,
     recordCount: current.records.length,
-    historyCount: current.history.length
+    historyCount: current.history.length,
+    retention
   };
 }
 
-function listSharedProspectsBackups() {
+function readSharedProspectsBackupSummaries() {
   try {
     return fs.readdirSync(sharedBackupsDir)
       .filter((filename) => filename.endsWith(".json"))
@@ -110,8 +117,7 @@ function listSharedProspectsBackups() {
           sizeBytes: stats.size
         };
       })
-      .sort((first, second) => second.createdAt.localeCompare(first.createdAt))
-      .slice(0, 20);
+      .sort((first, second) => second.createdAt.localeCompare(first.createdAt) || second.filename.localeCompare(first.filename));
   } catch (error) {
     if (error.code === "ENOENT") {
       return [];
@@ -119,6 +125,33 @@ function listSharedProspectsBackups() {
 
     throw error;
   }
+}
+
+function listSharedProspectsBackups() {
+  return readSharedProspectsBackupSummaries().slice(0, 20);
+}
+
+function pruneSharedProspectsBackups() {
+  const backups = readSharedProspectsBackupSummaries();
+  const deleted = [];
+
+  backups.slice(maxSharedProspectsBackups).forEach((backup) => {
+    try {
+      fs.unlinkSync(path.join(sharedBackupsDir, backup.filename));
+      deleted.push(backup.filename);
+    } catch (error) {
+      if (error.code !== "ENOENT") {
+        throw error;
+      }
+    }
+  });
+
+  return {
+    limit: maxSharedProspectsBackups,
+    keptCount: Math.min(backups.length, maxSharedProspectsBackups),
+    deletedCount: deleted.length,
+    deleted
+  };
 }
 
 function getSharedProspectsBackup(filename) {
@@ -534,7 +567,10 @@ const server = http.createServer(async (request, response) => {
 
   if (request.method === "GET" && requestUrl.pathname === "/api/team-backups") {
     try {
-      sendJson(response, 200, { backups: listSharedProspectsBackups() });
+      sendJson(response, 200, {
+        backups: listSharedProspectsBackups(),
+        retentionLimit: maxSharedProspectsBackups
+      });
     } catch (error) {
       sendJson(response, 500, { message: error.message });
     }
@@ -644,6 +680,7 @@ module.exports = {
   getSharedProspectsBackup,
   listSharedProspectsBackups,
   normalizeSearchResult,
+  pruneSharedProspectsBackups,
   readSharedProspects,
   syncCrmRecords,
   writeSharedProspects
