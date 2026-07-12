@@ -542,10 +542,11 @@ function renderTeamBackupList(backups = []) {
         <strong>${escapeHtml(backup.filename)}</strong>
         <p>${escapeHtml(backup.recordCount ?? 0)} records | ${escapeHtml(backup.historyCount ?? 0)} history items | ${escapeHtml(formatFileSize(backup.sizeBytes))}</p>
         <p>${escapeHtml(backup.reason || "Automatic safety backup")} | ${escapeHtml(formatDateTime(backup.createdAt))}</p>
+        ${renderTeamBackupIntegritySummary(backup.integrity)}
         ${renderTeamBackupAuditSummary(backup.audit)}
       </div>
       <div class="backup-actions">
-        <button class="secondary-button" type="button" data-action="preview-backup" data-filename="${escapeHtml(backup.filename)}">Preview restore</button>
+        <button class="secondary-button" type="button" data-action="preview-backup" data-filename="${escapeHtml(backup.filename)}" ${backup.integrity?.status === "invalid" ? "disabled" : ""}>Preview restore</button>
         <button class="danger-button" type="button" data-action="delete-backup" data-filename="${escapeHtml(backup.filename)}">Delete</button>
       </div>
     </article>
@@ -598,6 +599,44 @@ function buildTeamBackupAudit(records, history, reason, createdAt, sourceUpdated
   };
 }
 
+function validateTeamBackupPayload(payload) {
+  const issues = [];
+  const warnings = [];
+  const records = Array.isArray(payload?.records) ? payload.records : [];
+  const history = Array.isArray(payload?.history) ? payload.history : [];
+
+  if (!payload || typeof payload !== "object") {
+    issues.push("Backup file must contain a JSON object.");
+  }
+
+  if (!Array.isArray(payload?.records)) {
+    issues.push("Backup file must contain a records array.");
+  } else {
+    const invalidRecords = records.filter((record) => !record || typeof record !== "object").length;
+    const unnamedRecords = records.filter((record) => !record?.company?.trim?.()).length;
+
+    if (invalidRecords > 0) {
+      issues.push(`${invalidRecords} record${invalidRecords === 1 ? "" : "s"} are not valid objects.`);
+    }
+
+    if (unnamedRecords > 0) {
+      warnings.push(`${unnamedRecords} record${unnamedRecords === 1 ? "" : "s"} have no company name.`);
+    }
+  }
+
+  if (payload?.history !== undefined && !Array.isArray(payload.history)) {
+    warnings.push("History is not an array and will be ignored during restore.");
+  }
+
+  return {
+    status: issues.length > 0 ? "invalid" : warnings.length > 0 ? "warning" : "valid",
+    issues,
+    warnings,
+    recordCount: records.length,
+    historyCount: history.length
+  };
+}
+
 function formatAuditCounts(counts, limit = 3) {
   const entries = Object.entries(counts || {})
     .sort((first, second) => second[1] - first[1] || first[0].localeCompare(second[0]))
@@ -606,6 +645,21 @@ function formatAuditCounts(counts, limit = 3) {
   return entries.length > 0
     ? entries.map(([label, count]) => `${label}: ${count}`).join(", ")
     : "None";
+}
+
+function renderTeamBackupIntegritySummary(integrity) {
+  if (!integrity || typeof integrity !== "object") {
+    return `<p class="backup-integrity" data-state="warning">Integrity: not checked yet.</p>`;
+  }
+
+  const detail = [
+    ...(Array.isArray(integrity.issues) ? integrity.issues : []),
+    ...(Array.isArray(integrity.warnings) ? integrity.warnings : [])
+  ].join(" ");
+  const status = integrity.status || "warning";
+  const label = status === "valid" ? "valid" : status === "warning" ? "valid with warnings" : "invalid";
+
+  return `<p class="backup-integrity" data-state="${escapeHtml(status)}">Integrity: ${escapeHtml(label)}${detail ? ` | ${escapeHtml(detail)}` : ""}</p>`;
 }
 
 function renderTeamBackupAuditSummary(audit) {
@@ -665,13 +719,19 @@ async function previewAutomaticTeamBackup(filename) {
       throw new Error("Backup file does not contain a records array.");
     }
 
+    const integrity = backup.integrity || validateTeamBackupPayload(backup);
+    if (integrity.status === "invalid") {
+      throw new Error(`Backup integrity check failed: ${(integrity.issues || []).join(" ")}`);
+    }
+
     pendingTeamRestore = {
       fileName: backup.filename || filename,
       records: backup.records.map(normalizeProspect),
       history: Array.isArray(backup.history) ? backup.history : [],
       exportedAt: backup.exportedAt || backup.createdAt || "",
       updatedAt: backup.updatedAt || "",
-      audit: backup.audit || null
+      audit: backup.audit || null,
+      integrity
     };
     renderTeamRestorePreview();
     setTeamSyncStatus(`Preview loaded for ${pendingTeamRestore.fileName}. Confirm restore to replace the shared team store.`);
@@ -845,7 +905,8 @@ function renderTeamRestorePreview() {
     return;
   }
 
-  const { fileName, records, history, exportedAt, updatedAt, audit } = pendingTeamRestore;
+  const { fileName, records, history, exportedAt, updatedAt, audit, integrity } = pendingTeamRestore;
+  const restoreDisabled = integrity?.status === "invalid";
   teamRestorePreview.hidden = false;
   teamRestorePreview.innerHTML = `
     <div>
@@ -853,10 +914,11 @@ function renderTeamRestorePreview() {
       <strong>${escapeHtml(fileName)}</strong>
       <p>${escapeHtml(records.length)} prospect${records.length === 1 ? "" : "s"} | ${escapeHtml(history.length)} history item${history.length === 1 ? "" : "s"}</p>
       <p>Exported ${escapeHtml(formatDateTime(exportedAt))}${updatedAt ? ` | Store updated ${escapeHtml(formatDateTime(updatedAt))}` : ""}</p>
+      ${renderTeamBackupIntegritySummary(integrity)}
       ${renderTeamBackupAuditSummary(audit)}
     </div>
     <div class="restore-preview-actions">
-      <button id="confirmTeamRestoreButton" type="button">Restore now</button>
+      <button id="confirmTeamRestoreButton" type="button" ${restoreDisabled ? "disabled" : ""}>Restore now</button>
       <button id="cancelTeamRestoreButton" class="secondary-button" type="button">Cancel</button>
     </div>
   `;
@@ -868,8 +930,10 @@ async function restoreTeamBackup(event) {
 
   try {
     const backup = JSON.parse(await file.text());
-    if (!Array.isArray(backup.records)) {
-      throw new Error("Backup file does not contain a records array.");
+    const integrity = validateTeamBackupPayload(backup);
+
+    if (integrity.status === "invalid") {
+      throw new Error(`Backup integrity check failed: ${integrity.issues.join(" ")}`);
     }
 
     const records = backup.records.map(normalizeProspect);
@@ -881,7 +945,8 @@ async function restoreTeamBackup(event) {
       history,
       exportedAt: backup.exportedAt || "",
       updatedAt: backup.updatedAt || "",
-      audit: backup.audit || buildTeamBackupAudit(records, history, `Imported ${file.name}`, backup.exportedAt || "", backup.updatedAt || "")
+      audit: backup.audit || buildTeamBackupAudit(records, history, `Imported ${file.name}`, backup.exportedAt || "", backup.updatedAt || ""),
+      integrity
     };
     renderTeamRestorePreview();
     setTeamSyncStatus(`Preview loaded for ${file.name}. Confirm restore to replace the shared team store.`);
@@ -896,6 +961,11 @@ async function restoreTeamBackup(event) {
 async function confirmTeamBackupRestore() {
   if (!pendingTeamRestore) {
     setTeamSyncStatus("Choose a backup file before restoring.", "error");
+    return;
+  }
+
+  if (pendingTeamRestore.integrity?.status === "invalid") {
+    setTeamSyncStatus("Restore blocked because the backup failed integrity checks.", "error");
     return;
   }
 

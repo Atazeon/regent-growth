@@ -1,6 +1,7 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 
 const root = process.cwd();
 const port = Number(process.env.PORT || 5193);
@@ -66,6 +67,67 @@ function countValues(records, fieldName, fallback = "Unassigned") {
   }, {});
 }
 
+function calculateSharedProspectsBackupChecksum(payload) {
+  const checksumPayload = {
+    records: Array.isArray(payload.records) ? payload.records : [],
+    history: Array.isArray(payload.history) ? payload.history : [],
+    updatedAt: payload.updatedAt || "",
+    createdAt: payload.createdAt || ""
+  };
+
+  return crypto
+    .createHash("sha256")
+    .update(JSON.stringify(checksumPayload))
+    .digest("hex");
+}
+
+function validateSharedProspectsBackupPayload(payload) {
+  const issues = [];
+  const warnings = [];
+
+  if (!payload || typeof payload !== "object") {
+    return {
+      status: "invalid",
+      issues: ["Backup file must contain a JSON object."],
+      warnings,
+      checksum: "",
+      checkedAt: new Date().toISOString()
+    };
+  }
+
+  if (!Array.isArray(payload.records)) {
+    issues.push("Backup file must contain a records array.");
+  } else {
+    const invalidRecords = payload.records.filter((record) => !record || typeof record !== "object").length;
+    const unnamedRecords = payload.records.filter((record) => !cleanText(record?.company)).length;
+
+    if (invalidRecords > 0) {
+      issues.push(`${invalidRecords} record${invalidRecords === 1 ? "" : "s"} are not valid objects.`);
+    }
+
+    if (unnamedRecords > 0) {
+      warnings.push(`${unnamedRecords} record${unnamedRecords === 1 ? "" : "s"} have no company name.`);
+    }
+  }
+
+  if (payload.history !== undefined && !Array.isArray(payload.history)) {
+    warnings.push("History is not an array and will be ignored during restore.");
+  }
+
+  const checksum = calculateSharedProspectsBackupChecksum(payload);
+  if (payload.integrity?.checksum && payload.integrity.checksum !== checksum) {
+    issues.push("Backup checksum does not match the current file contents.");
+  }
+
+  return {
+    status: issues.length > 0 ? "invalid" : warnings.length > 0 ? "warning" : "valid",
+    issues,
+    warnings,
+    checksum,
+    checkedAt: new Date().toISOString()
+  };
+}
+
 function createSharedProspectsBackupAudit(records, history, reason, createdAt, activity = {}) {
   const latestActivity = Array.isArray(history) && history.length > 0 ? history[0] : null;
 
@@ -107,6 +169,7 @@ function createSharedProspectsBackup(reason = "manual", activity = {}) {
     audit,
     ...current
   };
+  payload.integrity = validateSharedProspectsBackupPayload(payload);
 
   fs.mkdirSync(sharedBackupsDir, { recursive: true });
   fs.writeFileSync(filePath, `${JSON.stringify(payload, null, 2)}\n`);
@@ -120,6 +183,7 @@ function createSharedProspectsBackup(reason = "manual", activity = {}) {
     recordCount: current.records.length,
     historyCount: current.history.length,
     audit,
+    integrity: payload.integrity,
     retention
   };
 }
@@ -136,6 +200,13 @@ function readSharedProspectsBackupSummaries() {
         let reason = "";
         let createdAt = stats.mtime.toISOString();
         let audit = null;
+        let integrity = {
+          status: "invalid",
+          issues: ["Backup metadata could not be read."],
+          warnings: [],
+          checksum: "",
+          checkedAt: new Date().toISOString()
+        };
 
         try {
           const payload = JSON.parse(fs.readFileSync(filePath, "utf8"));
@@ -144,6 +215,7 @@ function readSharedProspectsBackupSummaries() {
           reason = payload.reason || "";
           createdAt = payload.createdAt || createdAt;
           audit = payload.audit && typeof payload.audit === "object" ? payload.audit : null;
+          integrity = validateSharedProspectsBackupPayload(payload);
         } catch {
           reason = "Unreadable backup metadata";
         }
@@ -155,6 +227,7 @@ function readSharedProspectsBackupSummaries() {
           recordCount,
           historyCount,
           audit,
+          integrity,
           sizeBytes: stats.size
         };
       })
@@ -204,10 +277,12 @@ function getSharedProspectsBackup(filename) {
 
   const filePath = path.join(sharedBackupsDir, safeFilename);
   const payload = JSON.parse(fs.readFileSync(filePath, "utf8"));
+  const integrity = validateSharedProspectsBackupPayload(payload);
 
   return {
     filename: safeFilename,
     ...payload,
+    integrity,
     records: Array.isArray(payload.records) ? payload.records : [],
     history: Array.isArray(payload.history) ? payload.history : []
   };
@@ -724,5 +799,6 @@ module.exports = {
   pruneSharedProspectsBackups,
   readSharedProspects,
   syncCrmRecords,
+  validateSharedProspectsBackupPayload,
   writeSharedProspects
 };

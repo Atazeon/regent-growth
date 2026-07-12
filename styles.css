@@ -777,6 +777,22 @@ button:disabled {
   word-break: break-word;
 }
 
+.backup-integrity {
+  font-weight: 700;
+}
+
+.backup-integrity[data-state="valid"] {
+  color: #247247;
+}
+
+.backup-integrity[data-state="warning"] {
+  color: #8a5a00;
+}
+
+.backup-integrity[data-state="invalid"] {
+  color: #a73535;
+}
+
 .backup-actions {
   display: flex;
   gap: 8px;
