@@ -173,6 +173,7 @@ let discoveryQueue = loadDiscoveryQueue();
 let editingIndex = null;
 let selectedProspectIndex = 0;
 let pendingTeamRestore = null;
+let teamBackupsCache = [];
 
 const prospectList = document.querySelector("#prospectList");
 const selectedDetail = document.querySelector("#selectedDetail");
@@ -208,6 +209,8 @@ const blockedHandoffList = document.querySelector("#blockedHandoffList");
 const teamSyncStatus = document.querySelector("#teamSyncStatus");
 const teamSyncHistory = document.querySelector("#teamSyncHistory");
 const teamBackupList = document.querySelector("#teamBackupList");
+const teamBackupSearchInput = document.querySelector("#teamBackupSearchInput");
+const teamBackupIntegrityFilter = document.querySelector("#teamBackupIntegrityFilter");
 const teamRestorePreview = document.querySelector("#teamRestorePreview");
 const teamActorForm = document.querySelector("#teamActorForm");
 const teamActorInput = document.querySelector("#teamActorInput");
@@ -587,9 +590,40 @@ function renderTeamSyncHistory(history = []) {
   `).join("");
 }
 
+function getTeamBackupSearchText(backup) {
+  return [
+    backup.filename,
+    backup.label,
+    backup.reason,
+    backup.integrity?.status,
+    backup.audit?.createdBy,
+    backup.audit?.triggerType,
+    backup.audit?.latestActivity?.actor,
+    backup.audit?.latestActivity?.summary
+  ].filter(Boolean).join(" ").toLowerCase();
+}
+
+function getFilteredTeamBackups(backups = teamBackupsCache) {
+  const query = teamBackupSearchInput.value.trim().toLowerCase();
+  const integrity = teamBackupIntegrityFilter.value;
+
+  return backups.filter((backup) => {
+    const matchesQuery = !query || getTeamBackupSearchText(backup).includes(query);
+    const status = backup.integrity?.status || "warning";
+    const matchesIntegrity = integrity === "all" || status === integrity;
+
+    return matchesQuery && matchesIntegrity;
+  });
+}
+
+function applyTeamBackupFilters() {
+  renderTeamBackupList(getFilteredTeamBackups());
+}
+
 function renderTeamBackupList(backups = []) {
   if (!Array.isArray(backups) || backups.length === 0) {
-    teamBackupList.innerHTML = `<p class="empty-state">No automatic restore backups yet.</p>`;
+    const hasFilters = teamBackupSearchInput.value.trim() || teamBackupIntegrityFilter.value !== "all";
+    teamBackupList.innerHTML = `<p class="empty-state">${hasFilters ? "No backups match the current filters." : "No automatic restore backups yet."}</p>`;
     return;
   }
 
@@ -798,11 +832,15 @@ async function refreshTeamBackups() {
       throw new Error(payload.message || `Team backups returned ${response.status}.`);
     }
 
-    renderTeamBackupList(payload.backups);
+    teamBackupsCache = Array.isArray(payload.backups) ? payload.backups : [];
+    renderTeamBackupList(getFilteredTeamBackups());
     const backupCount = Array.isArray(payload.backups) ? payload.backups.length : 0;
+    const filteredCount = getFilteredTeamBackups().length;
     const retentionText = payload.retentionLimit ? ` Retention keeps the newest ${payload.retentionLimit}.` : "";
-    setTeamSyncStatus(`Loaded ${backupCount} shared-store backup${backupCount === 1 ? "" : "s"}.${retentionText}`);
+    const filterText = filteredCount === backupCount ? "" : ` Showing ${filteredCount} after filters.`;
+    setTeamSyncStatus(`Loaded ${backupCount} shared-store backup${backupCount === 1 ? "" : "s"}.${filterText}${retentionText}`);
   } catch (error) {
+    teamBackupsCache = [];
     renderTeamBackupList([]);
     setTeamSyncStatus(isLocalFile()
       ? "Backup browser needs the local research server. Run local-research-server.js and open the local URL."
@@ -3418,6 +3456,8 @@ checkTeamSyncButton.addEventListener("click", checkTeamSync);
 pullTeamProspectsButton.addEventListener("click", pullTeamProspects);
 pushTeamProspectsButton.addEventListener("click", pushTeamProspects);
 refreshTeamBackupsButton.addEventListener("click", refreshTeamBackups);
+teamBackupSearchInput.addEventListener("input", applyTeamBackupFilters);
+teamBackupIntegrityFilter.addEventListener("change", applyTeamBackupFilters);
 teamBackupList.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-action]");
   if (!button) return;

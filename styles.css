@@ -768,6 +768,21 @@ button:disabled {
   margin: 0;
 }
 
+.backup-filter-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(150px, 220px);
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.backup-filter-row label {
+  color: var(--muted);
+  display: grid;
+  font-size: 0.9rem;
+  font-weight: 700;
+  gap: 8px;
+}
+
 .backup-list {
   display: grid;
   gap: 10px;
@@ -1035,6 +1050,7 @@ textarea {
   .restore-preview-actions,
   .backup-item,
   .backup-actions,
+  .backup-filter-row,
   .sync-history-item,
   .blocked-item {
     align-items: stretch;
