@@ -55,26 +55,69 @@
         <article>
           <span>Qualified</span>
           <strong id="qualifiedMetric">0</strong>
+          <small id="qualifiedSubMetric">0% of weekly target</small>
         </article>
         <article>
           <span>Email Drafted</span>
           <strong id="emailMetric">0</strong>
+          <small id="emailSubMetric">0% of pipeline</small>
         </article>
         <article>
           <span>Follow-up Due</span>
           <strong id="followUpMetric">0</strong>
+          <small id="followUpSubMetric">No overdue touches</small>
         </article>
         <article>
           <span>Meetings</span>
           <strong id="meetingMetric">0</strong>
+          <small id="meetingSubMetric">0% meeting rate</small>
+        </article>
+        <article>
+          <span>Priority Leads</span>
+          <strong id="priorityLeadMetric">0</strong>
+          <small id="priorityLeadSubMetric">Lead score 85+</small>
+        </article>
+        <article>
+          <span>Warm Leads</span>
+          <strong id="warmLeadMetric">0</strong>
+          <small id="warmLeadSubMetric">Ready for handoff</small>
+        </article>
+        <article>
+          <span>Avg Lead Score</span>
+          <strong id="avgLeadScoreMetric">0</strong>
+          <small id="avgLeadScoreSubMetric">Pipeline quality</small>
+        </article>
+        <article>
+          <span>Weekly Target</span>
+          <strong id="targetProgressMetric">0%</strong>
+          <small id="targetProgressSubMetric">0 of 100 companies</small>
         </article>
         <article>
           <span>Assigned</span>
           <strong id="assignedMetric">0</strong>
+          <small id="assignedSubMetric">Owned handoffs</small>
         </article>
         <article>
           <span>Blocked</span>
           <strong id="blockedMetric">0</strong>
+          <small id="blockedSubMetric">Needs unblock</small>
+        </article>
+      </section>
+
+      <section class="dashboard-summary" aria-label="Dashboard summary">
+        <article>
+          <div>
+            <span class="eyebrow">Pipeline Mix</span>
+            <h3>Stage Breakdown</h3>
+          </div>
+          <div id="stageBreakdown" class="stage-breakdown"></div>
+        </article>
+        <article>
+          <div>
+            <span class="eyebrow">Next Focus</span>
+            <h3 id="dashboardFocusTitle">Build pipeline</h3>
+          </div>
+          <p id="dashboardFocusText">Add qualified companies to start measuring pipeline health.</p>
         </article>
       </section>
 

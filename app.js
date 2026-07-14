@@ -11,6 +11,7 @@ const teamProspectsEndpoint = "/api/team-prospects";
 const teamBackupsEndpoint = "/api/team-backups";
 const teamBackupEndpoint = "/api/team-backup";
 const ollamaTimeoutMs = 150000;
+const weeklyQualifiedTarget = 100;
 const stageOrder = ["Research", "Email Drafted", "Sequence", "LinkedIn", "Call", "Meeting", "Assessment"];
 const responseStatuses = ["Not Contacted", "Contacted", "Replied", "Interested", "Meeting Booked", "Not Interested", "No Response"];
 const linkedInStatuses = ["Not Started", "Connection Sent", "Connected", "Messaged", "No Profile", "Not Relevant"];
@@ -1737,12 +1738,104 @@ function renderSavedViews() {
 }
 
 function updateMetrics() {
-  document.querySelector("#qualifiedMetric").textContent = prospects.length;
-  document.querySelector("#emailMetric").textContent = prospects.filter((prospect) => prospect.stage !== "Research").length;
-  document.querySelector("#followUpMetric").textContent = prospects.filter(isFollowUpDue).length;
-  document.querySelector("#meetingMetric").textContent = prospects.filter((prospect) => prospect.stage === "Meeting" || prospect.responseStatus === "Meeting Booked").length;
-  document.querySelector("#assignedMetric").textContent = prospects.filter(isAssignedHandoff).length;
-  document.querySelector("#blockedMetric").textContent = prospects.filter(isBlockedHandoff).length;
+  const total = prospects.length;
+  const emailDraftedCount = prospects.filter((prospect) => prospect.stage !== "Research").length;
+  const followUpDueCount = prospects.filter(isFollowUpDue).length;
+  const overdueCount = prospects.filter((prospect) => prospect.nextTouch && daysUntil(prospect.nextTouch) < 0 && !isClosedResponse(prospect)).length;
+  const meetingCount = prospects.filter((prospect) => prospect.stage === "Meeting" || prospect.responseStatus === "Meeting Booked").length;
+  const assignedCount = prospects.filter(isAssignedHandoff).length;
+  const blockedCount = prospects.filter(isBlockedHandoff).length;
+  const priorityLeadCount = prospects.filter((prospect) => getLeadScoreSummary(prospect).score >= 85).length;
+  const warmLeadCount = prospects.filter(isWarmLead).length;
+  const averageLeadScore = total
+    ? Math.round(prospects.reduce((sum, prospect) => sum + getLeadScoreSummary(prospect).score, 0) / total)
+    : 0;
+  const targetProgress = Math.min(100, Math.round((total / weeklyQualifiedTarget) * 100));
+
+  document.querySelector("#qualifiedMetric").textContent = total;
+  document.querySelector("#qualifiedSubMetric").textContent = `${targetProgress}% of weekly target`;
+  document.querySelector("#emailMetric").textContent = emailDraftedCount;
+  document.querySelector("#emailSubMetric").textContent = `${formatPercent(emailDraftedCount, total)} of pipeline`;
+  document.querySelector("#followUpMetric").textContent = followUpDueCount;
+  document.querySelector("#followUpSubMetric").textContent = overdueCount > 0 ? `${overdueCount} overdue` : "No overdue touches";
+  document.querySelector("#meetingMetric").textContent = meetingCount;
+  document.querySelector("#meetingSubMetric").textContent = `${formatPercent(meetingCount, total)} meeting rate`;
+  document.querySelector("#priorityLeadMetric").textContent = priorityLeadCount;
+  document.querySelector("#priorityLeadSubMetric").textContent = `${formatPercent(priorityLeadCount, total)} of pipeline`;
+  document.querySelector("#warmLeadMetric").textContent = warmLeadCount;
+  document.querySelector("#warmLeadSubMetric").textContent = `${formatPercent(warmLeadCount, total)} ready for handoff`;
+  document.querySelector("#avgLeadScoreMetric").textContent = averageLeadScore;
+  document.querySelector("#avgLeadScoreSubMetric").textContent = getLeadScoreTier(averageLeadScore).label;
+  document.querySelector("#targetProgressMetric").textContent = `${targetProgress}%`;
+  document.querySelector("#targetProgressSubMetric").textContent = `${total} of ${weeklyQualifiedTarget} companies`;
+  document.querySelector("#assignedMetric").textContent = assignedCount;
+  document.querySelector("#assignedSubMetric").textContent = `${formatPercent(assignedCount, warmLeadCount)} of warm leads`;
+  document.querySelector("#blockedMetric").textContent = blockedCount;
+  document.querySelector("#blockedSubMetric").textContent = blockedCount > 0 ? "Needs unblock" : "No blockers";
+  renderStageBreakdown(total);
+  renderDashboardFocus({ total, followUpDueCount, overdueCount, priorityLeadCount, warmLeadCount, blockedCount, meetingCount, targetProgress });
+}
+
+function formatPercent(count, total) {
+  if (!total) return "0%";
+  return `${Math.round((count / total) * 100)}%`;
+}
+
+function renderStageBreakdown(total = prospects.length) {
+  const stageBreakdown = document.querySelector("#stageBreakdown");
+
+  stageBreakdown.innerHTML = stageOrder.map((stage) => {
+    const count = prospects.filter((prospect) => prospect.stage === stage).length;
+    const percent = total ? Math.round((count / total) * 100) : 0;
+
+    return `
+      <div class="stage-breakdown-row">
+        <span>${escapeHtml(stage)}</span>
+        <div class="stage-meter" aria-label="${escapeHtml(stage)} ${escapeHtml(percent)}%">
+          <span style="width: ${escapeHtml(percent)}%"></span>
+        </div>
+        <strong>${escapeHtml(count)}</strong>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderDashboardFocus(summary) {
+  const title = document.querySelector("#dashboardFocusTitle");
+  const text = document.querySelector("#dashboardFocusText");
+
+  if (summary.blockedCount > 0) {
+    title.textContent = "Unblock handoffs";
+    text.textContent = `${summary.blockedCount} handoff${summary.blockedCount === 1 ? "" : "s"} need attention before they can move forward.`;
+    return;
+  }
+
+  if (summary.overdueCount > 0) {
+    title.textContent = "Catch up follow-ups";
+    text.textContent = `${summary.overdueCount} prospect${summary.overdueCount === 1 ? "" : "s"} have overdue touches. Clear those before adding more volume.`;
+    return;
+  }
+
+  if (summary.priorityLeadCount > 0) {
+    title.textContent = "Work priority leads";
+    text.textContent = `${summary.priorityLeadCount} account${summary.priorityLeadCount === 1 ? "" : "s"} have lead score 85+. Push them toward meetings or handoff.`;
+    return;
+  }
+
+  if (summary.warmLeadCount > 0) {
+    title.textContent = "Prepare handoffs";
+    text.textContent = `${summary.warmLeadCount} warm lead${summary.warmLeadCount === 1 ? "" : "s"} can be packaged for CRM or owner review.`;
+    return;
+  }
+
+  if (summary.targetProgress < 100) {
+    title.textContent = "Build pipeline";
+    text.textContent = `${summary.total} of ${weeklyQualifiedTarget} weekly target companies are loaded. Add more qualified prospects or generate discovery candidates.`;
+    return;
+  }
+
+  title.textContent = "Target reached";
+  text.textContent = `Weekly target is loaded. Focus on follow-up, meetings, and handoff quality.`;
 }
 
 function isWarmLead(prospect) {

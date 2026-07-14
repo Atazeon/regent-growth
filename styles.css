@@ -188,11 +188,12 @@ button:disabled {
 
 .metrics {
   display: grid;
-  grid-template-columns: repeat(4, minmax(150px, 1fr));
+  grid-template-columns: repeat(5, minmax(140px, 1fr));
   gap: 16px;
 }
 
 .metrics article,
+.dashboard-summary article,
 .panel,
 .prospect-card {
   border: 1px solid var(--line);
@@ -215,6 +216,69 @@ button:disabled {
 
 .metrics strong {
   font-size: 2rem;
+}
+
+.metrics small {
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.dashboard-summary {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(320px, 1.35fr) minmax(260px, 0.65fr);
+  margin-top: 16px;
+}
+
+.dashboard-summary article {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.dashboard-summary h3 {
+  margin: 4px 0 0;
+}
+
+.dashboard-summary p {
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.stage-breakdown {
+  display: grid;
+  gap: 10px;
+}
+
+.stage-breakdown-row {
+  align-items: center;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(110px, 0.5fr) 1fr 34px;
+}
+
+.stage-breakdown-row span {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.stage-breakdown-row strong {
+  text-align: right;
+}
+
+.stage-meter {
+  background: #eef1f5;
+  border-radius: 999px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.stage-meter span {
+  background: var(--accent);
+  display: block;
+  height: 100%;
 }
 
 .panel {
@@ -1141,6 +1205,7 @@ textarea {
   }
 
   .metrics,
+  .dashboard-summary,
   .split,
   .checklist,
   .detail-grid,
