@@ -263,6 +263,59 @@ button:disabled {
   font-weight: 700;
 }
 
+.score-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.lead-score {
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  display: inline-flex;
+  gap: 8px;
+  padding: 6px 9px;
+  white-space: nowrap;
+}
+
+.lead-score strong {
+  font-size: 0.9rem;
+}
+
+.lead-score span {
+  color: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.lead-score[data-state="priority"] {
+  border-color: #247247;
+  color: #247247;
+}
+
+.lead-score[data-state="strong"] {
+  border-color: #2f6f94;
+  color: #2f6f94;
+}
+
+.lead-score[data-state="developing"] {
+  border-color: #8a5a00;
+  color: #8a5a00;
+}
+
+.lead-score[data-state="low"] {
+  border-color: #a73535;
+  color: #a73535;
+}
+
+.lead-reasons {
+  font-size: 0.9rem;
+  margin-top: 6px;
+}
+
 .card-actions {
   display: grid;
   gap: 8px;
@@ -598,6 +651,16 @@ button:disabled {
   margin: 0;
   color: var(--ink);
   line-height: 1.5;
+}
+
+.detail-grid .lead-score {
+  margin: 0;
+}
+
+.detail-grid .lead-score span {
+  display: inline;
+  margin: 0;
+  text-transform: none;
 }
 
 .detail-grid a {

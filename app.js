@@ -34,6 +34,7 @@ Buying trigger: {{trigger}}
 Fit reason: {{fit}}
 Stage: {{stage}}
 Fit score: {{score}}
+Lead score: {{leadScore}} ({{leadTier}})
 
 Return exactly these sections:
 1. Why this company is qualified
@@ -54,6 +55,7 @@ Buying trigger: {{trigger}}
 Fit reason: {{fit}}
 Stage: {{stage}}
 Fit score: {{score}}
+Lead score: {{leadScore}} ({{leadTier}})
 
 Rules:
 - Include a subject line.
@@ -376,6 +378,97 @@ function normalizeDiscoveryCandidate(candidate) {
     sourceNotes: candidate.sourceNotes || "",
     generatedAt: candidate.generatedAt || new Date().toISOString()
   };
+}
+
+function clampScore(value) {
+  return Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
+}
+
+function calculateLeadScore(prospect) {
+  const fitScore = clampScore(prospect.score);
+  const stagePoints = {
+    Research: 0,
+    "Email Drafted": 8,
+    Sequence: 12,
+    LinkedIn: 14,
+    Call: 16,
+    Meeting: 24,
+    Assessment: 26
+  };
+  const responsePoints = {
+    "Not Contacted": 0,
+    Contacted: 6,
+    Replied: 16,
+    Interested: 24,
+    "Meeting Booked": 30,
+    "Not Interested": -35,
+    "No Response": -12
+  };
+  const contactPoints = [
+    prospect.decisionMaker ? 3 : 0,
+    prospect.contactEmail ? 4 : 0,
+    prospect.contactLinkedIn ? 3 : 0,
+    prospect.contactPhone ? 3 : 0
+  ].reduce((total, points) => total + points, 0);
+  const signalPoints = [
+    prospect.website ? 2 : 0,
+    prospect.trigger?.trim().length >= 12 ? 5 : 0,
+    prospect.fit?.trim().length >= 30 ? 4 : 0,
+    prospect.bookingLink ? 4 : 0,
+    prospect.aiBrief ? 3 : 0,
+    prospect.aiEmail ? 3 : 0
+  ].reduce((total, points) => total + points, 0);
+  const daysToNextTouch = prospect.nextTouch ? daysUntil(prospect.nextTouch) : Number.POSITIVE_INFINITY;
+  const taskAdjustment = [
+    prospect.responseStatus === "No Response" && !prospect.nextTouch ? -6 : 0,
+    Number.isFinite(daysToNextTouch) && daysToNextTouch < 0 && !isClosedResponse(prospect) ? -8 : 0,
+    Number.isFinite(daysToNextTouch) && daysToNextTouch <= 1 && daysToNextTouch >= 0 && !isClosedResponse(prospect) ? 3 : 0,
+    prospect.handoffStatus === "Blocked" ? -18 : 0,
+    prospect.meetingOutcome === "No Show" ? -10 : 0,
+    prospect.meetingOutcome === "Closed Lost" ? -35 : 0,
+    prospect.meetingOutcome === "Closed Won" ? 20 : 0
+  ].reduce((total, points) => total + points, 0);
+
+  return clampScore((fitScore * 0.55) + (stagePoints[prospect.stage] ?? 0) + (responsePoints[prospect.responseStatus] ?? 0) + contactPoints + signalPoints + taskAdjustment);
+}
+
+function getLeadScoreTier(score) {
+  if (score >= 85) return { label: "Priority", state: "priority" };
+  if (score >= 70) return { label: "Strong", state: "strong" };
+  if (score >= 50) return { label: "Developing", state: "developing" };
+  return { label: "Low", state: "low" };
+}
+
+function getLeadScoreSummary(prospect) {
+  const score = calculateLeadScore(prospect);
+  const tier = getLeadScoreTier(score);
+  const reasons = [];
+
+  if (clampScore(prospect.score) >= 80) reasons.push("high fit score");
+  if (["Interested", "Meeting Booked"].includes(prospect.responseStatus)) reasons.push("positive response");
+  if (["Meeting", "Assessment"].includes(prospect.stage)) reasons.push("late-stage pipeline");
+  if (prospect.trigger) reasons.push("buying trigger");
+  if (prospect.contactEmail || prospect.contactLinkedIn || prospect.contactPhone) reasons.push("contact path available");
+  if (isFollowUpDue(prospect)) reasons.push("follow-up due");
+  if (prospect.handoffStatus === "Blocked") reasons.push("handoff blocked");
+  if (prospect.responseStatus === "Not Interested") reasons.push("not interested");
+
+  return {
+    score,
+    tier: tier.label,
+    state: tier.state,
+    reasons: reasons.slice(0, 3)
+  };
+}
+
+function renderLeadScoreBadge(prospect) {
+  const summary = getLeadScoreSummary(prospect);
+  return `<p class="lead-score" data-state="${escapeHtml(summary.state)}"><strong>Lead score ${escapeHtml(summary.score)}</strong><span>${escapeHtml(summary.tier)}</span></p>`;
+}
+
+function renderLeadScoreReasonText(prospect) {
+  const summary = getLeadScoreSummary(prospect);
+  return summary.reasons.length > 0 ? summary.reasons.join(", ") : "Needs more qualification signals.";
 }
 
 function saveProspects() {
@@ -1483,7 +1576,11 @@ function renderProspects() {
           <p><strong>Decision-maker:</strong> ${escapeHtml(prospect.decisionMaker)}</p>
           <p><strong>Trigger:</strong> ${escapeHtml(prospect.trigger)}</p>
           <p><strong>Response:</strong> ${escapeHtml(prospect.responseStatus)}${prospect.nextTouch ? ` | Next ${escapeHtml(formatDate(prospect.nextTouch))}` : ""}</p>
-          <p class="score">Fit score ${escapeHtml(prospect.score)}</p>
+          <div class="score-row">
+            <p class="score">Fit score ${escapeHtml(prospect.score)}</p>
+            ${renderLeadScoreBadge(prospect)}
+          </div>
+          <p class="lead-reasons">Signals: ${escapeHtml(renderLeadScoreReasonText(prospect))}</p>
         </div>
         <div class="card-actions">
           <button class="secondary-button" type="button" data-action="select" data-index="${index}">Use for AI</button>
@@ -1935,6 +2032,10 @@ function renderSelectedDetail() {
       <strong>${escapeHtml(prospect.score)}</strong>
     </article>
     <article>
+      <span>Lead Score</span>
+      ${renderLeadScoreBadge(prospect)}
+    </article>
+    <article>
       <span>Decision-Maker</span>
       <strong>${escapeHtml(prospect.decisionMaker || "Unknown")}</strong>
     </article>
@@ -2017,6 +2118,10 @@ function renderSelectedDetail() {
     <article class="detail-wide">
       <span>Fit Reason</span>
       <p>${escapeHtml(prospect.fit || "No fit reason recorded yet.")}</p>
+    </article>
+    <article class="detail-wide">
+      <span>Lead Score Signals</span>
+      <p>${escapeHtml(renderLeadScoreReasonText(prospect))}</p>
     </article>
     <article class="detail-wide">
       <span>Next Action</span>
@@ -2132,6 +2237,7 @@ function resetPromptTemplates() {
 }
 
 function renderTemplate(template, prospect) {
+  const leadSummary = getLeadScoreSummary(prospect);
   const values = {
     company: prospect.company,
     industry: prospect.industry,
@@ -2141,7 +2247,9 @@ function renderTemplate(template, prospect) {
     trigger: prospect.trigger,
     fit: prospect.fit,
     stage: prospect.stage,
-    score: prospect.score
+    score: prospect.score,
+    leadScore: leadSummary.score,
+    leadTier: leadSummary.tier
   };
 
   return template.replace(/\{\{(\w+)\}\}/g, (match, key) => values[key] ?? "");
@@ -2544,6 +2652,7 @@ function getWarmLeads() {
 }
 
 function getCrmRecord(prospect) {
+  const leadSummary = getLeadScoreSummary(prospect);
   return {
     company: prospect.company,
     website: prospect.website,
@@ -2556,6 +2665,9 @@ function getCrmRecord(prospect) {
     stage: prospect.stage,
     responseStatus: prospect.responseStatus,
     fitScore: prospect.score,
+    leadScore: leadSummary.score,
+    leadTier: leadSummary.tier,
+    leadScoreReasons: leadSummary.reasons.join("; "),
     buyingTrigger: prospect.trigger,
     fitReason: prospect.fit,
     bookingLink: prospect.bookingLink,
@@ -2592,6 +2704,8 @@ function formatHandoffPacket(prospect) {
     `Stage: ${record.stage}`,
     `Response: ${record.responseStatus}`,
     `Fit score: ${record.fitScore}`,
+    `Lead score: ${record.leadScore} (${record.leadTier})`,
+    `Lead score signals: ${record.leadScoreReasons || "Needs more qualification signals."}`,
     `Decision-maker: ${record.decisionMaker || "Not set"}`,
     `Email: ${record.email || "Not set"}`,
     `LinkedIn: ${record.linkedIn || "Not set"}`,
@@ -2669,7 +2783,7 @@ function exportWarmLeadCsv() {
     return;
   }
 
-  const headers = ["company", "website", "industry", "companySize", "decisionMaker", "email", "linkedIn", "phone", "stage", "responseStatus", "fitScore", "buyingTrigger", "fitReason", "bookingLink", "meetingDate", "meetingOutcome", "assessmentNotes", "handoffOwner", "handoffStatus", "handoffDue", "handoffNotes", "crmSyncStatus", "crmSyncedAt", "crmSyncNotes", "teamSyncNotes", "lastTouch", "nextTouch", "linkedInStatus", "callStatus", "notes"];
+  const headers = ["company", "website", "industry", "companySize", "decisionMaker", "email", "linkedIn", "phone", "stage", "responseStatus", "fitScore", "leadScore", "leadTier", "leadScoreReasons", "buyingTrigger", "fitReason", "bookingLink", "meetingDate", "meetingOutcome", "assessmentNotes", "handoffOwner", "handoffStatus", "handoffDue", "handoffNotes", "crmSyncStatus", "crmSyncedAt", "crmSyncNotes", "teamSyncNotes", "lastTouch", "nextTouch", "linkedInStatus", "callStatus", "notes"];
   const rows = warmLeads.map((prospect) => {
     const record = getCrmRecord(prospect);
     return headers.map((header) => csvCell(record[header])).join(",");
@@ -3374,8 +3488,8 @@ function saveProspectFromForm(event) {
 }
 
 function exportCsv() {
-  const headers = ["company", "industry", "size", "website", "decisionMaker", "contactEmail", "contactLinkedIn", "contactPhone", "score", "trigger", "fit", "stage", "bookingLink", "responseStatus", "lastTouch", "nextTouch", "responseNotes", "linkedInStatus", "linkedInNotes", "callStatus", "callNotes", "meetingDate", "meetingOutcome", "assessmentNotes", "handoffOwner", "handoffStatus", "handoffDue", "handoffNotes", "crmSyncStatus", "crmSyncedAt", "crmSyncNotes", "teamSyncNotes"];
-  const rows = prospects.map((prospect) => headers.map((header) => csvCell(prospect[header])).join(","));
+  const headers = ["company", "industry", "size", "website", "decisionMaker", "contactEmail", "contactLinkedIn", "contactPhone", "score", "leadScore", "leadTier", "leadScoreReasons", "trigger", "fit", "stage", "bookingLink", "responseStatus", "lastTouch", "nextTouch", "responseNotes", "linkedInStatus", "linkedInNotes", "callStatus", "callNotes", "meetingDate", "meetingOutcome", "assessmentNotes", "handoffOwner", "handoffStatus", "handoffDue", "handoffNotes", "crmSyncStatus", "crmSyncedAt", "crmSyncNotes", "teamSyncNotes"];
+  const rows = prospects.map((prospect) => headers.map((header) => csvCell(getProspectExportValue(prospect, header))).join(","));
   const csv = [headers.join(","), ...rows].join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
@@ -3384,6 +3498,13 @@ function exportCsv() {
   link.download = "regent-growth-prospects.csv";
   link.click();
   URL.revokeObjectURL(url);
+}
+
+function getProspectExportValue(prospect, header) {
+  if (header === "leadScore") return getLeadScoreSummary(prospect).score;
+  if (header === "leadTier") return getLeadScoreSummary(prospect).tier;
+  if (header === "leadScoreReasons") return getLeadScoreSummary(prospect).reasons.join("; ");
+  return prospect[header];
 }
 
 function csvCell(value) {
