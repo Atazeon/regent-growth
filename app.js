@@ -665,7 +665,7 @@ function renderTeamBackupList(backups = []) {
 
   if (!Array.isArray(backups) || backups.length === 0) {
     const hasFilters = teamBackupSearchInput.value.trim() || teamBackupIntegrityFilter.value !== "all" || teamBackupProtectionFilter.value !== "all";
-    teamBackupList.innerHTML = `<p class="empty-state">${hasFilters ? "No backups match the current filters." : "No automatic restore backups yet."}</p>`;
+    teamBackupList.innerHTML = renderTeamBackupEmptyState(hasFilters);
     return;
   }
 
@@ -688,6 +688,42 @@ function renderTeamBackupList(backups = []) {
       </div>
     </article>
   `).join("");
+}
+
+function renderTeamBackupEmptyState(hasFilters) {
+  if (hasFilters) {
+    return `
+      <article class="backup-empty-card">
+        <div>
+          <strong>No backups match these filters.</strong>
+          <p>Clear the search, integrity, or protection filters to see saved restore points again.</p>
+        </div>
+        <button class="secondary-button" type="button" data-action="clear-backup-filters">Clear filters</button>
+      </article>
+    `;
+  }
+
+  return `
+    <article class="backup-empty-card">
+      <div>
+        <strong>No automatic restore backups yet.</strong>
+        <p>Backups appear after a shared-store restore creates a safety copy. You can also export a manual team backup before changing shared data.</p>
+      </div>
+      <div class="backup-empty-actions">
+        <button class="secondary-button" type="button" data-action="refresh-backups">Refresh backups</button>
+        <button class="secondary-button" type="button" data-action="export-team-backup">Export manual backup</button>
+      </div>
+    </article>
+  `;
+}
+
+function clearTeamBackupFilters() {
+  teamBackupSearchInput.value = "";
+  teamBackupIntegrityFilter.value = "all";
+  teamBackupProtectionFilter.value = "all";
+  teamBackupSortSelect.value = "newest";
+  applyTeamBackupFilters();
+  setTeamSyncStatus("Backup filters cleared.");
 }
 
 function renderBackupMetadataChips(backup) {
@@ -3617,6 +3653,18 @@ teamBackupList.addEventListener("click", (event) => {
 
   if (button.dataset.action === "preview-backup") {
     previewAutomaticTeamBackup(button.dataset.filename);
+  }
+
+  if (button.dataset.action === "clear-backup-filters") {
+    clearTeamBackupFilters();
+  }
+
+  if (button.dataset.action === "refresh-backups") {
+    refreshTeamBackups();
+  }
+
+  if (button.dataset.action === "export-team-backup") {
+    exportTeamBackup();
   }
 
   if (button.dataset.action === "download-backup") {

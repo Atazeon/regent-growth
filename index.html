@@ -152,7 +152,16 @@
             </label>
           </div>
           <div id="teamBackupList" class="backup-list">
-            <p class="empty-state">No automatic restore backups yet.</p>
+            <article class="backup-empty-card">
+              <div>
+                <strong>No automatic restore backups yet.</strong>
+                <p>Backups appear after a shared-store restore creates a safety copy. You can also export a manual team backup before changing shared data.</p>
+              </div>
+              <div class="backup-empty-actions">
+                <button class="secondary-button" type="button" data-action="refresh-backups">Refresh backups</button>
+                <button class="secondary-button" type="button" data-action="export-team-backup">Export manual backup</button>
+              </div>
+            </article>
           </div>
         </div>
       </section>

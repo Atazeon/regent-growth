@@ -807,6 +807,30 @@ button:disabled {
   word-break: break-word;
 }
 
+.backup-empty-card {
+  align-items: center;
+  background: #f9fafc;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr auto;
+  padding: 14px;
+}
+
+.backup-empty-card p {
+  color: var(--muted);
+  line-height: 1.45;
+  margin: 6px 0 0;
+}
+
+.backup-empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
 .backup-chip-row {
   display: flex;
   flex-wrap: wrap;
@@ -1087,6 +1111,8 @@ textarea {
   .restore-preview,
   .restore-preview-actions,
   .backup-item,
+  .backup-empty-card,
+  .backup-empty-actions,
   .backup-actions,
   .backup-filter-row,
   .sync-history-item,
