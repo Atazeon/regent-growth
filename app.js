@@ -252,6 +252,7 @@ const openGmailButton = document.querySelector("#openGmailButton");
 const openOutlookButton = document.querySelector("#openOutlookButton");
 const copyEmailDraftButton = document.querySelector("#copyEmailDraftButton");
 const markEmailSentButton = document.querySelector("#markEmailSentButton");
+const emailSendSummary = document.querySelector("#emailSendSummary");
 const exportWarmCsvButton = document.querySelector("#exportWarmCsvButton");
 const exportWarmJsonButton = document.querySelector("#exportWarmJsonButton");
 const checkCrmSetupButton = document.querySelector("#checkCrmSetupButton");
@@ -2263,6 +2264,7 @@ function setDrafts(prospect) {
   if (!prospect) {
     researchPrompt.value = "";
     emailDraft.value = "";
+    renderEmailSendStatus(null);
     return;
   }
 
@@ -2291,6 +2293,7 @@ Would it be worth a quick conversation to see if we can help your team add more 
 
 Best,
 Ibrahim`;
+  renderEmailSendStatus(prospect);
 }
 
 function setAiStatus(message, state = "idle") {
@@ -2629,6 +2632,7 @@ async function generatePersonalizedEmail() {
     emailDraft.value = prospect.aiEmail;
     saveProspects();
     renderSelectedDetail();
+    renderEmailSendStatus(prospect);
   } catch (error) {
     const message = error.name === "AbortError"
       ? "Local AI timed out. Try qwen2.5:0.5b for a quick draft or retry qwen3:8b."
@@ -2660,6 +2664,57 @@ function getEmailRecipient(prospect) {
   return prospect.contactEmail || "";
 }
 
+function getEmailProviderLabel(provider) {
+  const labels = {
+    gmail: "Gmail",
+    outlook: "Outlook",
+    mailto: "Mail app"
+  };
+
+  return labels[provider] || "Email";
+}
+
+function isValidEmailAddress(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
+function getEmailSendReadiness(prospect = getSelectedProspect()) {
+  const draft = emailDraft.value.trim();
+  const { subject, body } = getDraftParts(draft);
+  const recipient = prospect ? getEmailRecipient(prospect).trim() : "";
+  const issues = [];
+
+  if (!prospect) issues.push("Select a prospect.");
+  if (!recipient) issues.push("Add a contact email.");
+  if (recipient && !isValidEmailAddress(recipient)) issues.push("Fix the contact email format.");
+  if (!draft) issues.push("Write or generate an email draft.");
+  if (!subject) issues.push("Add a subject line.");
+  if (!body) issues.push("Add an email body.");
+
+  return {
+    ready: issues.length === 0,
+    issues,
+    recipient,
+    subject,
+    body
+  };
+}
+
+function renderEmailSendStatus(prospect = getSelectedProspect()) {
+  const readiness = getEmailSendReadiness(prospect);
+
+  emailSendSummary.dataset.state = readiness.ready ? "ready" : "warning";
+  emailSendSummary.innerHTML = readiness.ready
+    ? `
+      <strong>Ready to send</strong>
+      <p>To ${escapeHtml(readiness.recipient)} | Subject: ${escapeHtml(readiness.subject)}</p>
+    `
+    : `
+      <strong>Sending needs setup</strong>
+      <p>${escapeHtml(readiness.issues.join(" "))}</p>
+    `;
+}
+
 function saveCurrentEmailDraft() {
   const prospect = getSelectedProspect();
   if (!prospect) return null;
@@ -2667,6 +2722,7 @@ function saveCurrentEmailDraft() {
   prospect.aiEmail = emailDraft.value.trim();
   saveProspects();
   renderSelectedDetail();
+  renderEmailSendStatus(prospect);
   setDataStatus(`Email draft saved for ${prospect.company}.`);
   return prospect;
 }
@@ -2702,14 +2758,16 @@ function buildEmailHandoffUrl(provider, prospect) {
 function openEmailHandoff(provider) {
   const prospect = saveCurrentEmailDraft();
   if (!prospect) return;
+  const readiness = getEmailSendReadiness(prospect);
 
-  if (!emailDraft.value.trim()) {
-    setDataStatus("Generate or write an email draft before opening a sending handoff.", "error");
+  if (!readiness.ready) {
+    renderEmailSendStatus(prospect);
+    setDataStatus(`Cannot open ${getEmailProviderLabel(provider)} yet: ${readiness.issues.join(" ")}`, "error");
     return;
   }
 
   window.open(buildEmailHandoffUrl(provider, prospect), "_blank", "noopener,noreferrer");
-  setDataStatus(`${provider === "mailto" ? "Mail app" : provider} draft opened for ${prospect.company}.`);
+  setDataStatus(`${getEmailProviderLabel(provider)} compose opened for ${prospect.company}. Review and send there, then mark sent here.`);
 }
 
 async function copyEmailDraft() {
@@ -2729,12 +2787,19 @@ async function copyEmailDraft() {
 function markEmailSent() {
   const prospect = saveCurrentEmailDraft();
   if (!prospect) return;
+  const readiness = getEmailSendReadiness(prospect);
+
+  if (!readiness.ready) {
+    renderEmailSendStatus(prospect);
+    setDataStatus(`Cannot mark sent yet: ${readiness.issues.join(" ")}`, "error");
+    return;
+  }
 
   prospect.lastTouch = getTodayString();
   prospect.nextTouch = addDays(prospect.lastTouch, 2);
   prospect.responseStatus = prospect.responseStatus === "Not Contacted" ? "Contacted" : prospect.responseStatus;
   prospect.stage = stageOrder.indexOf(prospect.stage) < stageOrder.indexOf("Sequence") ? "Sequence" : prospect.stage;
-  prospect.responseNotes = [prospect.responseNotes, "First email handoff marked sent."].filter(Boolean).join("\n");
+  prospect.responseNotes = [prospect.responseNotes, `${new Date().toISOString()}: Email marked sent to ${readiness.recipient} with subject "${readiness.subject}".`].filter(Boolean).join("\n");
   saveProspects();
   renderProspects();
   setDataStatus(`${prospect.company} marked contacted. Next touch scheduled for ${formatDate(prospect.nextTouch)}.`);
@@ -3930,6 +3995,7 @@ researchAccountButton.addEventListener("click", researchSelectedAccount);
 generateBriefButton.addEventListener("click", generateCompanyBrief);
 generateEmailButton.addEventListener("click", generatePersonalizedEmail);
 saveEmailDraftButton.addEventListener("click", saveCurrentEmailDraft);
+emailDraft.addEventListener("input", () => renderEmailSendStatus());
 openMailClientButton.addEventListener("click", () => openEmailHandoff("mailto"));
 openGmailButton.addEventListener("click", () => openEmailHandoff("gmail"));
 openOutlookButton.addEventListener("click", () => openEmailHandoff("outlook"));

@@ -1035,6 +1035,42 @@ button:disabled {
   padding: 0 12px;
 }
 
+.email-send-summary {
+  background: #f9fafc;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  display: grid;
+  gap: 4px;
+  line-height: 1.45;
+  margin-top: 12px;
+  padding: 12px;
+}
+
+.email-send-summary strong {
+  color: var(--ink);
+}
+
+.email-send-summary p {
+  margin: 0;
+}
+
+.email-send-summary[data-state="ready"] {
+  border-color: #247247;
+}
+
+.email-send-summary[data-state="ready"] strong {
+  color: #247247;
+}
+
+.email-send-summary[data-state="warning"] {
+  border-color: #8a5a00;
+}
+
+.email-send-summary[data-state="warning"] strong {
+  color: #8a5a00;
+}
+
 .handoff-tools {
   display: grid;
   grid-template-columns: minmax(220px, 0.8fr) 1.2fr;
