@@ -608,10 +608,20 @@ $env:REGENT_SEARCH_API_KEY="your_api_key"
           <div>
             <p class="eyebrow">CRM API Setup</p>
             <p id="crmSetupStatus">CRM connector status not checked yet.</p>
-            <pre>$env:REGENT_CRM_API_URL="https://your-crm-or-automation-webhook.example/leads"
+            <pre id="crmPresetSnippet">$env:REGENT_CRM_API_URL="https://your-crm-or-automation-webhook.example/leads"
 $env:REGENT_CRM_API_KEY="your_api_key"
 &amp; "C:\Users\ibrah\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe" local-research-server.js</pre>
           </div>
+          <label>
+            CRM preset
+            <select id="crmPresetSelect">
+              <option value="webhook">Webhook / Zapier / Make</option>
+              <option value="hubspot">HubSpot private app</option>
+              <option value="pipedrive">Pipedrive API token</option>
+              <option value="airtable">Airtable automation</option>
+              <option value="custom">Custom CRM endpoint</option>
+            </select>
+          </label>
           <div class="setup-actions">
             <button id="checkCrmSetupButton" class="secondary-button" type="button">Check CRM setup</button>
             <button id="syncSelectedCrmButton" class="secondary-button" type="button">Sync selected</button>

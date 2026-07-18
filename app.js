@@ -259,6 +259,8 @@ const checkCrmSetupButton = document.querySelector("#checkCrmSetupButton");
 const syncSelectedCrmButton = document.querySelector("#syncSelectedCrmButton");
 const syncWarmCrmButton = document.querySelector("#syncWarmCrmButton");
 const crmSetupStatus = document.querySelector("#crmSetupStatus");
+const crmPresetSelect = document.querySelector("#crmPresetSelect");
+const crmPresetSnippet = document.querySelector("#crmPresetSnippet");
 const copyHandoffPacketButton = document.querySelector("#copyHandoffPacketButton");
 const markCrmReadyButton = document.querySelector("#markCrmReadyButton");
 const handoffSummary = document.querySelector("#handoffSummary");
@@ -2966,6 +2968,54 @@ function setCrmSetupStatus(message, state = "") {
   crmSetupStatus.dataset.state = state;
 }
 
+const crmProviderPresets = {
+  webhook: {
+    label: "Webhook / Zapier / Make",
+    description: "Use this for Zapier, Make, n8n, or any automation webhook that accepts JSON leads.",
+    snippet: `$env:REGENT_CRM_API_URL="https://hooks.zapier.com/hooks/catch/your-hook"
+$env:REGENT_CRM_API_KEY=""
+& "C:\\Users\\ibrah\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe" local-research-server.js`
+  },
+  hubspot: {
+    label: "HubSpot private app",
+    description: "Point this at a middleware endpoint that maps Regent Growth records into HubSpot contacts or companies.",
+    snippet: `$env:REGENT_CRM_API_URL="https://your-middleware.example/hubspot/leads"
+$env:REGENT_CRM_API_KEY="hubspot_private_app_token_or_middleware_key"
+$env:REGENT_CRM_API_KEY_HEADER="Authorization"
+& "C:\\Users\\ibrah\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe" local-research-server.js`
+  },
+  pipedrive: {
+    label: "Pipedrive API token",
+    description: "Use a middleware endpoint that converts Regent Growth records into Pipedrive organizations, people, and deals.",
+    snippet: `$env:REGENT_CRM_API_URL="https://your-middleware.example/pipedrive/leads"
+$env:REGENT_CRM_API_KEY="pipedrive_api_token_or_middleware_key"
+$env:REGENT_CRM_API_KEY_HEADER="X-API-Key"
+& "C:\\Users\\ibrah\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe" local-research-server.js`
+  },
+  airtable: {
+    label: "Airtable automation",
+    description: "Use an Airtable automation webhook or middleware that writes each lead into your base.",
+    snippet: `$env:REGENT_CRM_API_URL="https://hooks.airtable.com/workflows/v1/genericWebhook/your-webhook"
+$env:REGENT_CRM_API_KEY="optional_webhook_secret"
+$env:REGENT_CRM_API_KEY_HEADER="X-API-Key"
+& "C:\\Users\\ibrah\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe" local-research-server.js`
+  },
+  custom: {
+    label: "Custom CRM endpoint",
+    description: "Use any internal endpoint that accepts the Regent Growth JSON payload from the local server.",
+    snippet: `$env:REGENT_CRM_API_URL="https://your-crm-or-api.example/leads"
+$env:REGENT_CRM_API_KEY="your_api_key"
+$env:REGENT_CRM_API_KEY_HEADER="Authorization"
+& "C:\\Users\\ibrah\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe" local-research-server.js`
+  }
+};
+
+function renderCrmProviderPreset() {
+  const preset = crmProviderPresets[crmPresetSelect.value] || crmProviderPresets.webhook;
+  crmPresetSnippet.textContent = preset.snippet;
+  setCrmSetupStatus(`${preset.label}: ${preset.description}`);
+}
+
 async function checkCrmSetup() {
   setCrmSetupStatus("Checking CRM connector...", "working");
 
@@ -4000,6 +4050,7 @@ generateDiscoveryButton.addEventListener("click", generateDiscoveryCandidates);
 clearDiscoveryButton.addEventListener("click", clearDiscoveryQueue);
 checkSearchSetupButton.addEventListener("click", checkSearchSetup);
 testSearchSetupButton.addEventListener("click", testSearchSetup);
+crmPresetSelect.addEventListener("change", renderCrmProviderPreset);
 detailAdvanceButton.addEventListener("click", () => advanceStage(selectedProspectIndex));
 detailEditButton.addEventListener("click", () => editProspect(selectedProspectIndex));
 savePromptsButton.addEventListener("click", savePromptTemplateEdits);
@@ -4024,6 +4075,7 @@ copyHandoffPacketButton.addEventListener("click", copySelectedHandoffPacket);
 markCrmReadyButton.addEventListener("click", markSelectedCrmReady);
 
 renderPromptTemplates();
+renderCrmProviderPreset();
 renderDiscoveryQueue();
 renderTeamSyncActor();
 renderProspects();

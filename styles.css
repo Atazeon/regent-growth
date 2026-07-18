@@ -491,7 +491,7 @@ button:disabled {
 }
 
 .crm-setup {
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr minmax(190px, 260px) auto;
 }
 
 .search-setup p,
