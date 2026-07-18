@@ -258,6 +258,7 @@ const exportWarmJsonButton = document.querySelector("#exportWarmJsonButton");
 const checkCrmSetupButton = document.querySelector("#checkCrmSetupButton");
 const syncSelectedCrmButton = document.querySelector("#syncSelectedCrmButton");
 const syncWarmCrmButton = document.querySelector("#syncWarmCrmButton");
+const retryFailedCrmButton = document.querySelector("#retryFailedCrmButton");
 const crmSetupStatus = document.querySelector("#crmSetupStatus");
 const crmPresetSelect = document.querySelector("#crmPresetSelect");
 const crmPresetSnippet = document.querySelector("#crmPresetSnippet");
@@ -265,6 +266,7 @@ const copyHandoffPacketButton = document.querySelector("#copyHandoffPacketButton
 const copyCrmMappingButton = document.querySelector("#copyCrmMappingButton");
 const markCrmReadyButton = document.querySelector("#markCrmReadyButton");
 const handoffSummary = document.querySelector("#handoffSummary");
+const crmRetryQueue = document.querySelector("#crmRetryQueue");
 const handoffPacket = document.querySelector("#handoffPacket");
 const crmFieldPreview = document.querySelector("#crmFieldPreview");
 const handoffForm = document.querySelector("#handoffForm");
@@ -1685,7 +1687,8 @@ function matchesSavedView(prospect, selectedView) {
     blocked: (item) => isBlockedHandoff(item),
     "not-interested": (item) => item.responseStatus === "Not Interested",
     "no-response": (item) => item.responseStatus === "No Response",
-    "follow-up-due": isFollowUpDue
+    "follow-up-due": isFollowUpDue,
+    "crm-failed": (item) => isWarmLead(item) && item.crmSyncStatus === "Sync Failed"
   };
 
   return (viewPredicates[selectedView] || viewPredicates.all)(prospect);
@@ -2813,6 +2816,10 @@ function getWarmLeads() {
   return prospects.filter(isWarmLead);
 }
 
+function getFailedCrmSyncLeads() {
+  return getWarmLeads().filter((prospect) => prospect.crmSyncStatus === "Sync Failed");
+}
+
 function getCrmRecord(prospect) {
   const leadSummary = getLeadScoreSummary(prospect);
   return {
@@ -2992,14 +2999,47 @@ function renderHandoff() {
   const warmLeads = getWarmLeads();
   const selectedProspect = getSelectedProspect();
   const selectedIsWarm = selectedProspect ? isWarmLead(selectedProspect) : false;
+  const failedCrmLeads = getFailedCrmSyncLeads();
   handoffSummary.textContent = `${warmLeads.length} warm lead${warmLeads.length === 1 ? "" : "s"} ready for CRM export.${selectedIsWarm ? ` Selected: ${selectedProspect.company}.` : " Select or mark a warm lead to build its packet."}`;
   handoffPacket.value = formatHandoffPacket(selectedProspect);
   renderCrmFieldMappingPreview(selectedProspect);
+  renderCrmRetryQueue(failedCrmLeads);
   handoffOwnerInput.value = selectedProspect?.handoffOwner || "";
   handoffStatusInput.value = selectedProspect?.handoffStatus || "Unassigned";
   handoffDueInput.value = selectedProspect?.handoffDue || "";
   handoffNotesInput.value = selectedProspect?.handoffNotes || "";
   handoffForm.hidden = !selectedProspect;
+}
+
+function renderCrmRetryQueue(failedCrmLeads = getFailedCrmSyncLeads()) {
+  retryFailedCrmButton.disabled = failedCrmLeads.length === 0;
+
+  if (failedCrmLeads.length === 0) {
+    crmRetryQueue.innerHTML = `<p class="empty-state">No failed CRM syncs queued for retry.</p>`;
+    return;
+  }
+
+  crmRetryQueue.innerHTML = `
+    <div class="crm-retry-heading">
+      <div>
+        <p class="eyebrow">CRM Retry Queue</p>
+        <h3>${escapeHtml(failedCrmLeads.length)} failed sync${failedCrmLeads.length === 1 ? "" : "s"}</h3>
+      </div>
+      <button class="secondary-button" type="button" data-action="show-crm-failed">Show failed</button>
+    </div>
+    <div class="crm-retry-list">
+      ${failedCrmLeads.slice(0, 5).map((prospect) => `
+        <article>
+          <strong>${escapeHtml(prospect.company)}</strong>
+          <p>${previewText(getLatestCrmSyncNote(prospect), "No failure note recorded.")}</p>
+        </article>
+      `).join("")}
+    </div>
+  `;
+}
+
+function getLatestCrmSyncNote(prospect) {
+  return prospect.crmSyncNotes?.split("\n").find((note) => note.trim()) || "";
 }
 
 function downloadFile(filename, content, type) {
@@ -3213,6 +3253,47 @@ async function syncWarmCrmLeads() {
     syncWarmCrmButton.disabled = false;
     syncSelectedCrmButton.disabled = false;
   }
+}
+
+async function retryFailedCrmSyncs() {
+  const failedCrmLeads = getFailedCrmSyncLeads();
+
+  if (failedCrmLeads.length === 0) {
+    setCrmSetupStatus("No failed CRM syncs to retry.", "error");
+    return;
+  }
+
+  retryFailedCrmButton.disabled = true;
+  syncWarmCrmButton.disabled = true;
+  syncSelectedCrmButton.disabled = true;
+  setCrmSetupStatus(`Retrying ${failedCrmLeads.length} failed CRM sync${failedCrmLeads.length === 1 ? "" : "s"}...`, "working");
+
+  try {
+    await syncCrmRecords(failedCrmLeads.map(getCrmRecord), failedCrmLeads);
+    setCrmSetupStatus(`Retried and synced ${failedCrmLeads.length} failed CRM record${failedCrmLeads.length === 1 ? "" : "s"}.`);
+    setDataStatus(`CRM retry queue cleared for ${failedCrmLeads.length} warm lead${failedCrmLeads.length === 1 ? "" : "s"}.`);
+  } catch (error) {
+    const failedAt = new Date().toISOString();
+    failedCrmLeads.forEach((prospect) => {
+      prospect.crmSyncStatus = "Sync Failed";
+      prospect.crmSyncNotes = [`${failedAt}: Retry failed: ${error.message}`, prospect.crmSyncNotes].filter(Boolean).join("\n");
+    });
+    saveProspects();
+    renderProspects();
+    setCrmSetupStatus(`CRM retry failed: ${error.message}`, "error");
+  } finally {
+    retryFailedCrmButton.disabled = getFailedCrmSyncLeads().length === 0;
+    syncWarmCrmButton.disabled = false;
+    syncSelectedCrmButton.disabled = false;
+  }
+}
+
+function showFailedCrmSyncs() {
+  savedViews.dataset.activeView = "crm-failed";
+  stageFilter.value = "all";
+  responseFilter.value = "all";
+  renderProspects();
+  setDataStatus("Showing warm leads with failed CRM syncs.");
 }
 
 async function copySelectedHandoffPacket() {
@@ -4067,6 +4148,14 @@ responseForm.addEventListener("submit", saveResponseFromForm);
 workflowForm.addEventListener("submit", saveWorkflowFromForm);
 assessmentForm.addEventListener("submit", saveAssessmentFromForm);
 handoffForm.addEventListener("submit", saveHandoffFromForm);
+crmRetryQueue.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-action]");
+  if (!button) return;
+
+  if (button.dataset.action === "show-crm-failed") {
+    showFailedCrmSyncs();
+  }
+});
 clearFormButton.addEventListener("click", resetForm);
 importInput.addEventListener("change", importCsv);
 exportButton.addEventListener("click", exportCsv);
@@ -4162,6 +4251,7 @@ exportWarmJsonButton.addEventListener("click", exportWarmLeadJson);
 checkCrmSetupButton.addEventListener("click", checkCrmSetup);
 syncSelectedCrmButton.addEventListener("click", syncSelectedCrmLead);
 syncWarmCrmButton.addEventListener("click", syncWarmCrmLeads);
+retryFailedCrmButton.addEventListener("click", retryFailedCrmSyncs);
 copyHandoffPacketButton.addEventListener("click", copySelectedHandoffPacket);
 copyCrmMappingButton.addEventListener("click", copySelectedCrmMapping);
 markCrmReadyButton.addEventListener("click", markSelectedCrmReady);

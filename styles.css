@@ -1195,6 +1195,43 @@ button:disabled {
   overflow-wrap: anywhere;
 }
 
+.crm-retry-queue {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  margin-top: 14px;
+  padding: 14px;
+}
+
+.crm-retry-heading {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.crm-retry-heading h3 {
+  margin: 4px 0 0;
+}
+
+.crm-retry-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.crm-retry-list article {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.crm-retry-list p {
+  color: var(--muted);
+  line-height: 1.45;
+  margin: 6px 0 0;
+}
+
 .team-dashboard-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1340,6 +1377,7 @@ textarea {
   .handoff-tools,
   .handoff-actions,
   .handoff-form,
+  .crm-retry-heading,
   .reminder-item,
   .reminder-title,
   .reminder-actions,
