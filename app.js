@@ -262,9 +262,11 @@ const crmSetupStatus = document.querySelector("#crmSetupStatus");
 const crmPresetSelect = document.querySelector("#crmPresetSelect");
 const crmPresetSnippet = document.querySelector("#crmPresetSnippet");
 const copyHandoffPacketButton = document.querySelector("#copyHandoffPacketButton");
+const copyCrmMappingButton = document.querySelector("#copyCrmMappingButton");
 const markCrmReadyButton = document.querySelector("#markCrmReadyButton");
 const handoffSummary = document.querySelector("#handoffSummary");
 const handoffPacket = document.querySelector("#handoffPacket");
+const crmFieldPreview = document.querySelector("#crmFieldPreview");
 const handoffForm = document.querySelector("#handoffForm");
 const handoffOwnerInput = document.querySelector("#handoffOwnerInput");
 const handoffStatusInput = document.querySelector("#handoffStatusInput");
@@ -2913,12 +2915,86 @@ function formatHandoffPacket(prospect) {
   ].join("\n");
 }
 
+function getCrmFieldGroups(record) {
+  return [
+    {
+      label: "Company",
+      fields: ["company", "website", "industry", "companySize", "decisionMaker", "email", "linkedIn", "phone"]
+    },
+    {
+      label: "Pipeline",
+      fields: ["stage", "responseStatus", "fitScore", "leadScore", "leadTier", "leadScoreReasons", "buyingTrigger", "fitReason"]
+    },
+    {
+      label: "Meeting and Handoff",
+      fields: ["bookingLink", "meetingDate", "meetingOutcome", "assessmentNotes", "handoffOwner", "handoffStatus", "handoffDue", "handoffNotes"]
+    },
+    {
+      label: "Sync and Activity",
+      fields: ["crmSyncStatus", "crmSyncedAt", "crmSyncNotes", "teamSyncNotes", "lastTouch", "nextTouch", "linkedInStatus", "callStatus", "notes"]
+    },
+    {
+      label: "AI Attachments",
+      fields: ["aiBrief", "aiEmail"]
+    }
+  ].map((group) => ({
+    ...group,
+    fields: group.fields.map((field) => ({ field, value: record[field] ?? "" }))
+  }));
+}
+
+function renderCrmFieldMappingPreview(prospect) {
+  if (!prospect) {
+    crmFieldPreview.innerHTML = `<p class="empty-state">Select a prospect to preview the CRM sync field mapping.</p>`;
+    copyCrmMappingButton.disabled = true;
+    return;
+  }
+
+  const record = getCrmRecord(prospect);
+  const groups = getCrmFieldGroups(record);
+  const warmLeadWarning = isWarmLead(prospect)
+    ? ""
+    : `<p class="crm-preview-warning">This account is not a warm lead yet. Mark it CRM ready before syncing.</p>`;
+
+  copyCrmMappingButton.disabled = false;
+  crmFieldPreview.innerHTML = `
+    <div class="crm-preview-heading">
+      <div>
+        <p class="eyebrow">CRM Sync Preview</p>
+        <h3>${escapeHtml(record.company || "Selected account")}</h3>
+      </div>
+      <span>${escapeHtml(Object.keys(record).length)} fields</span>
+    </div>
+    ${warmLeadWarning}
+    <div class="crm-field-groups">
+      ${groups.map((group) => `
+        <section>
+          <h4>${escapeHtml(group.label)}</h4>
+          ${group.fields.map(({ field, value }) => `
+            <div class="crm-field-row">
+              <code>${escapeHtml(field)}</code>
+              <span>${escapeHtml(formatCrmPreviewValue(value))}</span>
+            </div>
+          `).join("")}
+        </section>
+      `).join("")}
+    </div>
+  `;
+}
+
+function formatCrmPreviewValue(value) {
+  if (value === undefined || value === null || value === "") return "Not set";
+  const text = String(value).replace(/\s+/g, " ").trim();
+  return text.length > 120 ? `${text.slice(0, 117)}...` : text;
+}
+
 function renderHandoff() {
   const warmLeads = getWarmLeads();
   const selectedProspect = getSelectedProspect();
   const selectedIsWarm = selectedProspect ? isWarmLead(selectedProspect) : false;
   handoffSummary.textContent = `${warmLeads.length} warm lead${warmLeads.length === 1 ? "" : "s"} ready for CRM export.${selectedIsWarm ? ` Selected: ${selectedProspect.company}.` : " Select or mark a warm lead to build its packet."}`;
   handoffPacket.value = formatHandoffPacket(selectedProspect);
+  renderCrmFieldMappingPreview(selectedProspect);
   handoffOwnerInput.value = selectedProspect?.handoffOwner || "";
   handoffStatusInput.value = selectedProspect?.handoffStatus || "Unassigned";
   handoffDueInput.value = selectedProspect?.handoffDue || "";
@@ -3151,6 +3227,21 @@ async function copySelectedHandoffPacket() {
     handoffPacket.select();
     document.execCommand("copy");
     setDataStatus(`CRM handoff packet selected for ${prospect.company}.`);
+  }
+}
+
+async function copySelectedCrmMapping() {
+  const prospect = getSelectedProspect();
+  if (!prospect) return;
+
+  const mapping = JSON.stringify(getCrmRecord(prospect), null, 2);
+  try {
+    await navigator.clipboard.writeText(mapping);
+    setDataStatus(`CRM JSON mapping copied for ${prospect.company}.`);
+  } catch {
+    handoffPacket.value = mapping;
+    handoffPacket.select();
+    setDataStatus(`CRM JSON mapping selected for ${prospect.company}.`);
   }
 }
 
@@ -4072,6 +4163,7 @@ checkCrmSetupButton.addEventListener("click", checkCrmSetup);
 syncSelectedCrmButton.addEventListener("click", syncSelectedCrmLead);
 syncWarmCrmButton.addEventListener("click", syncWarmCrmLeads);
 copyHandoffPacketButton.addEventListener("click", copySelectedHandoffPacket);
+copyCrmMappingButton.addEventListener("click", copySelectedCrmMapping);
 markCrmReadyButton.addEventListener("click", markSelectedCrmReady);
 
 renderPromptTemplates();

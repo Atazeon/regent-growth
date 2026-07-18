@@ -633,6 +633,7 @@ $env:REGENT_CRM_API_KEY="your_api_key"
             <p class="handoff-summary" id="handoffSummary">No warm leads ready yet.</p>
             <div class="handoff-actions">
               <button id="copyHandoffPacketButton" class="secondary-button" type="button">Copy selected packet</button>
+              <button id="copyCrmMappingButton" class="secondary-button" type="button">Copy CRM JSON</button>
               <button id="markCrmReadyButton" type="button">Mark CRM ready</button>
             </div>
             <form id="handoffForm" class="handoff-form">
@@ -663,6 +664,9 @@ $env:REGENT_CRM_API_KEY="your_api_key"
             </form>
           </div>
           <textarea id="handoffPacket" readonly></textarea>
+        </div>
+        <div id="crmFieldPreview" class="crm-field-preview">
+          <p class="empty-state">Select a prospect to preview the CRM sync field mapping.</p>
         </div>
         <h3>Checklist</h3>
         <div class="checklist">

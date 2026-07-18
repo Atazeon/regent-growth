@@ -1125,6 +1125,76 @@ button:disabled {
   margin: 0;
 }
 
+.crm-field-preview {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f9fafc;
+  margin-top: 18px;
+  padding: 16px;
+}
+
+.crm-preview-heading {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.crm-preview-heading h3 {
+  margin: 4px 0 0;
+}
+
+.crm-preview-heading span {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.crm-preview-warning {
+  color: #8a5a00;
+  font-weight: 700;
+  margin: 12px 0 0;
+}
+
+.crm-field-groups {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  margin-top: 14px;
+}
+
+.crm-field-groups section {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.crm-field-groups h4 {
+  margin: 0 0 10px;
+}
+
+.crm-field-row {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(120px, 0.45fr) 1fr;
+  padding: 7px 0;
+}
+
+.crm-field-row + .crm-field-row {
+  border-top: 1px solid var(--line);
+}
+
+.crm-field-row code {
+  color: var(--blue);
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+
+.crm-field-row span {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
 .team-dashboard-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1248,7 +1318,9 @@ textarea {
   .prompt-grid,
   .response-form,
   .discovery-form,
-  .team-dashboard-grid {
+  .team-dashboard-grid,
+  .crm-field-groups,
+  .crm-field-row {
     grid-template-columns: 1fr;
   }
 
