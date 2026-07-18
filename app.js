@@ -2977,11 +2977,12 @@ async function checkCrmSetup() {
     }
 
     const status = await response.json();
+    const ready = status.configured && status.valid !== false;
     setCrmSetupStatus(
-      status.configured
+      ready
         ? `CRM connector ready: ${status.endpoint}${status.keyConfigured ? " with API key" : " without API key"}.`
-        : "CRM connector is not configured. Set REGENT_CRM_API_URL before starting the local server.",
-      status.configured ? "" : "error"
+        : status.message || "CRM connector is not configured. Set REGENT_CRM_API_URL before starting the local server.",
+      ready ? "" : "error"
     );
   } catch (error) {
     setCrmSetupStatus(isLocalFile()
@@ -2992,6 +2993,14 @@ async function checkCrmSetup() {
 }
 
 async function syncCrmRecords(records, prospectsToUpdate) {
+  const startedAt = new Date().toISOString();
+  prospectsToUpdate.forEach((prospect) => {
+    prospect.crmSyncStatus = "Syncing";
+    prospect.crmSyncNotes = [`${startedAt}: Sync queued for CRM connector.`, prospect.crmSyncNotes].filter(Boolean).join("\n");
+  });
+  saveProspects();
+  renderProspects();
+
   const response = await fetch(crmSyncEndpoint, {
     method: "POST",
     headers: {
@@ -3006,10 +3015,11 @@ async function syncCrmRecords(records, prospectsToUpdate) {
   }
 
   const syncedAt = payload.syncedAt || new Date().toISOString();
+  const acceptedCount = payload.acceptedCount ?? records.length;
   prospectsToUpdate.forEach((prospect) => {
     prospect.crmSyncStatus = "Synced";
     prospect.crmSyncedAt = syncedAt;
-    prospect.crmSyncNotes = [`Synced through local CRM connector.`, prospect.crmSyncNotes].filter(Boolean).join("\n");
+    prospect.crmSyncNotes = [`${syncedAt}: Synced through local CRM connector (${acceptedCount} record${acceptedCount === 1 ? "" : "s"} accepted).`, prospect.crmSyncNotes].filter(Boolean).join("\n");
     if (prospect.handoffStatus === "Assigned" || prospect.handoffStatus === "In Review") {
       prospect.handoffStatus = "Handed Off";
     }
@@ -3029,6 +3039,7 @@ async function syncSelectedCrmLead() {
   }
 
   syncSelectedCrmButton.disabled = true;
+  syncWarmCrmButton.disabled = true;
   setCrmSetupStatus(`Syncing ${prospect.company} to CRM...`, "working");
 
   try {
@@ -3043,6 +3054,7 @@ async function syncSelectedCrmLead() {
     setCrmSetupStatus(error.message, "error");
   } finally {
     syncSelectedCrmButton.disabled = false;
+    syncWarmCrmButton.disabled = false;
   }
 }
 
@@ -3055,6 +3067,7 @@ async function syncWarmCrmLeads() {
   }
 
   syncWarmCrmButton.disabled = true;
+  syncSelectedCrmButton.disabled = true;
   setCrmSetupStatus(`Syncing ${warmLeads.length} warm lead${warmLeads.length === 1 ? "" : "s"} to CRM...`, "working");
 
   try {
@@ -3072,6 +3085,7 @@ async function syncWarmCrmLeads() {
     setCrmSetupStatus(error.message, "error");
   } finally {
     syncWarmCrmButton.disabled = false;
+    syncSelectedCrmButton.disabled = false;
   }
 }
 

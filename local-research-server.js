@@ -15,6 +15,7 @@ const maxSharedProspectsBackups = Number.isFinite(configuredTeamBackupLimit)
   : 12;
 const sourceTimeoutMs = 12000;
 const searchTimeoutMs = 12000;
+const crmTimeoutMs = 15000;
 const searchApiUrl = process.env.REGENT_SEARCH_API_URL || "";
 const searchApiKey = process.env.REGENT_SEARCH_API_KEY || "";
 const searchApiKeyHeader = process.env.REGENT_SEARCH_API_KEY_HEADER || "Authorization";
@@ -479,21 +480,60 @@ function cleanText(value) {
 
 function getCrmStatus() {
   let endpoint = "";
+  let valid = false;
+  let message = crmApiUrl ? "CRM connector configured." : "CRM API URL is not configured.";
 
   if (crmApiUrl) {
     try {
-      endpoint = new URL(crmApiUrl).origin;
-    } catch {
+      const url = getValidatedCrmApiUrl();
+      endpoint = url.origin;
+      valid = true;
+    } catch (error) {
       endpoint = "Invalid CRM URL";
+      message = error.message;
     }
   }
 
   return {
     configured: Boolean(crmApiUrl),
+    valid,
     endpoint,
+    message,
     keyConfigured: Boolean(crmApiKey),
     keyHeader: crmApiKeyHeader
   };
+}
+
+function getValidatedCrmApiUrl() {
+  let url;
+
+  try {
+    url = new URL(crmApiUrl);
+  } catch {
+    throw new Error("CRM API URL is invalid. Use a full http or https webhook URL.");
+  }
+
+  if (!["http:", "https:"].includes(url.protocol)) {
+    throw new Error("CRM API URL must use http or https.");
+  }
+
+  return url;
+}
+
+function validateCrmRecords(records) {
+  if (!Array.isArray(records) || records.length === 0) {
+    throw new Error("At least one CRM record is required.");
+  }
+
+  records.forEach((record, index) => {
+    if (!record || typeof record !== "object" || Array.isArray(record)) {
+      throw new Error(`CRM record ${index + 1} must be an object.`);
+    }
+
+    if (!String(record.company || "").trim()) {
+      throw new Error(`CRM record ${index + 1} needs a company name.`);
+    }
+  });
 }
 
 function extractFirst(html, patterns) {
@@ -694,8 +734,9 @@ async function syncCrmRecords(records) {
     throw new Error("CRM API is not configured. Set REGENT_CRM_API_URL and optional REGENT_CRM_API_KEY before starting the server.");
   }
 
+  const url = getValidatedCrmApiUrl();
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), sourceTimeoutMs);
+  const timeout = setTimeout(() => controller.abort(), crmTimeoutMs);
   const headers = {
     "Accept": "application/json",
     "Content-Type": "application/json"
@@ -708,21 +749,28 @@ async function syncCrmRecords(records) {
   }
 
   try {
-    const response = await fetch(crmApiUrl, {
+    const syncedAt = new Date().toISOString();
+    const response = await fetch(url.href, {
       method: "POST",
       headers,
       signal: controller.signal,
       body: JSON.stringify({
         source: "regent-growth",
-        syncedAt: new Date().toISOString(),
+        syncedAt,
         records
       })
     });
     const contentType = response.headers.get("content-type") || "";
     const responseBody = await response.text();
-    const payload = contentType.includes("application/json") && responseBody
-      ? JSON.parse(responseBody)
-      : { message: responseBody };
+    let payload = responseBody ? { message: responseBody } : {};
+
+    if (contentType.includes("application/json") && responseBody) {
+      try {
+        payload = JSON.parse(responseBody);
+      } catch {
+        payload = { message: responseBody, parseWarning: "CRM returned invalid JSON." };
+      }
+    }
 
     if (!response.ok) {
       throw new Error(payload.message || `CRM API returned ${response.status}`);
@@ -731,7 +779,9 @@ async function syncCrmRecords(records) {
     return {
       ok: true,
       status: response.status,
-      syncedAt: new Date().toISOString(),
+      syncedAt,
+      acceptedCount: records.length,
+      endpoint: url.origin,
       result: payload
     };
   } finally {
@@ -875,10 +925,7 @@ const server = http.createServer(async (request, response) => {
     try {
       const body = await readJsonBody(request);
       const records = Array.isArray(body.records) ? body.records : [];
-
-      if (records.length === 0) {
-        throw new Error("At least one CRM record is required.");
-      }
+      validateCrmRecords(records);
 
       const result = await syncCrmRecords(records);
       sendJson(response, 200, result);
