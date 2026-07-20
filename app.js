@@ -3568,6 +3568,7 @@ function renderDailyRunHistory() {
           <option value="Failed" ${dailyRunHistoryStatusFilter === "Failed" ? "selected" : ""}>Failed</option>
         </select>
         <button class="secondary-button" type="button" data-action="copy-daily-history-summary">Copy summary</button>
+        <button class="secondary-button" type="button" data-action="copy-stopped-daily-history">Copy stopped</button>
         <button class="secondary-button" type="button" data-action="export-daily-history">Export visible JSON</button>
         <button class="secondary-button" type="button" data-action="export-daily-history-csv">Export visible CSV</button>
         <button class="danger-button" type="button" data-action="clear-daily-history">Clear</button>
@@ -3728,6 +3729,21 @@ async function copyDailyRunHistorySummary() {
   const summary = formatDailyRunHistorySummary();
   await navigator.clipboard.writeText(summary);
   setDataStatus("Copied Daily AI run history summary.");
+}
+
+async function copyStoppedDailyRunHistorySummary() {
+  const stoppedRuns = dailyRunHistory.filter((snapshot) => snapshot.status === "Stopped");
+  if (stoppedRuns.length === 0) {
+    setDataStatus("No stopped Daily AI runs to copy.", "error");
+    return;
+  }
+
+  const currentFilter = dailyRunHistoryStatusFilter;
+  dailyRunHistoryStatusFilter = "Stopped";
+  const summary = formatDailyRunHistorySummary(stoppedRuns);
+  dailyRunHistoryStatusFilter = currentFilter;
+  await navigator.clipboard.writeText(summary);
+  setDataStatus(`Copied ${stoppedRuns.length} stopped Daily AI run summar${stoppedRuns.length === 1 ? "y" : "ies"}.`);
 }
 
 function exportDailyRunHistoryCsv() {
@@ -6393,6 +6409,10 @@ dailyRunHistoryList.addEventListener("click", (event) => {
 
   if (button.dataset.action === "copy-daily-history-summary") {
     copyDailyRunHistorySummary();
+  }
+
+  if (button.dataset.action === "copy-stopped-daily-history") {
+    copyStoppedDailyRunHistorySummary();
   }
 
   if (button.dataset.action === "export-daily-history-csv") {
