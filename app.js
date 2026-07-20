@@ -3056,12 +3056,21 @@ function renderCrmRetryQueue(failedCrmLeads = getFailedCrmSyncLeads()) {
       </div>
     </div>
     <div class="crm-retry-list">
-      ${failedCrmLeads.slice(0, 5).map((prospect) => `
+      ${failedCrmLeads.slice(0, 5).map((prospect) => {
+        const index = prospects.indexOf(prospect);
+        return `
         <article>
-          <strong>${escapeHtml(prospect.company)}</strong>
-          <p>${previewText(getLatestCrmSyncNote(prospect), "No failure note recorded.")}</p>
+          <div>
+            <strong>${escapeHtml(prospect.company)}</strong>
+            <p>${previewText(getLatestCrmSyncNote(prospect), "No failure note recorded.")}</p>
+          </div>
+          <div class="crm-retry-item-actions">
+            <button class="secondary-button" type="button" data-action="open-crm-failed" data-index="${escapeHtml(index)}">Open</button>
+            <button class="secondary-button" type="button" data-action="retry-crm-one" data-index="${escapeHtml(index)}">Retry</button>
+          </div>
         </article>
-      `).join("")}
+        `;
+      }).join("")}
     </div>
   `;
 }
@@ -3431,6 +3440,53 @@ function showFailedCrmSyncs() {
   responseFilter.value = "all";
   renderProspects();
   setDataStatus("Showing warm leads with failed CRM syncs.");
+}
+
+function openFailedCrmSync(index) {
+  const prospect = prospects[index];
+  if (!prospect) return;
+
+  selectedProspectIndex = index;
+  savedViews.dataset.activeView = "crm-failed";
+  stageFilter.value = "all";
+  responseFilter.value = "all";
+  renderProspects();
+  setDataStatus(`Opened failed CRM sync for ${prospect.company}.`);
+}
+
+async function retrySingleFailedCrmSync(index) {
+  const prospect = prospects[index];
+
+  if (!prospect || prospect.crmSyncStatus !== "Sync Failed") {
+    setCrmSetupStatus("Select a failed CRM sync before retrying one record.", "error");
+    return;
+  }
+
+  if (!isWarmLead(prospect)) {
+    setCrmSetupStatus(`${prospect.company} is not warm/CRM-ready. Mark it CRM ready before retrying.`, "error");
+    return;
+  }
+
+  retryFailedCrmButton.disabled = true;
+  syncWarmCrmButton.disabled = true;
+  syncSelectedCrmButton.disabled = true;
+  setCrmSetupStatus(`Retrying CRM sync for ${prospect.company}...`, "working");
+
+  try {
+    await syncCrmRecords([getCrmRecord(prospect)], [prospect]);
+    setCrmSetupStatus(`${prospect.company} retried and synced to CRM.`);
+    setDataStatus(`${prospect.company} removed from CRM retry queue.`);
+  } catch (error) {
+    prospect.crmSyncStatus = "Sync Failed";
+    appendCrmSyncNote(prospect, `${new Date().toISOString()}: Single retry failed: ${error.message}`);
+    saveProspects();
+    renderProspects();
+    setCrmSetupStatus(`CRM retry failed for ${prospect.company}: ${error.message}`, "error");
+  } finally {
+    retryFailedCrmButton.disabled = getFailedCrmSyncLeads().length === 0;
+    syncWarmCrmButton.disabled = false;
+    syncSelectedCrmButton.disabled = false;
+  }
 }
 
 async function copySelectedHandoffPacket() {
@@ -4291,6 +4347,14 @@ crmRetryQueue.addEventListener("click", (event) => {
 
   if (button.dataset.action === "show-crm-failed") {
     showFailedCrmSyncs();
+  }
+
+  if (button.dataset.action === "open-crm-failed") {
+    openFailedCrmSync(Number(button.dataset.index));
+  }
+
+  if (button.dataset.action === "retry-crm-one") {
+    retrySingleFailedCrmSync(Number(button.dataset.index));
   }
 });
 clearFormButton.addEventListener("click", resetForm);
