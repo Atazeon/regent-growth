@@ -260,6 +260,7 @@ const syncSelectedCrmButton = document.querySelector("#syncSelectedCrmButton");
 const syncWarmCrmButton = document.querySelector("#syncWarmCrmButton");
 const retryFailedCrmButton = document.querySelector("#retryFailedCrmButton");
 const markReviewedCrmButton = document.querySelector("#markReviewedCrmButton");
+const requeueReviewedCrmButton = document.querySelector("#requeueReviewedCrmButton");
 const exportFailedCrmButton = document.querySelector("#exportFailedCrmButton");
 const exportFailedCrmCsvButton = document.querySelector("#exportFailedCrmCsvButton");
 const clearResolvedCrmButton = document.querySelector("#clearResolvedCrmButton");
@@ -2834,6 +2835,10 @@ function getFailedCrmSyncLeads() {
   return getWarmLeads().filter((prospect) => prospect.crmSyncStatus === "Sync Failed");
 }
 
+function getReviewedCrmSyncLeads() {
+  return getWarmLeads().filter((prospect) => prospect.crmSyncStatus === "Retry Reviewed");
+}
+
 function getCrmRecord(prospect) {
   const leadSummary = getLeadScoreSummary(prospect);
   return {
@@ -3026,13 +3031,15 @@ function renderHandoff() {
 }
 
 function renderCrmRetryQueue(failedCrmLeads = getFailedCrmSyncLeads()) {
+  const reviewedCrmLeads = getReviewedCrmSyncLeads();
   retryFailedCrmButton.disabled = failedCrmLeads.length === 0;
   markReviewedCrmButton.disabled = failedCrmLeads.length === 0;
+  requeueReviewedCrmButton.disabled = reviewedCrmLeads.length === 0;
   exportFailedCrmButton.disabled = failedCrmLeads.length === 0;
   exportFailedCrmCsvButton.disabled = failedCrmLeads.length === 0;
   const syncedCount = prospects.filter((prospect) => prospect.crmSyncStatus === "Synced").length;
   const syncingCount = prospects.filter((prospect) => prospect.crmSyncStatus === "Syncing").length;
-  const reviewedCount = prospects.filter((prospect) => prospect.crmSyncStatus === "Retry Reviewed").length;
+  const reviewedCount = reviewedCrmLeads.length;
   const notSyncedCount = prospects.filter((prospect) => !prospect.crmSyncStatus || prospect.crmSyncStatus === "Not Synced").length;
 
   if (failedCrmLeads.length === 0) {
@@ -3169,6 +3176,27 @@ function markFailedCrmSyncsReviewed() {
   renderProspects();
   setCrmSetupStatus(`Marked ${failedCrmLeads.length} failed CRM sync${failedCrmLeads.length === 1 ? "" : "s"} reviewed.`);
   setDataStatus("Reviewed CRM failures are preserved in the CRM Reviewed view.");
+}
+
+function requeueReviewedCrmSyncs() {
+  const reviewedCrmLeads = getReviewedCrmSyncLeads();
+
+  if (reviewedCrmLeads.length === 0) {
+    setCrmSetupStatus("No reviewed CRM syncs to requeue.");
+    return;
+  }
+
+  const requeuedAt = new Date().toISOString();
+
+  reviewedCrmLeads.forEach((prospect) => {
+    prospect.crmSyncStatus = "Sync Failed";
+    appendCrmSyncNote(prospect, `${requeuedAt}: Reviewed CRM retry requeued for automatic retry.`);
+  });
+
+  saveProspects();
+  renderProspects();
+  setCrmSetupStatus(`Requeued ${reviewedCrmLeads.length} reviewed CRM sync${reviewedCrmLeads.length === 1 ? "" : "s"}.`);
+  setDataStatus("Reviewed CRM syncs moved back to the failed retry queue.");
 }
 
 function downloadFile(filename, content, type) {
@@ -4481,6 +4509,7 @@ syncSelectedCrmButton.addEventListener("click", syncSelectedCrmLead);
 syncWarmCrmButton.addEventListener("click", syncWarmCrmLeads);
 retryFailedCrmButton.addEventListener("click", retryFailedCrmSyncs);
 markReviewedCrmButton.addEventListener("click", markFailedCrmSyncsReviewed);
+requeueReviewedCrmButton.addEventListener("click", requeueReviewedCrmSyncs);
 exportFailedCrmButton.addEventListener("click", exportFailedCrmSyncs);
 exportFailedCrmCsvButton.addEventListener("click", exportFailedCrmSyncCsv);
 clearResolvedCrmButton.addEventListener("click", clearResolvedCrmQueueState);
