@@ -3577,6 +3577,7 @@ function renderDailyRunHistory() {
           <button class="secondary-button" type="button" data-action="reset-daily-history-view">Reset view</button>
           <button class="secondary-button" type="button" data-action="copy-daily-history-summary">Copy summary</button>
           <button class="secondary-button" type="button" data-action="copy-daily-history-status-counts">Copy counts</button>
+          ${getDailyRunHistoryStatusCount("Failed") > 0 ? `<button class="secondary-button" type="button" data-action="show-failed-daily-history">View failed</button>` : ""}
           <button class="secondary-button" type="button" data-action="toggle-compact-daily-history">${compactDailyRunHistory ? "Full history" : "Compact history"}</button>
           <button class="secondary-button" type="button" data-action="toggle-all-daily-history">${showAllDailyRunHistory ? "Show first 5" : "Show all"}</button>
           <button class="secondary-button" type="button" data-action="export-daily-history">Export visible JSON</button>
@@ -3657,10 +3658,23 @@ function getDailyRunHistoryStatusCounts() {
   }));
 }
 
+function getDailyRunHistoryStatusCount(status) {
+  const match = getDailyRunHistoryStatusCounts().find((item) => item.value === status);
+  return match ? match.count : 0;
+}
+
 function clearDailyRunHistoryFilter() {
   dailyRunHistoryStatusFilter = "all";
   renderDailyRunHistory();
   setDataStatus("Cleared Daily AI history filter.");
+}
+
+function showFailedDailyRunHistory() {
+  dailyRunHistoryStatusFilter = "Failed";
+  compactDailyRunHistory = false;
+  showAllDailyRunHistory = true;
+  renderDailyRunHistory();
+  setDataStatus(`Showing ${getDailyRunHistoryStatusCount("Failed")} failed Daily AI run${getDailyRunHistoryStatusCount("Failed") === 1 ? "" : "s"}.`);
 }
 
 function resetDailyRunHistoryView() {
@@ -6672,6 +6686,10 @@ dailyRunHistoryList.addEventListener("click", (event) => {
 
   if (button.dataset.action === "copy-daily-history-status-counts") {
     copyDailyRunHistoryStatusCounts();
+  }
+
+  if (button.dataset.action === "show-failed-daily-history") {
+    showFailedDailyRunHistory();
   }
 
   if (button.dataset.action === "toggle-compact-daily-history") {
