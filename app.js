@@ -1744,6 +1744,7 @@ function renderDailyDraftReviewList(draftedProspects) {
         <button class="secondary-button" type="button" data-action="copy-daily-review">Copy packet</button>
         <button class="secondary-button" type="button" data-action="export-daily-review">Export JSON</button>
         <button class="secondary-button" type="button" data-action="export-daily-review-csv">Export CSV</button>
+        <button class="secondary-button" type="button" data-action="sequence-ready-daily-review">Sequence ready</button>
         <button class="secondary-button" type="button" data-action="sequence-all-daily-review">Sequence all</button>
       </div>
     </div>
@@ -1883,6 +1884,26 @@ function sequenceAllDailyReviewProspects() {
   saveProspects();
   renderProspects();
   setDataStatus(`Moved ${draftedProspects.length} Daily AI draft${draftedProspects.length === 1 ? "" : "s"} to Sequence.`);
+}
+
+function sequenceReadyDailyReviewProspects() {
+  const readyProspects = getDailyRunReviewProspects()
+    .filter(({ prospect }) => getDailyReviewSendReadiness(prospect).ready);
+
+  if (readyProspects.length === 0) {
+    setDataStatus("No send-ready Daily AI drafts are ready to sequence.", "error");
+    return;
+  }
+
+  const sequencedAt = new Date().toISOString();
+  readyProspects.forEach(({ prospect }) => {
+    prospect.stage = "Sequence";
+    prospect.responseNotes = [prospect.responseNotes, `${sequencedAt}: Send-ready AI email draft reviewed and moved to sequence in bulk.`].filter(Boolean).join("\n");
+  });
+
+  saveProspects();
+  renderProspects();
+  setDataStatus(`Moved ${readyProspects.length} send-ready Daily AI draft${readyProspects.length === 1 ? "" : "s"} to Sequence.`);
 }
 
 function getDailyReviewExportRecords() {
@@ -5789,6 +5810,10 @@ dailyRunReviewQueue.addEventListener("click", (event) => {
 
   if (button.dataset.action === "sequence-all-daily-review") {
     sequenceAllDailyReviewProspects();
+  }
+
+  if (button.dataset.action === "sequence-ready-daily-review") {
+    sequenceReadyDailyReviewProspects();
   }
 
   if (button.dataset.action === "export-daily-review") {
