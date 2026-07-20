@@ -557,7 +557,7 @@ button:disabled {
   align-items: end;
   display: grid;
   gap: 10px;
-  grid-template-columns: minmax(220px, 1fr) minmax(140px, 180px) auto;
+  grid-template-columns: minmax(220px, 1fr) minmax(140px, 180px) auto auto;
   margin-top: 14px;
 }
 
@@ -567,6 +567,25 @@ button:disabled {
   font-size: 0.9rem;
   font-weight: 700;
   gap: 8px;
+}
+
+.daily-failure-count {
+  align-items: center;
+  background: #f9fafc;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  display: inline-flex;
+  font-size: 0.82rem;
+  font-weight: 700;
+  min-height: 42px;
+  padding: 0 12px;
+}
+
+.daily-failure-count[data-state="warning"] {
+  background: #fff6ed;
+  border-color: #f0cfaa;
+  color: #8a5a00;
 }
 
 .daily-review-summary {

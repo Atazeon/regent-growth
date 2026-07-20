@@ -244,6 +244,7 @@ const dailyRunCapacitySummary = document.querySelector("#dailyRunCapacitySummary
 const dailyRunStats = document.querySelector("#dailyRunStats");
 const dailyReviewSearch = document.querySelector("#dailyReviewSearch");
 const dailyReviewReadinessFilter = document.querySelector("#dailyReviewReadinessFilter");
+const dailyFailureCountBadge = document.querySelector("#dailyFailureCountBadge");
 const clearDailyReviewFiltersButton = document.querySelector("#clearDailyReviewFiltersButton");
 const runDailyAiButton = document.querySelector("#runDailyAiButton");
 const generateDiscoveryButton = document.querySelector("#generateDiscoveryButton");
@@ -1744,6 +1745,7 @@ function renderDailyRunReviewQueue() {
   const draftedProspects = getDailyRunReviewProspects();
   const failedProspects = getDailyAiFailedProspects();
   const reviewCountLabel = renderDailyReviewCountLabel(draftedProspects, failedProspects);
+  renderDailyFailureCountBadge(failedProspects.length);
 
   if (draftedProspects.length === 0 && failedProspects.length === 0) {
     dailyRunReviewQueue.innerHTML = `
@@ -1758,6 +1760,12 @@ function renderDailyRunReviewQueue() {
     ${renderDailyDraftReviewList(draftedProspects)}
     ${renderDailyFailedReviewSection(failedProspects)}
   `;
+}
+
+function renderDailyFailureCountBadge(visibleFailureCount = getDailyAiFailedProspects().length) {
+  const totalFailureCount = filterDailyReviewItems(getDailyAiFailedItems()).length;
+  dailyFailureCountBadge.textContent = `${visibleFailureCount} visible / ${totalFailureCount} failure${totalFailureCount === 1 ? "" : "s"}`;
+  dailyFailureCountBadge.dataset.state = totalFailureCount > 0 ? "warning" : "clear";
 }
 
 function renderDailyReviewCountLabel(draftedProspects, failedProspects) {
