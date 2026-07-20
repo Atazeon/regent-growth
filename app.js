@@ -1688,7 +1688,10 @@ function matchesSavedView(prospect, selectedView) {
     "not-interested": (item) => item.responseStatus === "Not Interested",
     "no-response": (item) => item.responseStatus === "No Response",
     "follow-up-due": isFollowUpDue,
-    "crm-failed": (item) => isWarmLead(item) && item.crmSyncStatus === "Sync Failed"
+    "crm-failed": (item) => item.crmSyncStatus === "Sync Failed",
+    "crm-syncing": (item) => item.crmSyncStatus === "Syncing",
+    "crm-synced": (item) => item.crmSyncStatus === "Synced",
+    "crm-not-synced": (item) => !item.crmSyncStatus || item.crmSyncStatus === "Not Synced"
   };
 
   return (viewPredicates[selectedView] || viewPredicates.all)(prospect);
@@ -1704,7 +1707,11 @@ function getSavedViewLabel(selectedView) {
     blocked: "Blocked",
     "not-interested": "Not Interested",
     "no-response": "No Response",
-    "follow-up-due": "Follow-up Due"
+    "follow-up-due": "Follow-up Due",
+    "crm-failed": "CRM Failed",
+    "crm-syncing": "CRM Syncing",
+    "crm-synced": "CRM Synced",
+    "crm-not-synced": "CRM Not Synced"
   };
 
   return labels[selectedView] || labels.all;
@@ -3013,9 +3020,21 @@ function renderHandoff() {
 
 function renderCrmRetryQueue(failedCrmLeads = getFailedCrmSyncLeads()) {
   retryFailedCrmButton.disabled = failedCrmLeads.length === 0;
+  const syncedCount = prospects.filter((prospect) => prospect.crmSyncStatus === "Synced").length;
+  const syncingCount = prospects.filter((prospect) => prospect.crmSyncStatus === "Syncing").length;
+  const notSyncedCount = prospects.filter((prospect) => !prospect.crmSyncStatus || prospect.crmSyncStatus === "Not Synced").length;
 
   if (failedCrmLeads.length === 0) {
-    crmRetryQueue.innerHTML = `<p class="empty-state">No failed CRM syncs queued for retry.</p>`;
+    crmRetryQueue.innerHTML = `
+      <div class="crm-retry-heading">
+        <div>
+          <p class="eyebrow">CRM Retry Queue</p>
+          <h3>No failed syncs</h3>
+        </div>
+        ${renderCrmSyncStatusChips(failedCrmLeads.length, syncingCount, syncedCount, notSyncedCount)}
+      </div>
+      <p class="empty-state">No failed CRM syncs queued for retry.</p>
+    `;
     return;
   }
 
@@ -3025,7 +3044,10 @@ function renderCrmRetryQueue(failedCrmLeads = getFailedCrmSyncLeads()) {
         <p class="eyebrow">CRM Retry Queue</p>
         <h3>${escapeHtml(failedCrmLeads.length)} failed sync${failedCrmLeads.length === 1 ? "" : "s"}</h3>
       </div>
-      <button class="secondary-button" type="button" data-action="show-crm-failed">Show failed</button>
+      <div class="crm-retry-actions">
+        ${renderCrmSyncStatusChips(failedCrmLeads.length, syncingCount, syncedCount, notSyncedCount)}
+        <button class="secondary-button" type="button" data-action="show-crm-failed">Show failed</button>
+      </div>
     </div>
     <div class="crm-retry-list">
       ${failedCrmLeads.slice(0, 5).map((prospect) => `
@@ -3036,6 +3058,17 @@ function renderCrmRetryQueue(failedCrmLeads = getFailedCrmSyncLeads()) {
       `).join("")}
     </div>
   `;
+}
+
+function renderCrmSyncStatusChips(failedCount, syncingCount, syncedCount, notSyncedCount) {
+  const chips = [
+    { label: `${failedCount} failed`, state: "failed" },
+    { label: `${syncingCount} syncing`, state: "syncing" },
+    { label: `${syncedCount} synced`, state: "synced" },
+    { label: `${notSyncedCount} not synced`, state: "idle" }
+  ];
+
+  return `<div class="crm-sync-chips">${chips.map((chip) => `<span data-state="${escapeHtml(chip.state)}">${escapeHtml(chip.label)}</span>`).join("")}</div>`;
 }
 
 function getLatestCrmSyncNote(prospect) {

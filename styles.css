@@ -1214,6 +1214,45 @@ button:disabled {
   margin: 4px 0 0;
 }
 
+.crm-retry-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.crm-sync-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.crm-sync-chips span {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 6px 8px;
+  white-space: nowrap;
+}
+
+.crm-sync-chips span[data-state="failed"] {
+  border-color: #a73535;
+  color: #a73535;
+}
+
+.crm-sync-chips span[data-state="syncing"] {
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
+.crm-sync-chips span[data-state="synced"] {
+  border-color: #247247;
+  color: #247247;
+}
+
 .crm-retry-list {
   display: grid;
   gap: 8px;
@@ -1378,6 +1417,7 @@ textarea {
   .handoff-actions,
   .handoff-form,
   .crm-retry-heading,
+  .crm-retry-actions,
   .reminder-item,
   .reminder-title,
   .reminder-actions,
