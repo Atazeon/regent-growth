@@ -1745,6 +1745,8 @@ function renderDailyDraftReviewList(draftedProspects) {
         <button class="secondary-button" type="button" data-action="copy-blocked-daily-review">Copy blocked</button>
         <button class="secondary-button" type="button" data-action="export-daily-review">Export JSON</button>
         <button class="secondary-button" type="button" data-action="export-daily-review-csv">Export CSV</button>
+        <button class="secondary-button" type="button" data-action="export-blocked-daily-review">Export blocked JSON</button>
+        <button class="secondary-button" type="button" data-action="export-blocked-daily-review-csv">Export blocked CSV</button>
         <button class="secondary-button" type="button" data-action="export-ready-daily-review">Export ready JSON</button>
         <button class="secondary-button" type="button" data-action="export-ready-daily-review-csv">Export ready CSV</button>
         <button class="secondary-button" type="button" data-action="sequence-ready-daily-review">Sequence ready</button>
@@ -2074,6 +2076,51 @@ function formatBlockedDailyReviewPacket(items = getBlockedDailyReviewProspects()
       `Draft preview: ${previewText(prospect.aiEmail, "No draft saved.")}`
     ].join("\n");
   }).join("\n\n---\n\n");
+}
+
+function getBlockedDailyReviewExportRecords(items = getBlockedDailyReviewProspects()) {
+  return items.map(({ prospect }) => {
+    const readiness = getDailyReviewSendReadiness(prospect);
+    return {
+      company: prospect.company,
+      website: prospect.website,
+      industry: prospect.industry,
+      decisionMaker: prospect.decisionMaker,
+      contactEmail: prospect.contactEmail,
+      stage: prospect.stage,
+      missingRequired: readiness.checks
+        .filter((check) => check.required && !check.ready)
+        .map((check) => check.label)
+        .join("; "),
+      aiEmail: prospect.aiEmail
+    };
+  });
+}
+
+function exportBlockedDailyReviewJson() {
+  const records = getBlockedDailyReviewExportRecords();
+  if (records.length === 0) {
+    setDataStatus("No blocked Daily AI drafts to export.", "error");
+    return;
+  }
+
+  const exportedAt = new Date().toISOString();
+  const stamp = exportedAt.slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-daily-ai-blocked-review-${stamp}.json`, JSON.stringify({ exportedAt, records }, null, 2), "application/json;charset=utf-8");
+  setDataStatus(`Exported ${records.length} blocked Daily AI draft${records.length === 1 ? "" : "s"} as JSON.`);
+}
+
+function exportBlockedDailyReviewCsv() {
+  const records = getBlockedDailyReviewExportRecords();
+  if (records.length === 0) {
+    setDataStatus("No blocked Daily AI drafts to export.", "error");
+    return;
+  }
+
+  const headers = ["company", "website", "industry", "decisionMaker", "contactEmail", "stage", "missingRequired", "aiEmail"];
+  const rows = records.map((record) => headers.map((header) => csvCell(record[header])).join(","));
+  downloadFile("regent-growth-daily-ai-blocked-review.csv", [headers.join(","), ...rows].join("\n"), "text/csv;charset=utf-8");
+  setDataStatus(`Exported ${records.length} blocked Daily AI draft${records.length === 1 ? "" : "s"} as CSV.`);
 }
 
 async function copyBlockedDailyReviewPacket() {
@@ -5937,6 +5984,14 @@ dailyRunReviewQueue.addEventListener("click", (event) => {
 
   if (button.dataset.action === "export-ready-daily-review-csv") {
     exportReadyDailyReviewCsv();
+  }
+
+  if (button.dataset.action === "export-blocked-daily-review") {
+    exportBlockedDailyReviewJson();
+  }
+
+  if (button.dataset.action === "export-blocked-daily-review-csv") {
+    exportBlockedDailyReviewCsv();
   }
 
   if (button.dataset.action === "copy-daily-review") {
