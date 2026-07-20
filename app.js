@@ -3128,6 +3128,7 @@ function renderDailyRunHistory() {
           <option value="Completed with failures" ${dailyRunHistoryStatusFilter === "Completed with failures" ? "selected" : ""}>With failures</option>
           <option value="Failed" ${dailyRunHistoryStatusFilter === "Failed" ? "selected" : ""}>Failed</option>
         </select>
+        <button class="secondary-button" type="button" data-action="copy-daily-history-summary">Copy summary</button>
         <button class="secondary-button" type="button" data-action="export-daily-history">Export visible JSON</button>
         <button class="secondary-button" type="button" data-action="export-daily-history-csv">Export visible CSV</button>
         <button class="danger-button" type="button" data-action="clear-daily-history">Clear</button>
@@ -3255,6 +3256,39 @@ function exportDailyRunHistoryJson() {
   const stamp = exportedAt.slice(0, 19).replace(/[:T]/g, "-");
   downloadFile(`regent-growth-daily-ai-history-${stamp}.json`, JSON.stringify({ exportedAt, statusFilter: dailyRunHistoryStatusFilter, runs: visibleHistory }, null, 2), "application/json;charset=utf-8");
   setDataStatus(`Exported ${visibleHistory.length} Daily AI run history snapshot${visibleHistory.length === 1 ? "" : "s"} as JSON.`);
+}
+
+function formatDailyRunHistorySummary(historyItems = getVisibleDailyRunHistory()) {
+  if (historyItems.length === 0) return "No Daily AI run history matches the current filter.";
+
+  return [
+    `Daily AI Run History (${dailyRunHistoryStatusFilter === "all" ? "all runs" : dailyRunHistoryStatusFilter})`,
+    ...historyItems.slice(0, 10).map((snapshot, index) => {
+      const counts = [
+        `${snapshot.generatedCount} generated`,
+        `${snapshot.fetchedCount} fetched`,
+        `${snapshot.addedCount} added`,
+        `${snapshot.existingFilledCount} existing`,
+        `${snapshot.researched} researched`,
+        `${snapshot.drafted} drafted`,
+        `${snapshot.skipped} skipped`,
+        `${snapshot.failed} failed`
+      ].join(", ");
+      return [
+        `${index + 1}. ${snapshot.status} - ${formatDateTime(snapshot.finishedAt || snapshot.startedAt)}`,
+        `Model: ${snapshot.model || "Not set"} | Limit: ${snapshot.limit}`,
+        `Counts: ${counts}`,
+        `Companies: ${snapshot.companies.length > 0 ? snapshot.companies.join(", ") : "None"}`,
+        snapshot.error ? `Error: ${snapshot.error}` : ""
+      ].filter(Boolean).join("\n");
+    })
+  ].join("\n\n");
+}
+
+async function copyDailyRunHistorySummary() {
+  const summary = formatDailyRunHistorySummary();
+  await navigator.clipboard.writeText(summary);
+  setDataStatus("Copied Daily AI run history summary.");
 }
 
 function exportDailyRunHistoryCsv() {
@@ -5836,6 +5870,10 @@ dailyRunHistoryList.addEventListener("click", (event) => {
 
   if (button.dataset.action === "export-daily-history") {
     exportDailyRunHistoryJson();
+  }
+
+  if (button.dataset.action === "copy-daily-history-summary") {
+    copyDailyRunHistorySummary();
   }
 
   if (button.dataset.action === "export-daily-history-csv") {
