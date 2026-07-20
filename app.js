@@ -269,6 +269,7 @@ const exportFailedCrmCsvButton = document.querySelector("#exportFailedCrmCsvButt
 const exportReviewedCrmButton = document.querySelector("#exportReviewedCrmButton");
 const exportReviewedCrmCsvButton = document.querySelector("#exportReviewedCrmCsvButton");
 const copyCrmStatusSummaryButton = document.querySelector("#copyCrmStatusSummaryButton");
+const downloadCrmStatusSummaryButton = document.querySelector("#downloadCrmStatusSummaryButton");
 const clearResolvedCrmButton = document.querySelector("#clearResolvedCrmButton");
 const clearCrmNotesButton = document.querySelector("#clearCrmNotesButton");
 const crmSetupStatus = document.querySelector("#crmSetupStatus");
@@ -3489,6 +3490,13 @@ async function copyCrmStatusSummary() {
   }
 }
 
+function downloadCrmStatusSummary() {
+  const exportedAt = new Date().toISOString();
+  const stamp = exportedAt.slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-crm-summary-${stamp}.txt`, formatCrmStatusSummary(), "text/plain;charset=utf-8");
+  setCrmSetupStatus("Downloaded CRM sync summary.");
+}
+
 function setCrmSetupStatus(message, state = "") {
   crmSetupStatus.textContent = message;
   crmSetupStatus.dataset.state = state;
@@ -4785,6 +4793,7 @@ exportFailedCrmCsvButton.addEventListener("click", exportFailedCrmSyncCsv);
 exportReviewedCrmButton.addEventListener("click", exportReviewedCrmSyncs);
 exportReviewedCrmCsvButton.addEventListener("click", exportReviewedCrmSyncCsv);
 copyCrmStatusSummaryButton.addEventListener("click", copyCrmStatusSummary);
+downloadCrmStatusSummaryButton.addEventListener("click", downloadCrmStatusSummary);
 clearResolvedCrmButton.addEventListener("click", clearResolvedCrmQueueState);
 clearCrmNotesButton.addEventListener("click", cleanCrmSyncNotes);
 copyHandoffPacketButton.addEventListener("click", copySelectedHandoffPacket);
