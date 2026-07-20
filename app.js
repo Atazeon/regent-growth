@@ -184,6 +184,7 @@ let dailyRunHistoryStatusFilter = "all";
 let showAllDailyReviewItems = false;
 let showDailyReviewFailures = true;
 let dailyRunInProgress = false;
+let dailyRunStopRequested = false;
 let pendingTeamRestore = null;
 let teamBackupsCache = [];
 
@@ -247,6 +248,7 @@ const dailyReviewReadinessFilter = document.querySelector("#dailyReviewReadiness
 const dailyFailureCountBadge = document.querySelector("#dailyFailureCountBadge");
 const clearDailyReviewFiltersButton = document.querySelector("#clearDailyReviewFiltersButton");
 const runDailyAiButton = document.querySelector("#runDailyAiButton");
+const stopDailyAiButton = document.querySelector("#stopDailyAiButton");
 const generateDiscoveryButton = document.querySelector("#generateDiscoveryButton");
 const clearDiscoveryButton = document.querySelector("#clearDiscoveryButton");
 const searchSetupStatus = document.querySelector("#searchSetupStatus");
@@ -3920,7 +3922,17 @@ function renderDailyRunCapacitySummary() {
     ? `Daily AI capacity: ${capacity.existingCount} existing unfinished, ${capacity.eligibleCandidateCount} eligible candidate${capacity.eligibleCandidateCount === 1 ? "" : "s"}, ${capacity.plannedCandidateCount} candidate promotion slot${capacity.plannedCandidateCount === 1 ? "" : "s"} for a ${capacity.limit}-prospect run.${evidenceText}`
     : `Daily AI not ready: ${readiness.reason}`;
   runDailyAiButton.disabled = dailyRunInProgress || !readiness.ready;
+  stopDailyAiButton.disabled = !dailyRunInProgress || dailyRunStopRequested;
   renderDailyRunStats();
+}
+
+function requestDailyAiStop() {
+  if (!dailyRunInProgress) return;
+
+  dailyRunStopRequested = true;
+  stopDailyAiButton.disabled = true;
+  addDailyRunLog("Stop requested. Daily AI will stop after the current step finishes.", "error");
+  setDataStatus("Daily AI stop requested. Waiting for the current local AI step to finish.", "working");
 }
 
 function renderDailyRunStats() {
@@ -3949,6 +3961,11 @@ async function researchAndDraftDailyProspects(prospectsToProcess) {
   };
 
   for (const prospect of prospectsToProcess) {
+    if (dailyRunStopRequested) {
+      addDailyRunLog("Daily AI stop requested. Stopping before the next prospect.", "error");
+      break;
+    }
+
     try {
       if (prospect.aiBrief && prospect.aiEmail) {
         results.skipped += 1;
@@ -4021,7 +4038,9 @@ async function runDailyAiWorkflow() {
   }
 
   dailyRunInProgress = true;
+  dailyRunStopRequested = false;
   runDailyAiButton.disabled = true;
+  stopDailyAiButton.disabled = false;
   generateDiscoveryButton.disabled = true;
   researchAccountButton.disabled = true;
   generateEmailButton.disabled = true;
@@ -4063,11 +4082,12 @@ async function runDailyAiWorkflow() {
     runSnapshot.drafted = results.drafted;
     runSnapshot.skipped = results.skipped;
     runSnapshot.failed = results.failed;
-    runSnapshot.status = results.failed ? "Completed with failures" : "Completed";
+    runSnapshot.status = dailyRunStopRequested ? "Stopped" : (results.failed ? "Completed with failures" : "Completed");
     saveProspects();
     renderProspects();
-    setDataStatus(`Daily AI run complete: ${generatedCount} candidates generated, ${fetchedCount} sources fetched, ${addedProspects.length} prospects added, ${existingProspects.length} existing filled, ${results.researched} researched, ${results.drafted} emails drafted, ${results.skipped} skipped, ${results.failed} failed.`);
-    addDailyRunLog(`Complete: ${generatedCount} generated, ${fetchedCount} sources fetched, ${addedProspects.length} added, ${existingProspects.length} existing filled, ${results.researched} researched, ${results.drafted} drafted, ${results.skipped} skipped, ${results.failed} failed.`, results.failed ? "error" : "done");
+    const completionLabel = dailyRunStopRequested ? "Daily AI run stopped" : "Daily AI run complete";
+    setDataStatus(`${completionLabel}: ${generatedCount} candidates generated, ${fetchedCount} sources fetched, ${addedProspects.length} prospects added, ${existingProspects.length} existing filled, ${results.researched} researched, ${results.drafted} emails drafted, ${results.skipped} skipped, ${results.failed} failed.`);
+    addDailyRunLog(`${dailyRunStopRequested ? "Stopped" : "Complete"}: ${generatedCount} generated, ${fetchedCount} sources fetched, ${addedProspects.length} added, ${existingProspects.length} existing filled, ${results.researched} researched, ${results.drafted} drafted, ${results.skipped} skipped, ${results.failed} failed.`, results.failed || dailyRunStopRequested ? "error" : "done");
     recordDailyRunHistory(runSnapshot);
   } catch (error) {
     const message = error.name === "AbortError"
@@ -4081,6 +4101,7 @@ async function runDailyAiWorkflow() {
     recordDailyRunHistory(runSnapshot);
   } finally {
     dailyRunInProgress = false;
+    dailyRunStopRequested = false;
     renderDailyRunCapacitySummary();
     generateDiscoveryButton.disabled = false;
     researchAccountButton.disabled = false;
@@ -6356,6 +6377,7 @@ teamRestorePreview.addEventListener("click", (event) => {
   }
 });
 runDailyAiButton.addEventListener("click", runDailyAiWorkflow);
+stopDailyAiButton.addEventListener("click", requestDailyAiStop);
 discoveryForm.addEventListener("input", renderDailyRunCapacitySummary);
 dailyReviewSearch.addEventListener("input", renderDailyRunReviewQueue);
 dailyReviewReadinessFilter.addEventListener("change", renderDailyRunReviewQueue);
