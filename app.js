@@ -3564,6 +3564,7 @@ function renderDailyRunHistory() {
           <option value="all" ${dailyRunHistoryStatusFilter === "all" ? "selected" : ""}>All runs</option>
           <option value="Completed" ${dailyRunHistoryStatusFilter === "Completed" ? "selected" : ""}>Completed</option>
           <option value="Completed with failures" ${dailyRunHistoryStatusFilter === "Completed with failures" ? "selected" : ""}>With failures</option>
+          <option value="Stopped" ${dailyRunHistoryStatusFilter === "Stopped" ? "selected" : ""}>Stopped</option>
           <option value="Failed" ${dailyRunHistoryStatusFilter === "Failed" ? "selected" : ""}>Failed</option>
         </select>
         <button class="secondary-button" type="button" data-action="copy-daily-history-summary">Copy summary</button>
