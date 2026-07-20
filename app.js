@@ -3157,6 +3157,7 @@ function renderDailyRunHistoryItem(snapshot) {
     `${snapshot.failed} failed`
   ].join(" | ");
   const companyText = snapshot.companies.length > 0 ? snapshot.companies.join(", ") : "No companies processed";
+  const canRetry = snapshot.companies.length > 0 && (snapshot.status !== "Completed" || snapshot.failed > 0);
 
   return `
     <article>
@@ -3167,8 +3168,80 @@ function renderDailyRunHistoryItem(snapshot) {
         <p>${escapeHtml(companyText)}</p>
         ${snapshot.error ? `<p class="history-error">${escapeHtml(snapshot.error)}</p>` : ""}
       </div>
+      ${canRetry ? `
+        <div class="daily-review-actions">
+          <button type="button" data-action="retry-daily-history-failures" data-id="${escapeHtml(snapshot.id)}">Retry failures</button>
+        </div>
+      ` : ""}
     </article>
   `;
+}
+
+function getDailyHistoryFailedProspects(snapshot) {
+  const companyKeys = new Set(snapshot.companies.map(getCompanyMatchKey).filter(Boolean));
+  return prospects.filter((prospect) => (
+    companyKeys.has(getCompanyMatchKey(prospect.company))
+    && !prospect.aiEmail
+    && (prospect.responseNotes || "").includes("Daily AI failed:")
+  ));
+}
+
+function getCompanyMatchKey(company) {
+  return String(company || "").trim().toLowerCase();
+}
+
+async function retryDailyRunHistoryFailures(id) {
+  const snapshot = dailyRunHistory.find((historyItem) => historyItem.id === id);
+  if (!snapshot) return;
+
+  const failedProspects = getDailyHistoryFailedProspects(snapshot);
+  if (failedProspects.length === 0) {
+    setDataStatus("No matching failed Daily AI prospects are still waiting for retry.", "error");
+    return;
+  }
+
+  const retrySnapshot = {
+    id: createId(),
+    startedAt: new Date().toISOString(),
+    status: "Running",
+    model: modelSelect.value,
+    limit: failedProspects.length,
+    generatedCount: 0,
+    fetchedCount: 0,
+    addedCount: 0,
+    existingFilledCount: failedProspects.length,
+    researched: 0,
+    drafted: 0,
+    skipped: 0,
+    failed: 0,
+    error: "",
+    companies: failedProspects.map((prospect) => prospect.company).filter(Boolean)
+  };
+
+  runDailyAiButton.disabled = true;
+  resetDailyRunLog();
+  addDailyRunLog(`Retrying ${failedProspects.length} failed prospect${failedProspects.length === 1 ? "" : "s"} from Daily AI history.`);
+
+  try {
+    const results = await researchAndDraftDailyProspects(failedProspects);
+    retrySnapshot.researched = results.researched;
+    retrySnapshot.drafted = results.drafted;
+    retrySnapshot.skipped = results.skipped;
+    retrySnapshot.failed = results.failed;
+    retrySnapshot.status = results.failed ? "Completed with failures" : "Completed";
+    recordDailyRunHistory(retrySnapshot);
+    setDataStatus(`Daily AI history retry complete: ${results.researched} researched, ${results.drafted} drafted, ${results.failed} failed.`);
+    addDailyRunLog(`History retry complete: ${results.researched} researched, ${results.drafted} drafted, ${results.failed} failed.`, results.failed ? "error" : "done");
+  } catch (error) {
+    retrySnapshot.status = "Failed";
+    retrySnapshot.error = error.message || "Daily AI history retry failed.";
+    recordDailyRunHistory(retrySnapshot);
+    setDataStatus(`Daily AI history retry failed: ${retrySnapshot.error}`, "error");
+    addDailyRunLog(`History retry failed: ${retrySnapshot.error}`, "error");
+  } finally {
+    renderProspects();
+    renderDailyRunCapacitySummary();
+  }
 }
 
 function exportDailyRunHistoryJson() {
@@ -5771,6 +5844,10 @@ dailyRunHistoryList.addEventListener("click", (event) => {
 
   if (button.dataset.action === "clear-daily-history") {
     clearDailyRunHistory();
+  }
+
+  if (button.dataset.action === "retry-daily-history-failures") {
+    retryDailyRunHistoryFailures(button.dataset.id);
   }
 });
 dailyRunHistoryList.addEventListener("change", (event) => {

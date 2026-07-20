@@ -525,9 +525,13 @@ button:disabled {
 }
 
 .daily-run-history article {
+  align-items: center;
   background: #fff;
   border: 1px solid var(--line);
   border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr auto;
   padding: 10px 12px;
 }
 
@@ -1626,6 +1630,7 @@ textarea {
   .crm-retry-list article,
   .crm-retry-item-actions,
   .daily-review-list article,
+  .daily-run-history article,
   .daily-review-actions,
   .reminder-item,
   .reminder-title,
