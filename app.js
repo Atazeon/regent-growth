@@ -260,6 +260,7 @@ const syncSelectedCrmButton = document.querySelector("#syncSelectedCrmButton");
 const syncWarmCrmButton = document.querySelector("#syncWarmCrmButton");
 const retryFailedCrmButton = document.querySelector("#retryFailedCrmButton");
 const markReviewedCrmButton = document.querySelector("#markReviewedCrmButton");
+const requeueSelectedReviewedCrmButton = document.querySelector("#requeueSelectedReviewedCrmButton");
 const requeueReviewedCrmButton = document.querySelector("#requeueReviewedCrmButton");
 const exportFailedCrmButton = document.querySelector("#exportFailedCrmButton");
 const exportFailedCrmCsvButton = document.querySelector("#exportFailedCrmCsvButton");
@@ -3203,6 +3204,32 @@ function requeueReviewedCrmSyncs() {
   setDataStatus("Reviewed CRM syncs moved back to the failed retry queue.");
 }
 
+function requeueSelectedReviewedCrmSync() {
+  const prospect = getSelectedProspect();
+
+  if (!prospect) {
+    setCrmSetupStatus("Select a reviewed CRM sync before requeueing one record.", "error");
+    return;
+  }
+
+  if (prospect.crmSyncStatus !== "Retry Reviewed") {
+    setCrmSetupStatus(`${prospect.company} is not marked CRM reviewed.`, "error");
+    return;
+  }
+
+  if (!isWarmLead(prospect)) {
+    setCrmSetupStatus(`${prospect.company} is not warm/CRM-ready. Mark it CRM ready before requeueing.`, "error");
+    return;
+  }
+
+  prospect.crmSyncStatus = "Sync Failed";
+  appendCrmSyncNote(prospect, `${new Date().toISOString()}: Selected reviewed CRM retry requeued.`);
+  saveProspects();
+  renderProspects();
+  setCrmSetupStatus(`${prospect.company} moved back to the CRM retry queue.`);
+  setDataStatus(`${prospect.company} is ready for CRM retry.`);
+}
+
 function downloadFile(filename, content, type) {
   const blob = new Blob([content], { type });
   const url = URL.createObjectURL(blob);
@@ -4557,6 +4584,7 @@ syncSelectedCrmButton.addEventListener("click", syncSelectedCrmLead);
 syncWarmCrmButton.addEventListener("click", syncWarmCrmLeads);
 retryFailedCrmButton.addEventListener("click", retryFailedCrmSyncs);
 markReviewedCrmButton.addEventListener("click", markFailedCrmSyncsReviewed);
+requeueSelectedReviewedCrmButton.addEventListener("click", requeueSelectedReviewedCrmSync);
 requeueReviewedCrmButton.addEventListener("click", requeueReviewedCrmSyncs);
 exportFailedCrmButton.addEventListener("click", exportFailedCrmSyncs);
 exportFailedCrmCsvButton.addEventListener("click", exportFailedCrmSyncCsv);
