@@ -3579,6 +3579,8 @@ function renderDailyRunHistory() {
           <button class="secondary-button" type="button" data-action="copy-daily-history-status-counts">Copy counts</button>
           ${getDailyRunHistoryStatusCount("Failed") > 0 ? `<button class="secondary-button" type="button" data-action="show-failed-daily-history">View failed</button>` : ""}
           ${visibleHistory.some((snapshot) => getDailyHistoryFailedProspects(snapshot).length > 0) ? `<button class="secondary-button" type="button" data-action="copy-visible-daily-history-failures">Copy visible failures</button>` : ""}
+          ${visibleHistory.some((snapshot) => getDailyHistoryFailedProspects(snapshot).length > 0) ? `<button class="secondary-button" type="button" data-action="export-visible-daily-history-failures">Export failures JSON</button>` : ""}
+          ${visibleHistory.some((snapshot) => getDailyHistoryFailedProspects(snapshot).length > 0) ? `<button class="secondary-button" type="button" data-action="export-visible-daily-history-failures-csv">Export failures CSV</button>` : ""}
           ${visibleHistory.some((snapshot) => getDailyHistoryFailedProspects(snapshot).length > 0) ? `<button class="secondary-button" type="button" data-action="retry-visible-daily-history-failures">Retry visible failures</button>` : ""}
           <button class="secondary-button" type="button" data-action="toggle-compact-daily-history">${compactDailyRunHistory ? "Full history" : "Compact history"}</button>
           <button class="secondary-button" type="button" data-action="toggle-all-daily-history">${showAllDailyRunHistory ? "Show first 5" : "Show all"}</button>
@@ -3757,6 +3759,10 @@ function getDailyHistoryFailedProspects(snapshot) {
 }
 
 function getVisibleDailyHistoryFailedProspects() {
+  return getVisibleDailyHistoryFailedItems().map(({ prospect }) => prospect);
+}
+
+function getVisibleDailyHistoryFailedItems() {
   const failedProspects = [];
   const seenProspects = new Set();
   getVisibleDailyRunHistory().forEach((snapshot) => {
@@ -3764,7 +3770,7 @@ function getVisibleDailyHistoryFailedProspects() {
       const key = prospect.id || getCompanyMatchKey(prospect.company);
       if (!key || seenProspects.has(key)) return;
       seenProspects.add(key);
-      failedProspects.push(prospect);
+      failedProspects.push({ prospect, index: prospects.indexOf(prospect) });
     });
   });
   return failedProspects;
@@ -3859,15 +3865,41 @@ async function retryVisibleDailyRunHistoryFailures() {
 }
 
 async function copyVisibleDailyRunHistoryFailurePacket() {
-  const failedProspects = getVisibleDailyHistoryFailedProspects();
-  if (failedProspects.length === 0) {
+  const failedItems = getVisibleDailyHistoryFailedItems();
+  if (failedItems.length === 0) {
     setDataStatus("No visible Daily AI history failures to copy.", "error");
     return;
   }
 
-  const packet = formatDailyAiFailurePacket(failedProspects);
+  const packet = formatDailyAiFailurePacket(failedItems);
   await navigator.clipboard.writeText(packet);
-  setDataStatus(`Copied ${failedProspects.length} visible Daily AI history failure${failedProspects.length === 1 ? "" : "s"}.`);
+  setDataStatus(`Copied ${failedItems.length} visible Daily AI history failure${failedItems.length === 1 ? "" : "s"}.`);
+}
+
+function exportVisibleDailyRunHistoryFailuresJson() {
+  const records = getDailyAiFailureExportRecords(getVisibleDailyHistoryFailedItems());
+  if (records.length === 0) {
+    setDataStatus("No visible Daily AI history failures to export.", "error");
+    return;
+  }
+
+  const exportedAt = new Date().toISOString();
+  const stamp = exportedAt.slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-daily-ai-history-failures-${stamp}.json`, JSON.stringify({ exportedAt, statusFilter: dailyRunHistoryStatusFilter, records }, null, 2), "application/json;charset=utf-8");
+  setDataStatus(`Exported ${records.length} visible Daily AI history failure${records.length === 1 ? "" : "s"} as JSON.`);
+}
+
+function exportVisibleDailyRunHistoryFailuresCsv() {
+  const records = getDailyAiFailureExportRecords(getVisibleDailyHistoryFailedItems());
+  if (records.length === 0) {
+    setDataStatus("No visible Daily AI history failures to export.", "error");
+    return;
+  }
+
+  const headers = ["company", "website", "industry", "decisionMaker", "contactEmail", "stage", "failure", "trigger", "fit", "responseNotes"];
+  const rows = records.map((record) => headers.map((header) => csvCell(record[header])).join(","));
+  downloadFile("regent-growth-daily-ai-history-failures.csv", [headers.join(","), ...rows].join("\n"), "text/csv;charset=utf-8");
+  setDataStatus(`Exported ${records.length} visible Daily AI history failure${records.length === 1 ? "" : "s"} as CSV.`);
 }
 
 async function retryDailyRunHistoryProspects(failedProspects, sourceLabel) {
@@ -6799,6 +6831,14 @@ dailyRunHistoryList.addEventListener("click", (event) => {
 
   if (button.dataset.action === "copy-visible-daily-history-failures") {
     copyVisibleDailyRunHistoryFailurePacket();
+  }
+
+  if (button.dataset.action === "export-visible-daily-history-failures") {
+    exportVisibleDailyRunHistoryFailuresJson();
+  }
+
+  if (button.dataset.action === "export-visible-daily-history-failures-csv") {
+    exportVisibleDailyRunHistoryFailuresCsv();
   }
 
   if (button.dataset.action === "requeue-stopped-daily-history") {
