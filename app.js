@@ -232,6 +232,7 @@ const restoreTeamBackupInput = document.querySelector("#restoreTeamBackupInput")
 const discoveryForm = document.querySelector("#discoveryForm");
 const discoveryList = document.querySelector("#discoveryList");
 const dailyRunLog = document.querySelector("#dailyRunLog");
+const dailyRunReviewQueue = document.querySelector("#dailyRunReviewQueue");
 const runDailyAiButton = document.querySelector("#runDailyAiButton");
 const generateDiscoveryButton = document.querySelector("#generateDiscoveryButton");
 const clearDiscoveryButton = document.querySelector("#clearDiscoveryButton");
@@ -1627,6 +1628,68 @@ function renderProspects() {
   renderReminders();
   renderHandoff();
   renderOwnerDashboard();
+  renderDailyRunReviewQueue();
+}
+
+function getDailyRunReviewProspects() {
+  return prospects
+    .map((prospect, index) => ({ prospect, index }))
+    .filter(({ prospect }) => prospect.stage === "Email Drafted" && Boolean(prospect.aiEmail));
+}
+
+function renderDailyRunReviewQueue() {
+  const draftedProspects = getDailyRunReviewProspects();
+
+  if (draftedProspects.length === 0) {
+    dailyRunReviewQueue.innerHTML = `<p class="empty-state">No drafted AI emails are waiting for review.</p>`;
+    return;
+  }
+
+  dailyRunReviewQueue.innerHTML = `
+    <div class="section-heading compact-heading">
+      <div>
+        <p class="eyebrow">Daily AI Review</p>
+        <h3>${escapeHtml(draftedProspects.length)} drafted email${draftedProspects.length === 1 ? "" : "s"} ready</h3>
+      </div>
+    </div>
+    <div class="daily-review-list">
+      ${draftedProspects.slice(0, 6).map(({ prospect, index }) => `
+        <article>
+          <div>
+            <strong>${escapeHtml(prospect.company)}</strong>
+            <p>${previewText(prospect.aiEmail, "No draft saved.")}</p>
+          </div>
+          <div class="daily-review-actions">
+            <button class="secondary-button" type="button" data-action="open-daily-review" data-index="${escapeHtml(index)}">Open</button>
+            <button type="button" data-action="sequence-daily-review" data-index="${escapeHtml(index)}">Sequence</button>
+          </div>
+        </article>
+      `).join("")}
+    </div>
+  `;
+}
+
+function openDailyReviewProspect(index) {
+  const prospect = prospects[index];
+  if (!prospect) return;
+
+  selectedProspectIndex = index;
+  savedViews.dataset.activeView = "all";
+  stageFilter.value = "all";
+  responseFilter.value = "all";
+  renderProspects();
+  setDataStatus(`Opened AI email draft for ${prospect.company}.`);
+}
+
+function sequenceDailyReviewProspect(index) {
+  const prospect = prospects[index];
+  if (!prospect) return;
+
+  prospect.stage = "Sequence";
+  prospect.responseNotes = [prospect.responseNotes, `${new Date().toISOString()}: AI email draft reviewed and moved to sequence.`].filter(Boolean).join("\n");
+  saveProspects();
+  renderProspects();
+  setDataStatus(`${prospect.company} moved to Sequence.`);
 }
 
 function renderDiscoveryQueue() {
@@ -4900,6 +4963,18 @@ discoveryList.addEventListener("click", (event) => {
 
   if (button.dataset.action === "search-source") {
     searchDiscoverySources(button.dataset.id);
+  }
+});
+dailyRunReviewQueue.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-action]");
+  if (!button) return;
+
+  if (button.dataset.action === "open-daily-review") {
+    openDailyReviewProspect(Number(button.dataset.index));
+  }
+
+  if (button.dataset.action === "sequence-daily-review") {
+    sequenceDailyReviewProspect(Number(button.dataset.index));
   }
 });
 prospectForm.addEventListener("submit", saveProspectFromForm);

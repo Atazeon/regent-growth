@@ -468,6 +468,45 @@ button:disabled {
   color: #a73535;
 }
 
+.daily-run-review-queue {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin-top: 14px;
+  padding: 12px;
+}
+
+.compact-heading {
+  margin-bottom: 10px;
+}
+
+.daily-review-list {
+  display: grid;
+  gap: 8px;
+}
+
+.daily-review-list article {
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr auto;
+  padding: 10px 12px;
+}
+
+.daily-review-list p {
+  color: var(--muted);
+  font-size: 0.86rem;
+  margin: 4px 0 0;
+}
+
+.daily-review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
 .discovery-card {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -1507,6 +1546,8 @@ textarea {
   .crm-retry-actions,
   .crm-retry-list article,
   .crm-retry-item-actions,
+  .daily-review-list article,
+  .daily-review-actions,
   .reminder-item,
   .reminder-title,
   .reminder-actions,
