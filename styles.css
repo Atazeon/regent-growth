@@ -599,6 +599,27 @@ button:disabled {
   margin-left: 4px;
 }
 
+.daily-history-failure-count {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  display: inline-flex;
+  font-size: 0.76rem;
+  font-weight: 800;
+  margin: 8px 0 0;
+  padding: 6px 8px;
+}
+
+.daily-history-failure-count[data-state="warning"] {
+  border-color: #a73535;
+  color: #a73535;
+}
+
+.daily-history-failure-count[data-state="clear"] {
+  border-color: #247247;
+  color: #247247;
+}
+
 .daily-run-review-queue {
   border: 1px solid var(--line);
   border-radius: 8px;

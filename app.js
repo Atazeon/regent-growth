@@ -3562,6 +3562,7 @@ function renderDailyRunHistory() {
         <h3>${escapeHtml(visibleHistory.length)} of ${escapeHtml(dailyRunHistory.length)} saved run${dailyRunHistory.length === 1 ? "" : "s"}</h3>
         ${renderDailyRunHistoryCountBadge(visibleHistory)}
         ${renderDailyRunHistoryStatusCounts()}
+        ${renderDailyRunHistoryFailureRetryBadge(visibleHistory)}
       </div>
       <div class="daily-history-actions">
         <div>
@@ -3638,6 +3639,15 @@ function renderDailyRunHistoryStatusCounts() {
         </button>
       `).join("")}
     </div>
+  `;
+}
+
+function renderDailyRunHistoryFailureRetryBadge(visibleHistory) {
+  const retryableFailureCount = getVisibleDailyHistoryFailedItems(visibleHistory).length;
+  return `
+    <p class="daily-history-failure-count" data-state="${retryableFailureCount > 0 ? "warning" : "clear"}">
+      ${escapeHtml(retryableFailureCount)} visible retryable Daily AI failure${retryableFailureCount === 1 ? "" : "s"}
+    </p>
   `;
 }
 
@@ -3763,10 +3773,10 @@ function getVisibleDailyHistoryFailedProspects() {
   return getVisibleDailyHistoryFailedItems().map(({ prospect }) => prospect);
 }
 
-function getVisibleDailyHistoryFailedItems() {
+function getVisibleDailyHistoryFailedItems(historyItems = getVisibleDailyRunHistory()) {
   const failedProspects = [];
   const seenProspects = new Set();
-  getVisibleDailyRunHistory().forEach((snapshot) => {
+  historyItems.forEach((snapshot) => {
     getDailyHistoryFailedProspects(snapshot).forEach((prospect) => {
       const key = prospect.id || getCompanyMatchKey(prospect.company);
       if (!key || seenProspects.has(key)) return;
