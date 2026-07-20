@@ -1670,6 +1670,7 @@ function renderDailyDraftReviewList(draftedProspects) {
         <p class="eyebrow">Daily AI Review</p>
         <h3>${escapeHtml(draftedProspects.length)} drafted email${draftedProspects.length === 1 ? "" : "s"} ready</h3>
       </div>
+      <button class="secondary-button" type="button" data-action="sequence-all-daily-review">Sequence all</button>
     </div>
     <div class="daily-review-list">
       ${draftedProspects.slice(0, 6).map(({ prospect, index }) => `
@@ -1756,6 +1757,25 @@ function sequenceDailyReviewProspect(index) {
   saveProspects();
   renderProspects();
   setDataStatus(`${prospect.company} moved to Sequence.`);
+}
+
+function sequenceAllDailyReviewProspects() {
+  const draftedProspects = getDailyRunReviewProspects();
+
+  if (draftedProspects.length === 0) {
+    setDataStatus("No Daily AI drafts are ready to sequence.", "error");
+    return;
+  }
+
+  const sequencedAt = new Date().toISOString();
+  draftedProspects.forEach(({ prospect }) => {
+    prospect.stage = "Sequence";
+    prospect.responseNotes = [prospect.responseNotes, `${sequencedAt}: AI email draft reviewed and moved to sequence in bulk.`].filter(Boolean).join("\n");
+  });
+
+  saveProspects();
+  renderProspects();
+  setDataStatus(`Moved ${draftedProspects.length} Daily AI draft${draftedProspects.length === 1 ? "" : "s"} to Sequence.`);
 }
 
 function sendDailyReviewProspect(index) {
@@ -5270,6 +5290,10 @@ dailyRunReviewQueue.addEventListener("click", (event) => {
 
   if (button.dataset.action === "sequence-daily-review") {
     sequenceDailyReviewProspect(Number(button.dataset.index));
+  }
+
+  if (button.dataset.action === "sequence-all-daily-review") {
+    sequenceAllDailyReviewProspects();
   }
 
   if (button.dataset.action === "send-daily-review") {
