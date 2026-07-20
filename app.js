@@ -3549,6 +3549,7 @@ function recordDailyRunHistory(snapshot) {
 
 function renderDailyRunHistory() {
   const visibleHistory = getVisibleDailyRunHistory();
+  const visibleHistoryHasFailures = visibleHistory.some((snapshot) => getDailyHistoryFailedProspects(snapshot).length > 0);
 
   if (dailyRunHistory.length === 0) {
     dailyRunHistoryList.innerHTML = `<p class="empty-state">Completed Daily AI runs will appear here.</p>`;
@@ -3579,16 +3580,20 @@ function renderDailyRunHistory() {
           <button class="secondary-button" type="button" data-action="copy-daily-history-summary">Copy summary</button>
           <button class="secondary-button" type="button" data-action="copy-daily-history-status-counts">Copy counts</button>
           ${getDailyRunHistoryStatusCount("Failed") > 0 ? `<button class="secondary-button" type="button" data-action="show-failed-daily-history">View failed</button>` : ""}
-          ${visibleHistory.some((snapshot) => getDailyHistoryFailedProspects(snapshot).length > 0) ? `<button class="secondary-button" type="button" data-action="copy-visible-daily-history-failures">Copy visible failures</button>` : ""}
-          ${visibleHistory.some((snapshot) => getDailyHistoryFailedProspects(snapshot).length > 0) ? `<button class="secondary-button" type="button" data-action="export-visible-daily-history-failures">Export failures JSON</button>` : ""}
-          ${visibleHistory.some((snapshot) => getDailyHistoryFailedProspects(snapshot).length > 0) ? `<button class="secondary-button" type="button" data-action="export-visible-daily-history-failures-csv">Export failures CSV</button>` : ""}
-          ${visibleHistory.some((snapshot) => getDailyHistoryFailedProspects(snapshot).length > 0) ? `<button class="secondary-button" type="button" data-action="retry-visible-daily-history-failures">Retry visible failures</button>` : ""}
-          ${visibleHistory.some((snapshot) => getDailyHistoryFailedProspects(snapshot).length > 0) ? `<button class="secondary-button" type="button" data-action="clear-visible-daily-history-failures">Clear visible failures</button>` : ""}
           <button class="secondary-button" type="button" data-action="toggle-compact-daily-history">${compactDailyRunHistory ? "Full history" : "Compact history"}</button>
           <button class="secondary-button" type="button" data-action="toggle-all-daily-history">${showAllDailyRunHistory ? "Show first 5" : "Show all"}</button>
           <button class="secondary-button" type="button" data-action="export-daily-history">Export visible JSON</button>
           <button class="secondary-button" type="button" data-action="export-daily-history-csv">Export visible CSV</button>
         </div>
+        ${visibleHistoryHasFailures ? `
+          <div data-action-group="daily-history-failures">
+            <button class="secondary-button" type="button" data-action="copy-visible-daily-history-failures">Copy visible failures</button>
+            <button class="secondary-button" type="button" data-action="export-visible-daily-history-failures">Export failures JSON</button>
+            <button class="secondary-button" type="button" data-action="export-visible-daily-history-failures-csv">Export failures CSV</button>
+            <button class="secondary-button" type="button" data-action="retry-visible-daily-history-failures">Retry visible failures</button>
+            <button class="secondary-button" type="button" data-action="clear-visible-daily-history-failures">Clear visible failures</button>
+          </div>
+        ` : ""}
         <div>
           <button class="secondary-button" type="button" data-action="copy-skipped-daily-history">Copy skipped</button>
           <button class="secondary-button" type="button" data-action="export-skipped-daily-history">Export skipped JSON</button>
