@@ -453,6 +453,33 @@ button:disabled {
   margin: 12px 0 0;
 }
 
+.daily-run-stats {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  margin-top: 12px;
+}
+
+.daily-run-stats article {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 2px;
+  padding: 12px;
+}
+
+.daily-run-stats strong {
+  color: var(--ink);
+  font-size: 1.25rem;
+}
+
+.daily-run-stats span {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
 .discovery-list {
   display: grid;
   gap: 12px;
@@ -1541,6 +1568,7 @@ textarea {
   .prompt-grid,
   .response-form,
   .discovery-form,
+  .daily-run-stats,
   .team-dashboard-grid,
   .crm-field-groups,
   .crm-field-row {

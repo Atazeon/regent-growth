@@ -235,6 +235,7 @@ const discoveryList = document.querySelector("#discoveryList");
 const dailyRunLog = document.querySelector("#dailyRunLog");
 const dailyRunReviewQueue = document.querySelector("#dailyRunReviewQueue");
 const dailyRunCapacitySummary = document.querySelector("#dailyRunCapacitySummary");
+const dailyRunStats = document.querySelector("#dailyRunStats");
 const dailyReviewSearch = document.querySelector("#dailyReviewSearch");
 const runDailyAiButton = document.querySelector("#runDailyAiButton");
 const generateDiscoveryButton = document.querySelector("#generateDiscoveryButton");
@@ -1636,15 +1637,23 @@ function renderProspects() {
 }
 
 function getDailyRunReviewProspects() {
-  return filterDailyReviewItems(prospects
+  return filterDailyReviewItems(getDailyRunReviewItems());
+}
+
+function getDailyRunReviewItems() {
+  return prospects
     .map((prospect, index) => ({ prospect, index }))
-    .filter(({ prospect }) => prospect.stage === "Email Drafted" && Boolean(prospect.aiEmail)));
+    .filter(({ prospect }) => prospect.stage === "Email Drafted" && Boolean(prospect.aiEmail));
 }
 
 function getDailyAiFailedProspects() {
-  return filterDailyReviewItems(prospects
+  return filterDailyReviewItems(getDailyAiFailedItems());
+}
+
+function getDailyAiFailedItems() {
+  return prospects
     .map((prospect, index) => ({ prospect, index }))
-    .filter(({ prospect }) => !prospect.aiEmail && (prospect.responseNotes || "").includes("Daily AI failed:")));
+    .filter(({ prospect }) => !prospect.aiEmail && (prospect.responseNotes || "").includes("Daily AI failed:"));
 }
 
 function filterDailyReviewItems(items) {
@@ -3209,6 +3218,24 @@ function renderDailyRunCapacitySummary() {
     ? `Daily AI capacity: ${capacity.existingCount} existing unfinished, ${capacity.eligibleCandidateCount} eligible candidate${capacity.eligibleCandidateCount === 1 ? "" : "s"}, ${capacity.plannedCandidateCount} candidate promotion slot${capacity.plannedCandidateCount === 1 ? "" : "s"} for a ${capacity.limit}-prospect run.${evidenceText}`
     : `Daily AI not ready: ${readiness.reason}`;
   runDailyAiButton.disabled = dailyRunInProgress || !readiness.ready;
+  renderDailyRunStats();
+}
+
+function renderDailyRunStats() {
+  const limit = getDailyRunLimit();
+  const stats = [
+    { label: "Drafts ready", value: getDailyRunReviewItems().length },
+    { label: "AI failures", value: getDailyAiFailedItems().length },
+    { label: "Unfinished", value: getExistingDailyRunProspects(limit).length },
+    { label: "Eligible candidates", value: getDailyRunEligibleCandidates().length }
+  ];
+
+  dailyRunStats.innerHTML = stats.map((stat) => `
+    <article>
+      <strong>${escapeHtml(stat.value)}</strong>
+      <span>${escapeHtml(stat.label)}</span>
+    </article>
+  `).join("");
 }
 
 async function researchAndDraftDailyProspects(prospectsToProcess) {
