@@ -268,6 +268,7 @@ const exportFailedCrmButton = document.querySelector("#exportFailedCrmButton");
 const exportFailedCrmCsvButton = document.querySelector("#exportFailedCrmCsvButton");
 const exportReviewedCrmButton = document.querySelector("#exportReviewedCrmButton");
 const exportReviewedCrmCsvButton = document.querySelector("#exportReviewedCrmCsvButton");
+const copyCrmStatusSummaryButton = document.querySelector("#copyCrmStatusSummaryButton");
 const clearResolvedCrmButton = document.querySelector("#clearResolvedCrmButton");
 const clearCrmNotesButton = document.querySelector("#clearCrmNotesButton");
 const crmSetupStatus = document.querySelector("#crmSetupStatus");
@@ -3451,6 +3452,43 @@ function exportReviewedCrmSyncCsv() {
   setCrmSetupStatus(`Exported ${reviewedCrmLeads.length} reviewed CRM sync${reviewedCrmLeads.length === 1 ? "" : "s"} as CSV.`);
 }
 
+function formatCrmStatusSummary() {
+  const failedCrmLeads = getFailedCrmSyncLeads();
+  const reviewedCrmLeads = getReviewedCrmSyncLeads();
+  const syncedCount = prospects.filter((prospect) => prospect.crmSyncStatus === "Synced").length;
+  const syncingCount = prospects.filter((prospect) => prospect.crmSyncStatus === "Syncing").length;
+  const notSyncedCount = prospects.filter((prospect) => !prospect.crmSyncStatus || prospect.crmSyncStatus === "Not Synced").length;
+  const failedLines = failedCrmLeads.slice(0, 5).map((prospect) => `- ${prospect.company}: ${getLatestCrmSyncNote(prospect) || "No failure note recorded."}`);
+  const reviewedLines = reviewedCrmLeads.slice(0, 5).map((prospect) => `- ${prospect.company}: ${getLatestCrmSyncNote(prospect) || "No review note recorded."}`);
+
+  return [
+    "Regent Growth CRM Sync Summary",
+    `Generated: ${new Date().toISOString()}`,
+    `Failed: ${failedCrmLeads.length}`,
+    `Reviewed: ${reviewedCrmLeads.length}`,
+    `Syncing: ${syncingCount}`,
+    `Synced: ${syncedCount}`,
+    `Not Synced: ${notSyncedCount}`,
+    "",
+    "Failed queue:",
+    failedLines.length ? failedLines.join("\n") : "- None",
+    "",
+    "Reviewed queue:",
+    reviewedLines.length ? reviewedLines.join("\n") : "- None"
+  ].join("\n");
+}
+
+async function copyCrmStatusSummary() {
+  const summary = formatCrmStatusSummary();
+
+  try {
+    await navigator.clipboard.writeText(summary);
+    setCrmSetupStatus("CRM sync summary copied.");
+  } catch {
+    setCrmSetupStatus(summary);
+  }
+}
+
 function setCrmSetupStatus(message, state = "") {
   crmSetupStatus.textContent = message;
   crmSetupStatus.dataset.state = state;
@@ -4746,6 +4784,7 @@ exportFailedCrmButton.addEventListener("click", exportFailedCrmSyncs);
 exportFailedCrmCsvButton.addEventListener("click", exportFailedCrmSyncCsv);
 exportReviewedCrmButton.addEventListener("click", exportReviewedCrmSyncs);
 exportReviewedCrmCsvButton.addEventListener("click", exportReviewedCrmSyncCsv);
+copyCrmStatusSummaryButton.addEventListener("click", copyCrmStatusSummary);
 clearResolvedCrmButton.addEventListener("click", clearResolvedCrmQueueState);
 clearCrmNotesButton.addEventListener("click", cleanCrmSyncNotes);
 copyHandoffPacketButton.addEventListener("click", copySelectedHandoffPacket);
