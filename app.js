@@ -3022,39 +3022,48 @@ async function researchAndDraftDailyProspects(prospectsToProcess) {
   const results = {
     researched: 0,
     drafted: 0,
-    skipped: 0
+    skipped: 0,
+    failed: 0
   };
 
   for (const prospect of prospectsToProcess) {
-    if (prospect.aiBrief && prospect.aiEmail) {
-      results.skipped += 1;
-      addDailyRunLog(`Skipped ${prospect.company}: brief and email draft already exist.`, "done");
-      continue;
+    try {
+      if (prospect.aiBrief && prospect.aiEmail) {
+        results.skipped += 1;
+        addDailyRunLog(`Skipped ${prospect.company}: brief and email draft already exist.`, "done");
+        continue;
+      }
+
+      selectedProspectIndex = prospects.indexOf(prospect);
+
+      if (!prospect.aiBrief) {
+        setDataStatus(`Daily AI researching ${prospect.company}...`, "working");
+        addDailyRunLog(`Researching ${prospect.company}.`);
+
+        const rawResearch = await generateWithOllama(buildResearchAgentPrompt(prospect), 420);
+        const research = parseJsonFromText(rawResearch);
+        applyResearchToProspect(prospect, research);
+        results.researched += 1;
+      }
+
+      if (!prospect.aiEmail) {
+        setDataStatus(`Daily AI drafting outreach for ${prospect.company}...`, "working");
+        addDailyRunLog(`Drafting email for ${prospect.company}.`);
+        prospect.aiEmail = await generateWithOllama(renderTemplate(promptTemplates.email, prospect), 180);
+        prospect.stage = "Email Drafted";
+        results.drafted += 1;
+      }
+
+      saveProspects();
+      renderProspects();
+      addDailyRunLog(`Finished ${prospect.company}: ${prospect.aiBrief ? "brief ready" : "brief missing"} and ${prospect.aiEmail ? "email draft ready" : "email draft missing"}.`, "done");
+    } catch (error) {
+      results.failed += 1;
+      prospect.responseNotes = [prospect.responseNotes, `${new Date().toISOString()}: Daily AI failed: ${error.message}`].filter(Boolean).join("\n");
+      saveProspects();
+      renderProspects();
+      addDailyRunLog(`Failed ${prospect.company}: ${error.message}`, "error");
     }
-
-    selectedProspectIndex = prospects.indexOf(prospect);
-
-    if (!prospect.aiBrief) {
-      setDataStatus(`Daily AI researching ${prospect.company}...`, "working");
-      addDailyRunLog(`Researching ${prospect.company}.`);
-
-      const rawResearch = await generateWithOllama(buildResearchAgentPrompt(prospect), 420);
-      const research = parseJsonFromText(rawResearch);
-      applyResearchToProspect(prospect, research);
-      results.researched += 1;
-    }
-
-    if (!prospect.aiEmail) {
-      setDataStatus(`Daily AI drafting outreach for ${prospect.company}...`, "working");
-      addDailyRunLog(`Drafting email for ${prospect.company}.`);
-      prospect.aiEmail = await generateWithOllama(renderTemplate(promptTemplates.email, prospect), 180);
-      prospect.stage = "Email Drafted";
-      results.drafted += 1;
-    }
-
-    saveProspects();
-    renderProspects();
-    addDailyRunLog(`Finished ${prospect.company}: ${prospect.aiBrief ? "brief ready" : "brief missing"} and ${prospect.aiEmail ? "email draft ready" : "email draft missing"}.`, "done");
   }
 
   return results;
@@ -3107,8 +3116,8 @@ async function runDailyAiWorkflow() {
     const results = await researchAndDraftDailyProspects(prospectsToProcess);
     saveProspects();
     renderProspects();
-    setDataStatus(`Daily AI run complete: ${generatedCount} candidates generated, ${fetchedCount} sources fetched, ${addedProspects.length} prospects added, ${existingProspects.length} existing filled, ${results.researched} researched, ${results.drafted} emails drafted, ${results.skipped} skipped.`);
-    addDailyRunLog(`Complete: ${generatedCount} generated, ${fetchedCount} sources fetched, ${addedProspects.length} added, ${existingProspects.length} existing filled, ${results.researched} researched, ${results.drafted} drafted, ${results.skipped} skipped.`, "done");
+    setDataStatus(`Daily AI run complete: ${generatedCount} candidates generated, ${fetchedCount} sources fetched, ${addedProspects.length} prospects added, ${existingProspects.length} existing filled, ${results.researched} researched, ${results.drafted} emails drafted, ${results.skipped} skipped, ${results.failed} failed.`);
+    addDailyRunLog(`Complete: ${generatedCount} generated, ${fetchedCount} sources fetched, ${addedProspects.length} added, ${existingProspects.length} existing filled, ${results.researched} researched, ${results.drafted} drafted, ${results.skipped} skipped, ${results.failed} failed.`, results.failed ? "error" : "done");
   } catch (error) {
     const message = error.name === "AbortError"
       ? "Daily AI timed out. Lower the daily run limit or use qwen2.5:0.5b for a faster pass."
