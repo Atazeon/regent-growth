@@ -1671,6 +1671,7 @@ function renderDailyDraftReviewList(draftedProspects) {
         <h3>${escapeHtml(draftedProspects.length)} drafted email${draftedProspects.length === 1 ? "" : "s"} ready</h3>
       </div>
       <div class="daily-review-actions">
+        <button class="secondary-button" type="button" data-action="copy-daily-review">Copy packet</button>
         <button class="secondary-button" type="button" data-action="export-daily-review">Export JSON</button>
         <button class="secondary-button" type="button" data-action="export-daily-review-csv">Export CSV</button>
         <button class="secondary-button" type="button" data-action="sequence-all-daily-review">Sequence all</button>
@@ -1823,6 +1824,42 @@ function exportDailyReviewCsv() {
   const rows = records.map((record) => headers.map((header) => csvCell(record[header])).join(","));
   downloadFile("regent-growth-daily-ai-review.csv", [headers.join(","), ...rows].join("\n"), "text/csv;charset=utf-8");
   setDataStatus(`Exported ${records.length} Daily AI review draft${records.length === 1 ? "" : "s"} as CSV.`);
+}
+
+function formatDailyReviewPacket(records = getDailyReviewExportRecords()) {
+  if (records.length === 0) return "No Daily AI drafts are ready for review.";
+
+  return records.map((record, index) => [
+    `Daily AI Draft ${index + 1}: ${record.company}`,
+    `Website: ${record.website || "Not set"}`,
+    `Decision-maker: ${record.decisionMaker || "Not set"}`,
+    `Email: ${record.contactEmail || "Not set"}`,
+    `Lead: ${record.leadScore} (${record.leadTier})`,
+    `Trigger: ${record.trigger || "Not set"}`,
+    `Fit: ${record.fit || "Not set"}`,
+    "",
+    "Brief:",
+    record.aiBrief || "No brief saved.",
+    "",
+    "Draft:",
+    record.aiEmail || "No draft saved."
+  ].join("\n")).join("\n\n---\n\n");
+}
+
+async function copyDailyReviewPacket() {
+  const records = getDailyReviewExportRecords();
+  if (records.length === 0) {
+    setDataStatus("No Daily AI drafts to copy.", "error");
+    return;
+  }
+
+  const packet = formatDailyReviewPacket(records);
+  try {
+    await navigator.clipboard.writeText(packet);
+    setDataStatus(`Copied ${records.length} Daily AI review draft${records.length === 1 ? "" : "s"}.`);
+  } catch {
+    setDataStatus(packet);
+  }
 }
 
 function sendDailyReviewProspect(index) {
@@ -5349,6 +5386,10 @@ dailyRunReviewQueue.addEventListener("click", (event) => {
 
   if (button.dataset.action === "export-daily-review-csv") {
     exportDailyReviewCsv();
+  }
+
+  if (button.dataset.action === "copy-daily-review") {
+    copyDailyReviewPacket();
   }
 
   if (button.dataset.action === "send-daily-review") {
