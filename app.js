@@ -178,6 +178,7 @@ let selectedProspectIndex = 0;
 let crmFailedQueuePage = 0;
 let crmReviewedQueuePage = 0;
 let crmFailureReasonFilter = "all";
+let dailyRunInProgress = false;
 let pendingTeamRestore = null;
 let teamBackupsCache = [];
 
@@ -2958,10 +2959,28 @@ function getDailyRunCapacity(limit = getDailyRunLimit()) {
   };
 }
 
+function getDailyRunReadiness() {
+  const criteria = getDiscoveryCriteria();
+  const capacity = getDailyRunCapacity();
+  const hasExistingWork = capacity.existingCount > 0;
+  const hasCriteria = Boolean(criteria.industries && criteria.signals);
+
+  return {
+    ready: hasExistingWork || hasCriteria,
+    reason: hasExistingWork || hasCriteria
+      ? ""
+      : "Add target industries and qualification signals, or add an unfinished prospect."
+  };
+}
+
 function renderDailyRunCapacitySummary() {
   const capacity = getDailyRunCapacity();
+  const readiness = getDailyRunReadiness();
   const evidenceText = shouldDailyRunRequireEvidence() ? " Source evidence required." : "";
-  dailyRunCapacitySummary.textContent = `Daily AI capacity: ${capacity.existingCount} existing unfinished, ${capacity.eligibleCandidateCount} eligible candidate${capacity.eligibleCandidateCount === 1 ? "" : "s"}, ${capacity.plannedCandidateCount} candidate promotion slot${capacity.plannedCandidateCount === 1 ? "" : "s"} for a ${capacity.limit}-prospect run.${evidenceText}`;
+  dailyRunCapacitySummary.textContent = readiness.ready
+    ? `Daily AI capacity: ${capacity.existingCount} existing unfinished, ${capacity.eligibleCandidateCount} eligible candidate${capacity.eligibleCandidateCount === 1 ? "" : "s"}, ${capacity.plannedCandidateCount} candidate promotion slot${capacity.plannedCandidateCount === 1 ? "" : "s"} for a ${capacity.limit}-prospect run.${evidenceText}`
+    : `Daily AI not ready: ${readiness.reason}`;
+  runDailyAiButton.disabled = dailyRunInProgress || !readiness.ready;
 }
 
 async function researchAndDraftDailyProspects(prospectsToProcess) {
@@ -3009,12 +3028,15 @@ async function researchAndDraftDailyProspects(prospectsToProcess) {
 async function runDailyAiWorkflow() {
   const criteria = getDiscoveryCriteria();
   const limit = getDailyRunLimit();
+  const readiness = getDailyRunReadiness();
+  const hasDiscoveryCriteria = Boolean(criteria.industries && criteria.signals);
 
-  if (!criteria.industries || !criteria.signals) {
-    setDataStatus("Add target industries and qualification signals before running Daily AI.", "error");
+  if (!readiness.ready) {
+    setDataStatus(readiness.reason, "error");
     return;
   }
 
+  dailyRunInProgress = true;
   runDailyAiButton.disabled = true;
   generateDiscoveryButton.disabled = true;
   researchAccountButton.disabled = true;
@@ -3025,7 +3047,7 @@ async function runDailyAiWorkflow() {
     addDailyRunLog(`Starting Daily AI run for up to ${limit} prospect${limit === 1 ? "" : "s"}.`);
     let generatedCount = 0;
 
-    if (getDailyRunEligibleCandidates().length < limit) {
+    if (hasDiscoveryCriteria && getDailyRunEligibleCandidates().length < limit) {
       setDataStatus("Daily AI generating discovery candidates...", "working");
       generatedCount = await discoverCandidatesForDailyRun({ ...criteria, count: Math.max(criteria.count, limit) });
     }
@@ -3059,7 +3081,8 @@ async function runDailyAiWorkflow() {
     setDataStatus(message, "error");
     addDailyRunLog(message, "error");
   } finally {
-    runDailyAiButton.disabled = false;
+    dailyRunInProgress = false;
+    renderDailyRunCapacitySummary();
     generateDiscoveryButton.disabled = false;
     researchAccountButton.disabled = false;
     generateEmailButton.disabled = false;
