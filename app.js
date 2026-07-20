@@ -184,6 +184,7 @@ let dailyRunHistoryStatusFilter = "all";
 let showAllDailyReviewItems = false;
 let showDailyReviewFailures = true;
 let compactDailyRunHistory = false;
+let showAllDailyRunHistory = false;
 let dailyRunInProgress = false;
 let dailyRunStopRequested = false;
 let pendingTeamRestore = null;
@@ -3572,6 +3573,7 @@ function renderDailyRunHistory() {
           </select>
           <button class="secondary-button" type="button" data-action="copy-daily-history-summary">Copy summary</button>
           <button class="secondary-button" type="button" data-action="toggle-compact-daily-history">${compactDailyRunHistory ? "Full history" : "Compact history"}</button>
+          <button class="secondary-button" type="button" data-action="toggle-all-daily-history">${showAllDailyRunHistory ? "Show first 5" : "Show all"}</button>
           <button class="secondary-button" type="button" data-action="export-daily-history">Export visible JSON</button>
           <button class="secondary-button" type="button" data-action="export-daily-history-csv">Export visible CSV</button>
         </div>
@@ -3592,8 +3594,22 @@ function renderDailyRunHistory() {
     </div>
     ${visibleHistory.length === 0
       ? `<p class="empty-state">No Daily AI runs match this status filter.</p>`
-      : `<div class="daily-run-history-items">${visibleHistory.slice(0, 5).map(renderDailyRunHistoryItem).join("")}</div>`}
+      : `
+        ${renderDailyRunHistoryVisibleLimitSummary(visibleHistory)}
+        <div class="daily-run-history-items">${getVisibleDailyRunHistoryItems(visibleHistory).map(renderDailyRunHistoryItem).join("")}</div>
+      `}
   `;
+}
+
+function getVisibleDailyRunHistoryItems(items) {
+  return showAllDailyRunHistory ? items : items.slice(0, 5);
+}
+
+function renderDailyRunHistoryVisibleLimitSummary(items) {
+  const hiddenCount = showAllDailyRunHistory ? 0 : Math.max(0, items.length - 5);
+  if (hiddenCount === 0) return "";
+
+  return `<p class="daily-review-limit">Showing first 5 history records; ${escapeHtml(hiddenCount)} more match the current filter.</p>`;
 }
 
 function getVisibleDailyRunHistory() {
@@ -6580,6 +6596,11 @@ dailyRunHistoryList.addEventListener("click", (event) => {
 
   if (button.dataset.action === "toggle-compact-daily-history") {
     compactDailyRunHistory = !compactDailyRunHistory;
+    renderDailyRunHistory();
+  }
+
+  if (button.dataset.action === "toggle-all-daily-history") {
+    showAllDailyRunHistory = !showAllDailyRunHistory;
     renderDailyRunHistory();
   }
 
