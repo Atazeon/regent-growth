@@ -570,6 +570,35 @@ button:disabled {
   margin: 4px 0 0;
 }
 
+.daily-history-status-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.daily-history-status-counts button {
+  background: rgba(255, 255, 255, 0.74);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 6px 8px;
+  white-space: nowrap;
+}
+
+.daily-history-status-counts button[data-active="true"] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+
+.daily-history-status-counts strong {
+  margin-left: 4px;
+}
+
 .daily-run-review-queue {
   border: 1px solid var(--line);
   border-radius: 8px;

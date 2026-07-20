@@ -3561,6 +3561,7 @@ function renderDailyRunHistory() {
         <p class="eyebrow">Daily AI History</p>
         <h3>${escapeHtml(visibleHistory.length)} of ${escapeHtml(dailyRunHistory.length)} saved run${dailyRunHistory.length === 1 ? "" : "s"}</h3>
         ${renderDailyRunHistoryCountBadge(visibleHistory)}
+        ${renderDailyRunHistoryStatusCounts()}
       </div>
       <div class="daily-history-actions">
         <div>
@@ -3611,6 +3612,37 @@ function renderDailyRunHistoryCountBadge(visibleHistory) {
     <p class="daily-history-count">
       ${escapeHtml(visibleHistory.length)} visible / ${escapeHtml(dailyRunHistory.length)} total | ${escapeHtml(filterLabel)}
     </p>
+  `;
+}
+
+function renderDailyRunHistoryStatusCounts() {
+  const statusCounts = dailyRunHistory.reduce((counts, snapshot) => {
+    counts[snapshot.status] = (counts[snapshot.status] || 0) + 1;
+    if (snapshot.skipped > 0) counts.skipped = (counts.skipped || 0) + 1;
+    return counts;
+  }, { all: dailyRunHistory.length });
+  const countItems = [
+    ["all", "All"],
+    ["Completed", "Completed"],
+    ["Completed with failures", "With failures"],
+    ["Stopped", "Stopped"],
+    ["Failed", "Failed"],
+    ["skipped", "With skipped"]
+  ];
+
+  return `
+    <div class="daily-history-status-counts" aria-label="Daily AI history status counts">
+      ${countItems.map(([value, label]) => `
+        <button
+          type="button"
+          data-action="set-daily-history-filter"
+          data-value="${escapeHtml(value)}"
+          data-active="${dailyRunHistoryStatusFilter === value}"
+        >
+          ${escapeHtml(label)} <strong>${escapeHtml(statusCounts[value] || 0)}</strong>
+        </button>
+      `).join("")}
+    </div>
   `;
 }
 
@@ -6637,6 +6669,11 @@ dailyRunHistoryList.addEventListener("click", (event) => {
 
   if (button.dataset.action === "reset-daily-history-view") {
     resetDailyRunHistoryView();
+  }
+
+  if (button.dataset.action === "set-daily-history-filter") {
+    dailyRunHistoryStatusFilter = button.dataset.value || "all";
+    renderDailyRunHistory();
   }
 
   if (button.dataset.action === "copy-stopped-daily-history") {
