@@ -1661,6 +1661,7 @@ function renderDailyRunReviewQueue() {
           </div>
           <div class="daily-review-actions">
             <button class="secondary-button" type="button" data-action="open-daily-review" data-index="${escapeHtml(index)}">Open</button>
+            <button class="secondary-button" type="button" data-action="send-daily-review" data-index="${escapeHtml(index)}">Send</button>
             <button type="button" data-action="sequence-daily-review" data-index="${escapeHtml(index)}">Sequence</button>
           </div>
         </article>
@@ -1690,6 +1691,19 @@ function sequenceDailyReviewProspect(index) {
   saveProspects();
   renderProspects();
   setDataStatus(`${prospect.company} moved to Sequence.`);
+}
+
+function sendDailyReviewProspect(index) {
+  const prospect = prospects[index];
+  if (!prospect) return;
+
+  selectedProspectIndex = index;
+  savedViews.dataset.activeView = "all";
+  stageFilter.value = "all";
+  responseFilter.value = "all";
+  setDrafts(prospect);
+  openEmailHandoff("mailto");
+  renderProspects();
 }
 
 function renderDiscoveryQueue() {
@@ -4975,6 +4989,10 @@ dailyRunReviewQueue.addEventListener("click", (event) => {
 
   if (button.dataset.action === "sequence-daily-review") {
     sequenceDailyReviewProspect(Number(button.dataset.index));
+  }
+
+  if (button.dataset.action === "send-daily-review") {
+    sendDailyReviewProspect(Number(button.dataset.index));
   }
 });
 prospectForm.addEventListener("submit", saveProspectFromForm);
