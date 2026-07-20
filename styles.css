@@ -442,6 +442,32 @@ button:disabled {
   margin-top: 18px;
 }
 
+.daily-run-log {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  margin: 14px 0 0;
+  max-height: 220px;
+  overflow: auto;
+  padding: 10px 12px;
+}
+
+.daily-run-log p {
+  color: var(--muted);
+  font-size: 0.86rem;
+  margin: 0;
+}
+
+.daily-run-log p[data-state="done"] {
+  color: #247247;
+}
+
+.daily-run-log p[data-state="error"] {
+  color: #a73535;
+}
+
 .discovery-card {
   border: 1px solid var(--line);
   border-radius: 8px;

@@ -231,6 +231,7 @@ const exportTeamBackupButton = document.querySelector("#exportTeamBackupButton")
 const restoreTeamBackupInput = document.querySelector("#restoreTeamBackupInput");
 const discoveryForm = document.querySelector("#discoveryForm");
 const discoveryList = document.querySelector("#discoveryList");
+const dailyRunLog = document.querySelector("#dailyRunLog");
 const runDailyAiButton = document.querySelector("#runDailyAiButton");
 const generateDiscoveryButton = document.querySelector("#generateDiscoveryButton");
 const clearDiscoveryButton = document.querySelector("#clearDiscoveryButton");
@@ -2690,7 +2691,19 @@ function getDailyRunLimit() {
   return Math.min(10, Math.max(1, Number.isFinite(value) ? value : 3));
 }
 
+function resetDailyRunLog() {
+  dailyRunLog.innerHTML = "";
+}
+
+function addDailyRunLog(message, state = "working") {
+  const entry = document.createElement("p");
+  entry.dataset.state = state;
+  entry.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+  dailyRunLog.prepend(entry);
+}
+
 async function discoverCandidatesForDailyRun(criteria) {
+  addDailyRunLog("Generating discovery candidates with local AI.");
   const rawDiscovery = await generateWithOllama(buildDiscoveryPrompt(criteria), 900);
   const candidates = parseDiscoveryCandidates(rawDiscovery);
 
@@ -2715,6 +2728,7 @@ async function discoverCandidatesForDailyRun(criteria) {
   discoveryQueue = [...newCandidates, ...discoveryQueue];
   saveDiscoveryQueue();
   renderDiscoveryQueue();
+  addDailyRunLog(`Added ${newCandidates.length} new discovery candidate${newCandidates.length === 1 ? "" : "s"} to the queue.`, "done");
   return newCandidates.length;
 }
 
@@ -2734,6 +2748,7 @@ function addDailyRunProspects(limit) {
   saveDiscoveryQueue();
   saveProspects();
   renderDiscoveryQueue();
+  addDailyRunLog(`Moved ${addedProspects.length} candidate${addedProspects.length === 1 ? "" : "s"} into the prospect pipeline.`, "done");
   return addedProspects;
 }
 
@@ -2746,6 +2761,7 @@ async function researchAndDraftDailyProspects(prospectsToProcess) {
   for (const prospect of prospectsToProcess) {
     selectedProspectIndex = prospects.indexOf(prospect);
     setDataStatus(`Daily AI researching ${prospect.company}...`, "working");
+    addDailyRunLog(`Researching ${prospect.company}.`);
 
     const rawResearch = await generateWithOllama(buildResearchAgentPrompt(prospect), 420);
     const research = parseJsonFromText(rawResearch);
@@ -2753,11 +2769,13 @@ async function researchAndDraftDailyProspects(prospectsToProcess) {
     results.researched += 1;
 
     setDataStatus(`Daily AI drafting outreach for ${prospect.company}...`, "working");
+    addDailyRunLog(`Drafting email for ${prospect.company}.`);
     prospect.aiEmail = await generateWithOllama(renderTemplate(promptTemplates.email, prospect), 180);
     prospect.stage = "Email Drafted";
     results.drafted += 1;
     saveProspects();
     renderProspects();
+    addDailyRunLog(`Finished ${prospect.company}: brief saved and email drafted.`, "done");
   }
 
   return results;
@@ -2778,6 +2796,8 @@ async function runDailyAiWorkflow() {
   generateEmailButton.disabled = true;
 
   try {
+    resetDailyRunLog();
+    addDailyRunLog(`Starting Daily AI run for up to ${limit} prospect${limit === 1 ? "" : "s"}.`);
     let generatedCount = 0;
 
     if (discoveryQueue.filter((candidate) => candidate.sourceStatus !== "Rejected").length < limit) {
@@ -2794,12 +2814,14 @@ async function runDailyAiWorkflow() {
     saveProspects();
     renderProspects();
     setDataStatus(`Daily AI run complete: ${generatedCount} candidates generated, ${addedProspects.length} prospects added, ${results.researched} researched, ${results.drafted} emails drafted.`);
+    addDailyRunLog(`Complete: ${generatedCount} generated, ${addedProspects.length} added, ${results.researched} researched, ${results.drafted} drafted.`, "done");
   } catch (error) {
     const message = error.name === "AbortError"
       ? "Daily AI timed out. Lower the daily run limit or use qwen2.5:0.5b for a faster pass."
       : `Daily AI error: ${error.message || "make sure Ollama is running and returning usable JSON."}`;
     setAiStatus(message, "error");
     setDataStatus(message, "error");
+    addDailyRunLog(message, "error");
   } finally {
     runDailyAiButton.disabled = false;
     generateDiscoveryButton.disabled = false;
