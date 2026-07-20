@@ -446,6 +446,13 @@ button:disabled {
   width: auto;
 }
 
+.daily-run-capacity {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin: 12px 0 0;
+}
+
 .discovery-list {
   display: grid;
   gap: 12px;

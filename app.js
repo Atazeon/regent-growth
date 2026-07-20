@@ -233,6 +233,7 @@ const discoveryForm = document.querySelector("#discoveryForm");
 const discoveryList = document.querySelector("#discoveryList");
 const dailyRunLog = document.querySelector("#dailyRunLog");
 const dailyRunReviewQueue = document.querySelector("#dailyRunReviewQueue");
+const dailyRunCapacitySummary = document.querySelector("#dailyRunCapacitySummary");
 const runDailyAiButton = document.querySelector("#runDailyAiButton");
 const generateDiscoveryButton = document.querySelector("#generateDiscoveryButton");
 const clearDiscoveryButton = document.querySelector("#clearDiscoveryButton");
@@ -1629,6 +1630,7 @@ function renderProspects() {
   renderHandoff();
   renderOwnerDashboard();
   renderDailyRunReviewQueue();
+  renderDailyRunCapacitySummary();
 }
 
 function getDailyRunReviewProspects() {
@@ -1722,6 +1724,7 @@ function markDailyReviewProspectSent(index) {
 function renderDiscoveryQueue() {
   if (discoveryQueue.length === 0) {
     discoveryList.innerHTML = `<p class="empty-state">No discovery candidates yet. Generate candidates from your target industries and qualification signals.</p>`;
+    renderDailyRunCapacitySummary();
     return;
   }
 
@@ -1762,6 +1765,7 @@ function renderDiscoveryQueue() {
       </div>
     </article>
   `).join("");
+  renderDailyRunCapacitySummary();
 }
 
 function buildSearchUrl(query) {
@@ -2939,6 +2943,25 @@ function getExistingDailyRunProspects(limit) {
     .filter((prospect) => ["Research", "Email Drafted"].includes(prospect.stage))
     .filter((prospect) => !prospect.aiBrief || !prospect.aiEmail)
     .slice(0, limit);
+}
+
+function getDailyRunCapacity(limit = getDailyRunLimit()) {
+  const existingCount = getExistingDailyRunProspects(limit).length;
+  const remainingCapacity = Math.max(0, limit - existingCount);
+  const eligibleCandidateCount = getDailyRunEligibleCandidates().length;
+  return {
+    limit,
+    existingCount,
+    remainingCapacity,
+    eligibleCandidateCount,
+    plannedCandidateCount: Math.min(remainingCapacity, eligibleCandidateCount)
+  };
+}
+
+function renderDailyRunCapacitySummary() {
+  const capacity = getDailyRunCapacity();
+  const evidenceText = shouldDailyRunRequireEvidence() ? " Source evidence required." : "";
+  dailyRunCapacitySummary.textContent = `Daily AI capacity: ${capacity.existingCount} existing unfinished, ${capacity.eligibleCandidateCount} eligible candidate${capacity.eligibleCandidateCount === 1 ? "" : "s"}, ${capacity.plannedCandidateCount} candidate promotion slot${capacity.plannedCandidateCount === 1 ? "" : "s"} for a ${capacity.limit}-prospect run.${evidenceText}`;
 }
 
 async function researchAndDraftDailyProspects(prospectsToProcess) {
@@ -5229,6 +5252,7 @@ teamRestorePreview.addEventListener("click", (event) => {
   }
 });
 runDailyAiButton.addEventListener("click", runDailyAiWorkflow);
+discoveryForm.addEventListener("input", renderDailyRunCapacitySummary);
 generateDiscoveryButton.addEventListener("click", generateDiscoveryCandidates);
 clearDiscoveryButton.addEventListener("click", clearDiscoveryQueue);
 checkSearchSetupButton.addEventListener("click", checkSearchSetup);
