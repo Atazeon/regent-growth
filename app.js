@@ -259,6 +259,7 @@ const checkCrmSetupButton = document.querySelector("#checkCrmSetupButton");
 const syncSelectedCrmButton = document.querySelector("#syncSelectedCrmButton");
 const syncWarmCrmButton = document.querySelector("#syncWarmCrmButton");
 const retryFailedCrmButton = document.querySelector("#retryFailedCrmButton");
+const exportFailedCrmButton = document.querySelector("#exportFailedCrmButton");
 const clearCrmNotesButton = document.querySelector("#clearCrmNotesButton");
 const crmSetupStatus = document.querySelector("#crmSetupStatus");
 const crmPresetSelect = document.querySelector("#crmPresetSelect");
@@ -3021,6 +3022,7 @@ function renderHandoff() {
 
 function renderCrmRetryQueue(failedCrmLeads = getFailedCrmSyncLeads()) {
   retryFailedCrmButton.disabled = failedCrmLeads.length === 0;
+  exportFailedCrmButton.disabled = failedCrmLeads.length === 0;
   const syncedCount = prospects.filter((prospect) => prospect.crmSyncStatus === "Synced").length;
   const syncingCount = prospects.filter((prospect) => prospect.crmSyncStatus === "Syncing").length;
   const notSyncedCount = prospects.filter((prospect) => !prospect.crmSyncStatus || prospect.crmSyncStatus === "Not Synced").length;
@@ -3146,6 +3148,29 @@ function exportWarmLeadJson() {
 
   downloadFile("regent-growth-warm-leads.json", JSON.stringify(warmLeads.map(getCrmRecord), null, 2), "application/json;charset=utf-8");
   setDataStatus(`Exported ${warmLeads.length} warm lead${warmLeads.length === 1 ? "" : "s"} as JSON.`);
+}
+
+function exportFailedCrmSyncs() {
+  const failedCrmLeads = getFailedCrmSyncLeads();
+
+  if (failedCrmLeads.length === 0) {
+    setCrmSetupStatus("No failed CRM syncs to export.", "error");
+    return;
+  }
+
+  const exportedAt = new Date().toISOString();
+  const payload = {
+    source: "regent-growth-crm-retry-queue",
+    exportedAt,
+    failedCount: failedCrmLeads.length,
+    records: failedCrmLeads.map((prospect) => ({
+      ...getCrmRecord(prospect),
+      latestCrmSyncNote: getLatestCrmSyncNote(prospect)
+    }))
+  };
+  const stamp = exportedAt.slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-crm-failed-syncs-${stamp}.json`, JSON.stringify(payload, null, 2), "application/json;charset=utf-8");
+  setCrmSetupStatus(`Exported ${failedCrmLeads.length} failed CRM sync${failedCrmLeads.length === 1 ? "" : "s"}.`);
 }
 
 function setCrmSetupStatus(message, state = "") {
@@ -4321,6 +4346,7 @@ checkCrmSetupButton.addEventListener("click", checkCrmSetup);
 syncSelectedCrmButton.addEventListener("click", syncSelectedCrmLead);
 syncWarmCrmButton.addEventListener("click", syncWarmCrmLeads);
 retryFailedCrmButton.addEventListener("click", retryFailedCrmSyncs);
+exportFailedCrmButton.addEventListener("click", exportFailedCrmSyncs);
 clearCrmNotesButton.addEventListener("click", cleanCrmSyncNotes);
 copyHandoffPacketButton.addEventListener("click", copySelectedHandoffPacket);
 copyCrmMappingButton.addEventListener("click", copySelectedCrmMapping);
