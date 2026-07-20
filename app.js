@@ -3118,6 +3118,11 @@ function renderDailyRunHistory() {
         <p class="eyebrow">Daily AI History</p>
         <h3>${escapeHtml(dailyRunHistory.length)} saved run${dailyRunHistory.length === 1 ? "" : "s"}</h3>
       </div>
+      <div class="daily-review-actions">
+        <button class="secondary-button" type="button" data-action="export-daily-history">Export JSON</button>
+        <button class="secondary-button" type="button" data-action="export-daily-history-csv">Export CSV</button>
+        <button class="danger-button" type="button" data-action="clear-daily-history">Clear</button>
+      </div>
     </div>
     <div class="daily-run-history-items">
       ${dailyRunHistory.slice(0, 5).map(renderDailyRunHistoryItem).join("")}
@@ -3149,6 +3154,45 @@ function renderDailyRunHistoryItem(snapshot) {
       </div>
     </article>
   `;
+}
+
+function exportDailyRunHistoryJson() {
+  if (dailyRunHistory.length === 0) {
+    setDataStatus("No Daily AI run history to export.", "error");
+    return;
+  }
+
+  const exportedAt = new Date().toISOString();
+  const stamp = exportedAt.slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-daily-ai-history-${stamp}.json`, JSON.stringify({ exportedAt, runs: dailyRunHistory }, null, 2), "application/json;charset=utf-8");
+  setDataStatus(`Exported ${dailyRunHistory.length} Daily AI run history snapshot${dailyRunHistory.length === 1 ? "" : "s"} as JSON.`);
+}
+
+function exportDailyRunHistoryCsv() {
+  if (dailyRunHistory.length === 0) {
+    setDataStatus("No Daily AI run history to export.", "error");
+    return;
+  }
+
+  const headers = ["startedAt", "finishedAt", "status", "model", "limit", "generatedCount", "fetchedCount", "addedCount", "existingFilledCount", "researched", "drafted", "skipped", "failed", "error", "companies"];
+  const rows = dailyRunHistory.map((snapshot) => headers.map((header) => (
+    csvCell(header === "companies" ? snapshot.companies.join("; ") : snapshot[header])
+  )).join(","));
+  downloadFile("regent-growth-daily-ai-history.csv", [headers.join(","), ...rows].join("\n"), "text/csv;charset=utf-8");
+  setDataStatus(`Exported ${dailyRunHistory.length} Daily AI run history snapshot${dailyRunHistory.length === 1 ? "" : "s"} as CSV.`);
+}
+
+function clearDailyRunHistory() {
+  if (dailyRunHistory.length === 0) {
+    setDataStatus("No Daily AI run history to clear.", "error");
+    return;
+  }
+
+  const clearedCount = dailyRunHistory.length;
+  dailyRunHistory = [];
+  saveDailyRunHistory();
+  renderDailyRunHistory();
+  setDataStatus(`Cleared ${clearedCount} Daily AI run history snapshot${clearedCount === 1 ? "" : "s"}.`);
 }
 
 async function discoverCandidatesForDailyRun(criteria) {
@@ -5696,6 +5740,22 @@ teamRestorePreview.addEventListener("click", (event) => {
 runDailyAiButton.addEventListener("click", runDailyAiWorkflow);
 discoveryForm.addEventListener("input", renderDailyRunCapacitySummary);
 dailyReviewSearch.addEventListener("input", renderDailyRunReviewQueue);
+dailyRunHistoryList.addEventListener("click", (event) => {
+  const button = event.target.closest("button");
+  if (!button) return;
+
+  if (button.dataset.action === "export-daily-history") {
+    exportDailyRunHistoryJson();
+  }
+
+  if (button.dataset.action === "export-daily-history-csv") {
+    exportDailyRunHistoryCsv();
+  }
+
+  if (button.dataset.action === "clear-daily-history") {
+    clearDailyRunHistory();
+  }
+});
 generateDiscoveryButton.addEventListener("click", generateDiscoveryCandidates);
 clearDiscoveryButton.addEventListener("click", clearDiscoveryQueue);
 checkSearchSetupButton.addEventListener("click", checkSearchSetup);
