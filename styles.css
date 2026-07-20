@@ -546,6 +546,19 @@ button:disabled {
   font-weight: 700;
 }
 
+.daily-history-actions {
+  display: grid;
+  gap: 8px;
+  justify-items: end;
+}
+
+.daily-history-actions div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
 .daily-run-review-queue {
   border: 1px solid var(--line);
   border-radius: 8px;

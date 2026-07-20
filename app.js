@@ -3559,25 +3559,33 @@ function renderDailyRunHistory() {
         <p class="eyebrow">Daily AI History</p>
         <h3>${escapeHtml(visibleHistory.length)} of ${escapeHtml(dailyRunHistory.length)} saved run${dailyRunHistory.length === 1 ? "" : "s"}</h3>
       </div>
-      <div class="daily-review-actions">
-        <select data-action="filter-daily-history" aria-label="Filter Daily AI history">
-          <option value="all" ${dailyRunHistoryStatusFilter === "all" ? "selected" : ""}>All runs</option>
-          <option value="Completed" ${dailyRunHistoryStatusFilter === "Completed" ? "selected" : ""}>Completed</option>
-          <option value="Completed with failures" ${dailyRunHistoryStatusFilter === "Completed with failures" ? "selected" : ""}>With failures</option>
-          <option value="Stopped" ${dailyRunHistoryStatusFilter === "Stopped" ? "selected" : ""}>Stopped</option>
-          <option value="skipped" ${dailyRunHistoryStatusFilter === "skipped" ? "selected" : ""}>With skipped</option>
-          <option value="Failed" ${dailyRunHistoryStatusFilter === "Failed" ? "selected" : ""}>Failed</option>
-        </select>
-        <button class="secondary-button" type="button" data-action="copy-daily-history-summary">Copy summary</button>
-        <button class="secondary-button" type="button" data-action="copy-skipped-daily-history">Copy skipped</button>
-        <button class="secondary-button" type="button" data-action="export-skipped-daily-history">Export skipped JSON</button>
-        <button class="secondary-button" type="button" data-action="export-skipped-daily-history-csv">Export skipped CSV</button>
-        <button class="secondary-button" type="button" data-action="copy-stopped-daily-history">Copy stopped</button>
-        <button class="secondary-button" type="button" data-action="export-stopped-daily-history">Export stopped JSON</button>
-        <button class="secondary-button" type="button" data-action="export-stopped-daily-history-csv">Export stopped CSV</button>
-        <button class="secondary-button" type="button" data-action="export-daily-history">Export visible JSON</button>
-        <button class="secondary-button" type="button" data-action="export-daily-history-csv">Export visible CSV</button>
-        <button class="danger-button" type="button" data-action="clear-daily-history">Clear</button>
+      <div class="daily-history-actions">
+        <div>
+          <select data-action="filter-daily-history" aria-label="Filter Daily AI history">
+            <option value="all" ${dailyRunHistoryStatusFilter === "all" ? "selected" : ""}>All runs</option>
+            <option value="Completed" ${dailyRunHistoryStatusFilter === "Completed" ? "selected" : ""}>Completed</option>
+            <option value="Completed with failures" ${dailyRunHistoryStatusFilter === "Completed with failures" ? "selected" : ""}>With failures</option>
+            <option value="Stopped" ${dailyRunHistoryStatusFilter === "Stopped" ? "selected" : ""}>Stopped</option>
+            <option value="skipped" ${dailyRunHistoryStatusFilter === "skipped" ? "selected" : ""}>With skipped</option>
+            <option value="Failed" ${dailyRunHistoryStatusFilter === "Failed" ? "selected" : ""}>Failed</option>
+          </select>
+          <button class="secondary-button" type="button" data-action="copy-daily-history-summary">Copy summary</button>
+          <button class="secondary-button" type="button" data-action="export-daily-history">Export visible JSON</button>
+          <button class="secondary-button" type="button" data-action="export-daily-history-csv">Export visible CSV</button>
+        </div>
+        <div>
+          <button class="secondary-button" type="button" data-action="copy-skipped-daily-history">Copy skipped</button>
+          <button class="secondary-button" type="button" data-action="export-skipped-daily-history">Export skipped JSON</button>
+          <button class="secondary-button" type="button" data-action="export-skipped-daily-history-csv">Export skipped CSV</button>
+        </div>
+        <div>
+          <button class="secondary-button" type="button" data-action="copy-stopped-daily-history">Copy stopped</button>
+          <button class="secondary-button" type="button" data-action="export-stopped-daily-history">Export stopped JSON</button>
+          <button class="secondary-button" type="button" data-action="export-stopped-daily-history-csv">Export stopped CSV</button>
+        </div>
+        <div>
+          <button class="danger-button" type="button" data-action="clear-daily-history">Clear</button>
+        </div>
       </div>
     </div>
     ${visibleHistory.length === 0
