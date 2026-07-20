@@ -1,6 +1,7 @@
 const storageKey = "regent-growth-prospects";
 const promptStorageKey = "regent-growth-prompt-templates";
 const discoveryStorageKey = "regent-growth-discovery-queue";
+const dailyRunHistoryStorageKey = "regent-growth-daily-run-history";
 const ollamaEndpoint = "http://127.0.0.1:11434/api/generate";
 const sourceFetchEndpoint = "/api/fetch-source";
 const sourceSearchEndpoint = "/api/search-sources";
@@ -173,6 +174,7 @@ const sampleProspects = [
 let prospects = loadProspects();
 let promptTemplates = loadPromptTemplates();
 let discoveryQueue = loadDiscoveryQueue();
+let dailyRunHistory = loadDailyRunHistory();
 let editingIndex = null;
 let selectedProspectIndex = 0;
 let crmFailedQueuePage = 0;
@@ -233,6 +235,7 @@ const restoreTeamBackupInput = document.querySelector("#restoreTeamBackupInput")
 const discoveryForm = document.querySelector("#discoveryForm");
 const discoveryList = document.querySelector("#discoveryList");
 const dailyRunLog = document.querySelector("#dailyRunLog");
+const dailyRunHistoryList = document.querySelector("#dailyRunHistoryList");
 const dailyRunReviewQueue = document.querySelector("#dailyRunReviewQueue");
 const dailyRunCapacitySummary = document.querySelector("#dailyRunCapacitySummary");
 const dailyRunStats = document.querySelector("#dailyRunStats");
@@ -348,6 +351,21 @@ function loadDiscoveryQueue() {
   }
 }
 
+function loadDailyRunHistory() {
+  const savedHistory = localStorage.getItem(dailyRunHistoryStorageKey);
+
+  if (!savedHistory) {
+    return [];
+  }
+
+  try {
+    const parsedHistory = JSON.parse(savedHistory);
+    return Array.isArray(parsedHistory) ? parsedHistory.map(normalizeDailyRunSnapshot).filter((snapshot) => snapshot.startedAt) : [];
+  } catch {
+    return [];
+  }
+}
+
 function normalizeProspect(prospect) {
   return {
     company: prospect.company || "",
@@ -407,6 +425,27 @@ function normalizeDiscoveryCandidate(candidate) {
     sourceStatus: sourceStatuses.includes(candidate.sourceStatus) ? candidate.sourceStatus : "Needs Review",
     sourceNotes: candidate.sourceNotes || "",
     generatedAt: candidate.generatedAt || new Date().toISOString()
+  };
+}
+
+function normalizeDailyRunSnapshot(snapshot) {
+  return {
+    id: snapshot.id || createId(),
+    startedAt: snapshot.startedAt || "",
+    finishedAt: snapshot.finishedAt || "",
+    status: snapshot.status || "Completed",
+    model: snapshot.model || "",
+    limit: Number(snapshot.limit) || 0,
+    generatedCount: Number(snapshot.generatedCount) || 0,
+    fetchedCount: Number(snapshot.fetchedCount) || 0,
+    addedCount: Number(snapshot.addedCount) || 0,
+    existingFilledCount: Number(snapshot.existingFilledCount) || 0,
+    researched: Number(snapshot.researched) || 0,
+    drafted: Number(snapshot.drafted) || 0,
+    skipped: Number(snapshot.skipped) || 0,
+    failed: Number(snapshot.failed) || 0,
+    error: snapshot.error || "",
+    companies: Array.isArray(snapshot.companies) ? snapshot.companies.filter(Boolean).slice(0, 12) : []
   };
 }
 
@@ -503,6 +542,10 @@ function renderLeadScoreReasonText(prospect) {
 
 function saveProspects() {
   localStorage.setItem(storageKey, JSON.stringify(prospects));
+}
+
+function saveDailyRunHistory() {
+  localStorage.setItem(dailyRunHistoryStorageKey, JSON.stringify(dailyRunHistory));
 }
 
 function getProspectFieldNames() {
@@ -3053,6 +3096,61 @@ function addDailyRunLog(message, state = "working") {
   dailyRunLog.prepend(entry);
 }
 
+function recordDailyRunHistory(snapshot) {
+  const normalizedSnapshot = normalizeDailyRunSnapshot({
+    ...snapshot,
+    finishedAt: snapshot.finishedAt || new Date().toISOString()
+  });
+  dailyRunHistory = [normalizedSnapshot, ...dailyRunHistory].slice(0, 10);
+  saveDailyRunHistory();
+  renderDailyRunHistory();
+}
+
+function renderDailyRunHistory() {
+  if (dailyRunHistory.length === 0) {
+    dailyRunHistoryList.innerHTML = `<p class="empty-state">Completed Daily AI runs will appear here.</p>`;
+    return;
+  }
+
+  dailyRunHistoryList.innerHTML = `
+    <div class="section-heading compact-heading">
+      <div>
+        <p class="eyebrow">Daily AI History</p>
+        <h3>${escapeHtml(dailyRunHistory.length)} saved run${dailyRunHistory.length === 1 ? "" : "s"}</h3>
+      </div>
+    </div>
+    <div class="daily-run-history-items">
+      ${dailyRunHistory.slice(0, 5).map(renderDailyRunHistoryItem).join("")}
+    </div>
+  `;
+}
+
+function renderDailyRunHistoryItem(snapshot) {
+  const counts = [
+    `${snapshot.generatedCount} generated`,
+    `${snapshot.fetchedCount} fetched`,
+    `${snapshot.addedCount} added`,
+    `${snapshot.existingFilledCount} existing`,
+    `${snapshot.researched} researched`,
+    `${snapshot.drafted} drafted`,
+    `${snapshot.skipped} skipped`,
+    `${snapshot.failed} failed`
+  ].join(" | ");
+  const companyText = snapshot.companies.length > 0 ? snapshot.companies.join(", ") : "No companies processed";
+
+  return `
+    <article>
+      <div>
+        <strong>${escapeHtml(snapshot.status)}</strong>
+        <p>${escapeHtml(formatDateTime(snapshot.finishedAt || snapshot.startedAt))} | ${escapeHtml(snapshot.model || "No model")} | limit ${escapeHtml(snapshot.limit)}</p>
+        <p>${escapeHtml(counts)}</p>
+        <p>${escapeHtml(companyText)}</p>
+        ${snapshot.error ? `<p class="history-error">${escapeHtml(snapshot.error)}</p>` : ""}
+      </div>
+    </article>
+  `;
+}
+
 async function discoverCandidatesForDailyRun(criteria) {
   addDailyRunLog("Generating discovery candidates with local AI.");
   const rawDiscovery = await generateWithOllama(buildDiscoveryPrompt(criteria), 900);
@@ -3294,6 +3392,24 @@ async function runDailyAiWorkflow() {
   const limit = getDailyRunLimit();
   const readiness = getDailyRunReadiness();
   const hasDiscoveryCriteria = Boolean(criteria.industries && criteria.signals);
+  const runSnapshot = {
+    id: createId(),
+    startedAt: new Date().toISOString(),
+    finishedAt: "",
+    status: "Running",
+    model: modelSelect.value,
+    limit,
+    generatedCount: 0,
+    fetchedCount: 0,
+    addedCount: 0,
+    existingFilledCount: 0,
+    researched: 0,
+    drafted: 0,
+    skipped: 0,
+    failed: 0,
+    error: "",
+    companies: []
+  };
 
   if (!readiness.ready) {
     setDataStatus(readiness.reason, "error");
@@ -3315,17 +3431,22 @@ async function runDailyAiWorkflow() {
     if (hasDiscoveryCriteria && getDailyRunEligibleCandidates().length < limit) {
       setDataStatus("Daily AI generating discovery candidates...", "working");
       generatedCount = await discoverCandidatesForDailyRun({ ...criteria, count: Math.max(criteria.count, limit) });
+      runSnapshot.generatedCount = generatedCount;
     }
 
     const fetchedCount = await autoFetchDailyRunEvidence(limit);
+    runSnapshot.fetchedCount = fetchedCount;
     const existingProspects = getExistingDailyRunProspects(limit);
+    runSnapshot.existingFilledCount = existingProspects.length;
     if (existingProspects.length > 0) {
       addDailyRunLog(`Found ${existingProspects.length} existing unfinished prospect${existingProspects.length === 1 ? "" : "s"} to process first.`, "done");
     }
 
     const remainingCapacity = Math.max(0, limit - existingProspects.length);
     const addedProspects = remainingCapacity > 0 ? addDailyRunProspects(remainingCapacity) : [];
+    runSnapshot.addedCount = addedProspects.length;
     const prospectsToProcess = [...existingProspects, ...addedProspects];
+    runSnapshot.companies = prospectsToProcess.map((prospect) => prospect.company).filter(Boolean);
 
     if (prospectsToProcess.length === 0) {
       throw new Error(shouldDailyRunRequireEvidence()
@@ -3334,17 +3455,26 @@ async function runDailyAiWorkflow() {
     }
 
     const results = await researchAndDraftDailyProspects(prospectsToProcess);
+    runSnapshot.researched = results.researched;
+    runSnapshot.drafted = results.drafted;
+    runSnapshot.skipped = results.skipped;
+    runSnapshot.failed = results.failed;
+    runSnapshot.status = results.failed ? "Completed with failures" : "Completed";
     saveProspects();
     renderProspects();
     setDataStatus(`Daily AI run complete: ${generatedCount} candidates generated, ${fetchedCount} sources fetched, ${addedProspects.length} prospects added, ${existingProspects.length} existing filled, ${results.researched} researched, ${results.drafted} emails drafted, ${results.skipped} skipped, ${results.failed} failed.`);
     addDailyRunLog(`Complete: ${generatedCount} generated, ${fetchedCount} sources fetched, ${addedProspects.length} added, ${existingProspects.length} existing filled, ${results.researched} researched, ${results.drafted} drafted, ${results.skipped} skipped, ${results.failed} failed.`, results.failed ? "error" : "done");
+    recordDailyRunHistory(runSnapshot);
   } catch (error) {
     const message = error.name === "AbortError"
       ? "Daily AI timed out. Lower the daily run limit or use qwen2.5:0.5b for a faster pass."
       : `Daily AI error: ${error.message || "make sure Ollama is running and returning usable JSON."}`;
+    runSnapshot.status = "Failed";
+    runSnapshot.error = message;
     setAiStatus(message, "error");
     setDataStatus(message, "error");
     addDailyRunLog(message, "error");
+    recordDailyRunHistory(runSnapshot);
   } finally {
     dailyRunInProgress = false;
     renderDailyRunCapacitySummary();
@@ -5611,6 +5741,7 @@ renderPromptTemplates();
 renderCrmProviderPreset();
 renderDiscoveryQueue();
 renderTeamSyncActor();
+renderDailyRunHistory();
 renderProspects();
 checkSearchSetup();
 checkCrmSetup();
