@@ -3654,14 +3654,46 @@ async function requeueStoppedDailyRun(id) {
     return;
   }
 
+  const requeueSnapshot = {
+    id: createId(),
+    startedAt: new Date().toISOString(),
+    status: "Running",
+    model: modelSelect.value,
+    limit: unfinishedProspects.length,
+    generatedCount: 0,
+    fetchedCount: 0,
+    addedCount: 0,
+    existingFilledCount: unfinishedProspects.length,
+    researched: 0,
+    drafted: 0,
+    skipped: 0,
+    failed: 0,
+    error: "",
+    companies: unfinishedProspects.map((prospect) => prospect.company).filter(Boolean)
+  };
+
   resetDailyRunLog();
   addDailyRunLog(`Requeueing ${unfinishedProspects.length} unfinished prospect${unfinishedProspects.length === 1 ? "" : "s"} from stopped Daily AI run.`);
-  const results = await researchAndDraftDailyProspects(unfinishedProspects);
-  saveProspects();
-  renderProspects();
-  renderDailyRunCapacitySummary();
-  setDataStatus(`Stopped run requeue complete: ${results.researched} researched, ${results.drafted} drafted, ${results.failed} failed.`);
-  addDailyRunLog(`Stopped requeue complete: ${results.researched} researched, ${results.drafted} drafted, ${results.failed} failed.`, results.failed ? "error" : "done");
+  try {
+    const results = await researchAndDraftDailyProspects(unfinishedProspects);
+    requeueSnapshot.researched = results.researched;
+    requeueSnapshot.drafted = results.drafted;
+    requeueSnapshot.skipped = results.skipped;
+    requeueSnapshot.failed = results.failed;
+    requeueSnapshot.status = results.failed ? "Completed with failures" : "Completed";
+    saveProspects();
+    renderProspects();
+    renderDailyRunCapacitySummary();
+    recordDailyRunHistory(requeueSnapshot);
+    setDataStatus(`Stopped run requeue complete: ${results.researched} researched, ${results.drafted} drafted, ${results.failed} failed.`);
+    addDailyRunLog(`Stopped requeue complete: ${results.researched} researched, ${results.drafted} drafted, ${results.failed} failed.`, results.failed ? "error" : "done");
+  } catch (error) {
+    requeueSnapshot.status = "Failed";
+    requeueSnapshot.error = error.message || "Stopped run requeue failed.";
+    recordDailyRunHistory(requeueSnapshot);
+    setDataStatus(`Stopped run requeue failed: ${requeueSnapshot.error}`, "error");
+    addDailyRunLog(`Stopped requeue failed: ${requeueSnapshot.error}`, "error");
+  }
 }
 
 async function retryDailyRunHistoryFailures(id) {
