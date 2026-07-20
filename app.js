@@ -3308,10 +3308,13 @@ function clearResolvedCrmQueueState() {
 }
 
 function markFailedCrmSyncsReviewed() {
-  const failedCrmLeads = getFailedCrmSyncLeads();
+  const failedCrmLeads = filterCrmLeadsByReason(getFailedCrmSyncLeads());
+  const filterLabel = crmFailureReasonFilter === "all" ? "" : ` (${crmFailureReasonFilter})`;
 
   if (failedCrmLeads.length === 0) {
-    setCrmSetupStatus("No failed CRM syncs to mark reviewed.");
+    setCrmSetupStatus(crmFailureReasonFilter === "all"
+      ? "No failed CRM syncs to mark reviewed."
+      : `No ${crmFailureReasonFilter} CRM sync failures to mark reviewed.`);
     return;
   }
 
@@ -3325,7 +3328,7 @@ function markFailedCrmSyncsReviewed() {
   resetCrmQueuePages("all");
   saveProspects();
   renderProspects();
-  setCrmSetupStatus(`Marked ${failedCrmLeads.length} failed CRM sync${failedCrmLeads.length === 1 ? "" : "s"} reviewed.`);
+  setCrmSetupStatus(`Marked ${failedCrmLeads.length}${filterLabel} failed CRM sync${failedCrmLeads.length === 1 ? "" : "s"} reviewed.`);
   setDataStatus("Reviewed CRM failures are preserved in the CRM Reviewed view.");
 }
 
