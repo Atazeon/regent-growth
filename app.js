@@ -1757,6 +1757,7 @@ function renderDailyDraftReviewList(draftedProspects) {
           </div>
           <div class="daily-review-actions">
             <button class="secondary-button" type="button" data-action="open-daily-review" data-index="${escapeHtml(index)}">Open</button>
+            ${getDailyReviewSendReadiness(prospect).ready ? "" : `<button class="secondary-button" type="button" data-action="fix-daily-review" data-index="${escapeHtml(index)}">Fix missing</button>`}
             <button class="secondary-button" type="button" data-action="send-daily-review" data-index="${escapeHtml(index)}" ${getDailyReviewSendReadiness(prospect).ready ? "" : "disabled"}>Send</button>
             <button class="secondary-button" type="button" data-action="sent-daily-review" data-index="${escapeHtml(index)}" ${getDailyReviewSendReadiness(prospect).ready ? "" : "disabled"}>Sent</button>
             <button type="button" data-action="sequence-daily-review" data-index="${escapeHtml(index)}">Sequence</button>
@@ -1980,6 +1981,31 @@ function sendDailyReviewProspect(index) {
   setDrafts(prospect);
   openEmailHandoff("mailto");
   renderProspects();
+}
+
+function openDailyReviewMissingFields(index) {
+  const prospect = prospects[index];
+  if (!prospect) return;
+
+  const readiness = getDailyReviewSendReadiness(prospect);
+  const missingRequired = readiness.checks.find((check) => check.required && !check.ready);
+
+  selectedProspectIndex = index;
+  savedViews.dataset.activeView = "all";
+  stageFilter.value = "all";
+  responseFilter.value = "all";
+
+  if (missingRequired?.label === "Contact email") {
+    editProspect(index);
+    setTimeout(() => prospectForm.contactEmail.focus(), 0);
+    setDataStatus(`Add or fix the contact email for ${prospect.company}.`, "error");
+    return;
+  }
+
+  setDrafts(prospect);
+  renderProspects();
+  setTimeout(() => emailDraft.focus(), 0);
+  setDataStatus(`Fix the email draft for ${prospect.company}.`, "error");
 }
 
 function markDailyReviewProspectSent(index) {
@@ -5779,6 +5805,10 @@ dailyRunReviewQueue.addEventListener("click", (event) => {
 
   if (button.dataset.action === "send-daily-review") {
     sendDailyReviewProspect(Number(button.dataset.index));
+  }
+
+  if (button.dataset.action === "fix-daily-review") {
+    openDailyReviewMissingFields(Number(button.dataset.index));
   }
 
   if (button.dataset.action === "sent-daily-review") {
