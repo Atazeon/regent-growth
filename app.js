@@ -231,6 +231,7 @@ const exportTeamBackupButton = document.querySelector("#exportTeamBackupButton")
 const restoreTeamBackupInput = document.querySelector("#restoreTeamBackupInput");
 const discoveryForm = document.querySelector("#discoveryForm");
 const discoveryList = document.querySelector("#discoveryList");
+const runDailyAiButton = document.querySelector("#runDailyAiButton");
 const generateDiscoveryButton = document.querySelector("#generateDiscoveryButton");
 const clearDiscoveryButton = document.querySelector("#clearDiscoveryButton");
 const searchSetupStatus = document.querySelector("#searchSetupStatus");
@@ -2674,6 +2675,139 @@ async function generatePersonalizedEmail() {
   }
 }
 
+function getDiscoveryCriteria() {
+  const formData = new FormData(discoveryForm);
+  return {
+    industries: formData.get("industries").trim(),
+    location: formData.get("location").trim(),
+    count: Math.min(20, Math.max(3, Number(formData.get("count")) || 8)),
+    signals: formData.get("signals").trim()
+  };
+}
+
+function getDailyRunLimit() {
+  const value = Number(discoveryForm.elements.dailyRunLimit?.value);
+  return Math.min(10, Math.max(1, Number.isFinite(value) ? value : 3));
+}
+
+async function discoverCandidatesForDailyRun(criteria) {
+  const rawDiscovery = await generateWithOllama(buildDiscoveryPrompt(criteria), 900);
+  const candidates = parseDiscoveryCandidates(rawDiscovery);
+
+  if (candidates.length === 0) {
+    throw new Error("No usable discovery candidates returned.");
+  }
+
+  const knownKeys = new Set();
+  prospects.forEach((prospect) => addDuplicateKeys(knownKeys, prospect));
+  discoveryQueue.forEach((candidate) => addDuplicateKeys(knownKeys, discoveryCandidateToProspect(candidate)));
+
+  const newCandidates = [];
+  candidates.forEach((candidate) => {
+    const prospect = discoveryCandidateToProspect(candidate);
+    const isDuplicate = getDuplicateKeys(prospect).some((key) => knownKeys.has(key));
+    if (isDuplicate) return;
+
+    newCandidates.push(candidate);
+    addDuplicateKeys(knownKeys, prospect);
+  });
+
+  discoveryQueue = [...newCandidates, ...discoveryQueue];
+  saveDiscoveryQueue();
+  renderDiscoveryQueue();
+  return newCandidates.length;
+}
+
+function addDailyRunProspects(limit) {
+  const candidates = discoveryQueue
+    .filter((candidate) => candidate.sourceStatus !== "Rejected")
+    .slice(0, limit);
+  const addedProspects = [];
+
+  candidates.forEach((candidate) => {
+    const prospect = discoveryCandidateToProspect(candidate);
+    prospects.unshift(prospect);
+    addedProspects.push(prospect);
+  });
+
+  discoveryQueue = discoveryQueue.filter((candidate) => !candidates.includes(candidate));
+  saveDiscoveryQueue();
+  saveProspects();
+  renderDiscoveryQueue();
+  return addedProspects;
+}
+
+async function researchAndDraftDailyProspects(prospectsToProcess) {
+  const results = {
+    researched: 0,
+    drafted: 0
+  };
+
+  for (const prospect of prospectsToProcess) {
+    selectedProspectIndex = prospects.indexOf(prospect);
+    setDataStatus(`Daily AI researching ${prospect.company}...`, "working");
+
+    const rawResearch = await generateWithOllama(buildResearchAgentPrompt(prospect), 420);
+    const research = parseJsonFromText(rawResearch);
+    applyResearchToProspect(prospect, research);
+    results.researched += 1;
+
+    setDataStatus(`Daily AI drafting outreach for ${prospect.company}...`, "working");
+    prospect.aiEmail = await generateWithOllama(renderTemplate(promptTemplates.email, prospect), 180);
+    prospect.stage = "Email Drafted";
+    results.drafted += 1;
+    saveProspects();
+    renderProspects();
+  }
+
+  return results;
+}
+
+async function runDailyAiWorkflow() {
+  const criteria = getDiscoveryCriteria();
+  const limit = getDailyRunLimit();
+
+  if (!criteria.industries || !criteria.signals) {
+    setDataStatus("Add target industries and qualification signals before running Daily AI.", "error");
+    return;
+  }
+
+  runDailyAiButton.disabled = true;
+  generateDiscoveryButton.disabled = true;
+  researchAccountButton.disabled = true;
+  generateEmailButton.disabled = true;
+
+  try {
+    let generatedCount = 0;
+
+    if (discoveryQueue.filter((candidate) => candidate.sourceStatus !== "Rejected").length < limit) {
+      setDataStatus("Daily AI generating discovery candidates...", "working");
+      generatedCount = await discoverCandidatesForDailyRun({ ...criteria, count: Math.max(criteria.count, limit) });
+    }
+
+    const addedProspects = addDailyRunProspects(limit);
+    if (addedProspects.length === 0) {
+      throw new Error("No discovery candidates were available to add to the pipeline.");
+    }
+
+    const results = await researchAndDraftDailyProspects(addedProspects);
+    saveProspects();
+    renderProspects();
+    setDataStatus(`Daily AI run complete: ${generatedCount} candidates generated, ${addedProspects.length} prospects added, ${results.researched} researched, ${results.drafted} emails drafted.`);
+  } catch (error) {
+    const message = error.name === "AbortError"
+      ? "Daily AI timed out. Lower the daily run limit or use qwen2.5:0.5b for a faster pass."
+      : `Daily AI error: ${error.message || "make sure Ollama is running and returning usable JSON."}`;
+    setAiStatus(message, "error");
+    setDataStatus(message, "error");
+  } finally {
+    runDailyAiButton.disabled = false;
+    generateDiscoveryButton.disabled = false;
+    researchAccountButton.disabled = false;
+    generateEmailButton.disabled = false;
+  }
+}
+
 function getDraftParts(rawDraft) {
   const draft = rawDraft.trim();
   const lines = draft.split(/\r?\n/);
@@ -4857,6 +4991,7 @@ teamRestorePreview.addEventListener("click", (event) => {
     setTeamSyncStatus("Restore confirmation dismissed.");
   }
 });
+runDailyAiButton.addEventListener("click", runDailyAiWorkflow);
 generateDiscoveryButton.addEventListener("click", generateDiscoveryCandidates);
 clearDiscoveryButton.addEventListener("click", clearDiscoveryQueue);
 checkSearchSetupButton.addEventListener("click", checkSearchSetup);

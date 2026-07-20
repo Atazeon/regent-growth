@@ -247,6 +247,7 @@
             <h2>Find Qualified Companies</h2>
           </div>
           <div class="action-row">
+            <button id="runDailyAiButton" type="button">Run daily AI</button>
             <button id="generateDiscoveryButton" type="button">Generate candidates</button>
             <button id="clearDiscoveryButton" class="secondary-button" type="button">Clear queue</button>
           </div>
@@ -263,6 +264,10 @@
           <label>
             Number to generate
             <input id="discoveryCount" name="count" type="number" min="3" max="20" value="8">
+          </label>
+          <label>
+            Daily run limit
+            <input id="dailyRunLimit" name="dailyRunLimit" type="number" min="1" max="10" value="3">
           </label>
           <label class="full-span">
             Qualification signals
