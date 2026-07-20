@@ -3578,6 +3578,7 @@ function renderDailyRunHistory() {
           <button class="secondary-button" type="button" data-action="copy-daily-history-summary">Copy summary</button>
           <button class="secondary-button" type="button" data-action="copy-daily-history-status-counts">Copy counts</button>
           ${getDailyRunHistoryStatusCount("Failed") > 0 ? `<button class="secondary-button" type="button" data-action="show-failed-daily-history">View failed</button>` : ""}
+          ${visibleHistory.some((snapshot) => getDailyHistoryFailedProspects(snapshot).length > 0) ? `<button class="secondary-button" type="button" data-action="retry-visible-daily-history-failures">Retry visible failures</button>` : ""}
           <button class="secondary-button" type="button" data-action="toggle-compact-daily-history">${compactDailyRunHistory ? "Full history" : "Compact history"}</button>
           <button class="secondary-button" type="button" data-action="toggle-all-daily-history">${showAllDailyRunHistory ? "Show first 5" : "Show all"}</button>
           <button class="secondary-button" type="button" data-action="export-daily-history">Export visible JSON</button>
@@ -3829,6 +3830,30 @@ async function retryDailyRunHistoryFailures(id) {
     return;
   }
 
+  await retryDailyRunHistoryProspects(failedProspects, "Daily AI history");
+}
+
+async function retryVisibleDailyRunHistoryFailures() {
+  const failedProspects = [];
+  const seenProspects = new Set();
+  getVisibleDailyRunHistory().forEach((snapshot) => {
+    getDailyHistoryFailedProspects(snapshot).forEach((prospect) => {
+      const key = prospect.id || getCompanyMatchKey(prospect.company);
+      if (!key || seenProspects.has(key)) return;
+      seenProspects.add(key);
+      failedProspects.push(prospect);
+    });
+  });
+
+  if (failedProspects.length === 0) {
+    setDataStatus("No visible failed Daily AI prospects are still waiting for retry.", "error");
+    return;
+  }
+
+  await retryDailyRunHistoryProspects(failedProspects, "visible Daily AI history");
+}
+
+async function retryDailyRunHistoryProspects(failedProspects, sourceLabel) {
   const retrySnapshot = {
     id: createId(),
     startedAt: new Date().toISOString(),
@@ -3849,7 +3874,7 @@ async function retryDailyRunHistoryFailures(id) {
 
   runDailyAiButton.disabled = true;
   resetDailyRunLog();
-  addDailyRunLog(`Retrying ${failedProspects.length} failed prospect${failedProspects.length === 1 ? "" : "s"} from Daily AI history.`);
+  addDailyRunLog(`Retrying ${failedProspects.length} failed prospect${failedProspects.length === 1 ? "" : "s"} from ${sourceLabel}.`);
 
   try {
     const results = await researchAndDraftDailyProspects(failedProspects);
@@ -3859,13 +3884,13 @@ async function retryDailyRunHistoryFailures(id) {
     retrySnapshot.failed = results.failed;
     retrySnapshot.status = results.failed ? "Completed with failures" : "Completed";
     recordDailyRunHistory(retrySnapshot);
-    setDataStatus(`Daily AI history retry complete: ${results.researched} researched, ${results.drafted} drafted, ${results.failed} failed.`);
+    setDataStatus(`${sourceLabel} retry complete: ${results.researched} researched, ${results.drafted} drafted, ${results.failed} failed.`);
     addDailyRunLog(`History retry complete: ${results.researched} researched, ${results.drafted} drafted, ${results.failed} failed.`, results.failed ? "error" : "done");
   } catch (error) {
     retrySnapshot.status = "Failed";
-    retrySnapshot.error = error.message || "Daily AI history retry failed.";
+    retrySnapshot.error = error.message || `${sourceLabel} retry failed.`;
     recordDailyRunHistory(retrySnapshot);
-    setDataStatus(`Daily AI history retry failed: ${retrySnapshot.error}`, "error");
+    setDataStatus(`${sourceLabel} retry failed: ${retrySnapshot.error}`, "error");
     addDailyRunLog(`History retry failed: ${retrySnapshot.error}`, "error");
   } finally {
     renderProspects();
@@ -6749,6 +6774,10 @@ dailyRunHistoryList.addEventListener("click", (event) => {
 
   if (button.dataset.action === "retry-daily-history-failures") {
     retryDailyRunHistoryFailures(button.dataset.id);
+  }
+
+  if (button.dataset.action === "retry-visible-daily-history-failures") {
+    retryVisibleDailyRunHistoryFailures();
   }
 
   if (button.dataset.action === "requeue-stopped-daily-history") {
