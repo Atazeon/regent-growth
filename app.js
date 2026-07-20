@@ -259,6 +259,7 @@ const checkCrmSetupButton = document.querySelector("#checkCrmSetupButton");
 const syncSelectedCrmButton = document.querySelector("#syncSelectedCrmButton");
 const syncWarmCrmButton = document.querySelector("#syncWarmCrmButton");
 const retryFailedCrmButton = document.querySelector("#retryFailedCrmButton");
+const clearCrmNotesButton = document.querySelector("#clearCrmNotesButton");
 const crmSetupStatus = document.querySelector("#crmSetupStatus");
 const crmPresetSelect = document.querySelector("#crmPresetSelect");
 const crmPresetSnippet = document.querySelector("#crmPresetSnippet");
@@ -3075,6 +3076,41 @@ function getLatestCrmSyncNote(prospect) {
   return prospect.crmSyncNotes?.split("\n").find((note) => note.trim()) || "";
 }
 
+function appendCrmSyncNote(prospect, note, limit = 8) {
+  const notes = [note, ...(prospect.crmSyncNotes || "").split("\n")]
+    .map((item) => item.trim())
+    .filter(Boolean);
+  const uniqueNotes = [];
+  const seen = new Set();
+
+  notes.forEach((item) => {
+    if (seen.has(item)) return;
+    seen.add(item);
+    uniqueNotes.push(item);
+  });
+
+  prospect.crmSyncNotes = uniqueNotes.slice(0, limit).join("\n");
+}
+
+function cleanCrmSyncNotes() {
+  let updatedCount = 0;
+
+  prospects.forEach((prospect) => {
+    const before = prospect.crmSyncNotes || "";
+    appendCrmSyncNote(prospect, "", 5);
+
+    if ((prospect.crmSyncNotes || "") !== before) {
+      updatedCount += 1;
+    }
+  });
+
+  saveProspects();
+  renderProspects();
+  setCrmSetupStatus(updatedCount > 0
+    ? `Cleaned CRM sync notes for ${updatedCount} prospect${updatedCount === 1 ? "" : "s"}.`
+    : "CRM sync notes are already clean.");
+}
+
 function downloadFile(filename, content, type) {
   const blob = new Blob([content], { type });
   const url = URL.createObjectURL(blob);
@@ -3195,7 +3231,7 @@ async function syncCrmRecords(records, prospectsToUpdate) {
   const startedAt = new Date().toISOString();
   prospectsToUpdate.forEach((prospect) => {
     prospect.crmSyncStatus = "Syncing";
-    prospect.crmSyncNotes = [`${startedAt}: Sync queued for CRM connector.`, prospect.crmSyncNotes].filter(Boolean).join("\n");
+    appendCrmSyncNote(prospect, `${startedAt}: Sync queued for CRM connector.`);
   });
   saveProspects();
   renderProspects();
@@ -3218,7 +3254,7 @@ async function syncCrmRecords(records, prospectsToUpdate) {
   prospectsToUpdate.forEach((prospect) => {
     prospect.crmSyncStatus = "Synced";
     prospect.crmSyncedAt = syncedAt;
-    prospect.crmSyncNotes = [`${syncedAt}: Synced through local CRM connector (${acceptedCount} record${acceptedCount === 1 ? "" : "s"} accepted).`, prospect.crmSyncNotes].filter(Boolean).join("\n");
+    appendCrmSyncNote(prospect, `${syncedAt}: Synced through local CRM connector (${acceptedCount} record${acceptedCount === 1 ? "" : "s"} accepted).`);
     if (prospect.handoffStatus === "Assigned" || prospect.handoffStatus === "In Review") {
       prospect.handoffStatus = "Handed Off";
     }
@@ -3247,7 +3283,7 @@ async function syncSelectedCrmLead() {
     setDataStatus(`${prospect.company} synced to CRM.`);
   } catch (error) {
     prospect.crmSyncStatus = "Sync Failed";
-    prospect.crmSyncNotes = [`${new Date().toISOString()}: ${error.message}`, prospect.crmSyncNotes].filter(Boolean).join("\n");
+    appendCrmSyncNote(prospect, `${new Date().toISOString()}: ${error.message}`);
     saveProspects();
     renderProspects();
     setCrmSetupStatus(error.message, "error");
@@ -3277,7 +3313,7 @@ async function syncWarmCrmLeads() {
     const failedAt = new Date().toISOString();
     warmLeads.forEach((prospect) => {
       prospect.crmSyncStatus = "Sync Failed";
-      prospect.crmSyncNotes = [`${failedAt}: ${error.message}`, prospect.crmSyncNotes].filter(Boolean).join("\n");
+      appendCrmSyncNote(prospect, `${failedAt}: ${error.message}`);
     });
     saveProspects();
     renderProspects();
@@ -3309,7 +3345,7 @@ async function retryFailedCrmSyncs() {
     const failedAt = new Date().toISOString();
     failedCrmLeads.forEach((prospect) => {
       prospect.crmSyncStatus = "Sync Failed";
-      prospect.crmSyncNotes = [`${failedAt}: Retry failed: ${error.message}`, prospect.crmSyncNotes].filter(Boolean).join("\n");
+      appendCrmSyncNote(prospect, `${failedAt}: Retry failed: ${error.message}`);
     });
     saveProspects();
     renderProspects();
@@ -4285,6 +4321,7 @@ checkCrmSetupButton.addEventListener("click", checkCrmSetup);
 syncSelectedCrmButton.addEventListener("click", syncSelectedCrmLead);
 syncWarmCrmButton.addEventListener("click", syncWarmCrmLeads);
 retryFailedCrmButton.addEventListener("click", retryFailedCrmSyncs);
+clearCrmNotesButton.addEventListener("click", cleanCrmSyncNotes);
 copyHandoffPacketButton.addEventListener("click", copySelectedHandoffPacket);
 copyCrmMappingButton.addEventListener("click", copySelectedCrmMapping);
 markCrmReadyButton.addEventListener("click", markSelectedCrmReady);
