@@ -3588,10 +3588,10 @@ function renderDailyRunHistory() {
         ${visibleHistoryHasFailures ? `
           <div data-action-group="daily-history-failures">
             <span class="daily-history-action-label">${escapeHtml(getVisibleDailyHistoryFailedItems(visibleHistory).length)} retryable</span>
+            <button class="secondary-button" type="button" data-action="retry-visible-daily-history-failures">Retry visible failures</button>
             <button class="secondary-button" type="button" data-action="copy-visible-daily-history-failures">Copy visible failures</button>
             <button class="secondary-button" type="button" data-action="export-visible-daily-history-failures">Export failures JSON</button>
             <button class="secondary-button" type="button" data-action="export-visible-daily-history-failures-csv">Export failures CSV</button>
-            <button class="secondary-button" type="button" data-action="retry-visible-daily-history-failures">Retry visible failures</button>
             <button class="secondary-button" type="button" data-action="clear-visible-daily-history-failures">Clear visible failures</button>
           </div>
         ` : ""}
