@@ -183,6 +183,7 @@ let crmFailureReasonFilter = "all";
 let dailyRunHistoryStatusFilter = "all";
 let showAllDailyReviewItems = false;
 let showDailyReviewFailures = true;
+let compactDailyRunHistory = false;
 let dailyRunInProgress = false;
 let dailyRunStopRequested = false;
 let pendingTeamRestore = null;
@@ -3570,6 +3571,7 @@ function renderDailyRunHistory() {
             <option value="Failed" ${dailyRunHistoryStatusFilter === "Failed" ? "selected" : ""}>Failed</option>
           </select>
           <button class="secondary-button" type="button" data-action="copy-daily-history-summary">Copy summary</button>
+          <button class="secondary-button" type="button" data-action="toggle-compact-daily-history">${compactDailyRunHistory ? "Full history" : "Compact history"}</button>
           <button class="secondary-button" type="button" data-action="export-daily-history">Export visible JSON</button>
           <button class="secondary-button" type="button" data-action="export-daily-history-csv">Export visible CSV</button>
         </div>
@@ -3620,14 +3622,18 @@ function renderDailyRunHistoryItem(snapshot) {
   const stoppedUnfinishedCount = canRequeueStopped ? getDailyHistoryUnfinishedProspects(snapshot).length : 0;
 
   return `
-    <article>
+    <article ${compactDailyRunHistory ? `data-view="compact"` : ""}>
       <div>
         <strong>${escapeHtml(snapshot.status)}</strong>
         <p>${escapeHtml(formatDateTime(snapshot.finishedAt || snapshot.startedAt))} | ${escapeHtml(snapshot.model || "No model")} | limit ${escapeHtml(snapshot.limit)}</p>
-        <p>${escapeHtml(counts)}</p>
-        <p>${escapeHtml(companyText)}</p>
-        ${canRequeueStopped ? `<p>${escapeHtml(stoppedUnfinishedCount)} unfinished prospect${stoppedUnfinishedCount === 1 ? "" : "s"} still available to requeue.</p>` : ""}
-        ${snapshot.error ? `<p class="history-error">${escapeHtml(snapshot.error)}</p>` : ""}
+        ${compactDailyRunHistory
+          ? `<p>${escapeHtml(snapshot.drafted)} drafted | ${escapeHtml(snapshot.failed)} failed | ${escapeHtml(snapshot.skipped)} skipped | ${escapeHtml(snapshot.companies.length)} companies</p>`
+          : `
+            <p>${escapeHtml(counts)}</p>
+            <p>${escapeHtml(companyText)}</p>
+            ${canRequeueStopped ? `<p>${escapeHtml(stoppedUnfinishedCount)} unfinished prospect${stoppedUnfinishedCount === 1 ? "" : "s"} still available to requeue.</p>` : ""}
+            ${snapshot.error ? `<p class="history-error">${escapeHtml(snapshot.error)}</p>` : ""}
+          `}
       </div>
       ${canRetry ? `
         <div class="daily-review-actions">
@@ -6570,6 +6576,11 @@ dailyRunHistoryList.addEventListener("click", (event) => {
 
   if (button.dataset.action === "copy-daily-history-summary") {
     copyDailyRunHistorySummary();
+  }
+
+  if (button.dataset.action === "toggle-compact-daily-history") {
+    compactDailyRunHistory = !compactDailyRunHistory;
+    renderDailyRunHistory();
   }
 
   if (button.dataset.action === "copy-stopped-daily-history") {

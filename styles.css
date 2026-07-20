@@ -535,6 +535,10 @@ button:disabled {
   padding: 10px 12px;
 }
 
+.daily-run-history article[data-view="compact"] {
+  padding: 8px 10px;
+}
+
 .daily-run-history p {
   color: var(--muted);
   font-size: 0.86rem;
