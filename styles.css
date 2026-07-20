@@ -563,6 +563,13 @@ button:disabled {
   justify-content: flex-end;
 }
 
+.daily-history-count {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin: 4px 0 0;
+}
+
 .daily-run-review-queue {
   border: 1px solid var(--line);
   border-radius: 8px;

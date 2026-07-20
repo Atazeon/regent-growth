@@ -3560,6 +3560,7 @@ function renderDailyRunHistory() {
       <div>
         <p class="eyebrow">Daily AI History</p>
         <h3>${escapeHtml(visibleHistory.length)} of ${escapeHtml(dailyRunHistory.length)} saved run${dailyRunHistory.length === 1 ? "" : "s"}</h3>
+        ${renderDailyRunHistoryCountBadge(visibleHistory)}
       </div>
       <div class="daily-history-actions">
         <div>
@@ -3598,6 +3599,16 @@ function renderDailyRunHistory() {
         ${renderDailyRunHistoryVisibleLimitSummary(visibleHistory)}
         <div class="daily-run-history-items">${getVisibleDailyRunHistoryItems(visibleHistory).map(renderDailyRunHistoryItem).join("")}</div>
       `}
+  `;
+}
+
+function renderDailyRunHistoryCountBadge(visibleHistory) {
+  const filterLabel = dailyRunHistoryStatusFilter === "all" ? "all runs" : dailyRunHistoryStatusFilter;
+
+  return `
+    <p class="daily-history-count">
+      ${escapeHtml(visibleHistory.length)} visible / ${escapeHtml(dailyRunHistory.length)} total | ${escapeHtml(filterLabel)}
+    </p>
   `;
 }
 
