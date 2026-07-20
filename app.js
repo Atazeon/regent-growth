@@ -3569,6 +3569,7 @@ function renderDailyRunHistory() {
           <option value="Failed" ${dailyRunHistoryStatusFilter === "Failed" ? "selected" : ""}>Failed</option>
         </select>
         <button class="secondary-button" type="button" data-action="copy-daily-history-summary">Copy summary</button>
+        <button class="secondary-button" type="button" data-action="copy-skipped-daily-history">Copy skipped</button>
         <button class="secondary-button" type="button" data-action="copy-stopped-daily-history">Copy stopped</button>
         <button class="secondary-button" type="button" data-action="export-stopped-daily-history">Export stopped JSON</button>
         <button class="secondary-button" type="button" data-action="export-stopped-daily-history-csv">Export stopped CSV</button>
@@ -3815,6 +3816,21 @@ async function copyStoppedDailyRunHistorySummary() {
   dailyRunHistoryStatusFilter = currentFilter;
   await navigator.clipboard.writeText(summary);
   setDataStatus(`Copied ${stoppedRuns.length} stopped Daily AI run summar${stoppedRuns.length === 1 ? "y" : "ies"}.`);
+}
+
+async function copySkippedDailyRunHistorySummary() {
+  const skippedRuns = dailyRunHistory.filter((snapshot) => snapshot.skipped > 0);
+  if (skippedRuns.length === 0) {
+    setDataStatus("No skipped Daily AI runs to copy.", "error");
+    return;
+  }
+
+  const currentFilter = dailyRunHistoryStatusFilter;
+  dailyRunHistoryStatusFilter = "skipped";
+  const summary = formatDailyRunHistorySummary(skippedRuns);
+  dailyRunHistoryStatusFilter = currentFilter;
+  await navigator.clipboard.writeText(summary);
+  setDataStatus(`Copied ${skippedRuns.length} skipped Daily AI run summar${skippedRuns.length === 1 ? "y" : "ies"}.`);
 }
 
 function getStoppedDailyRunHistory() {
@@ -6516,6 +6532,10 @@ dailyRunHistoryList.addEventListener("click", (event) => {
 
   if (button.dataset.action === "copy-stopped-daily-history") {
     copyStoppedDailyRunHistorySummary();
+  }
+
+  if (button.dataset.action === "copy-skipped-daily-history") {
+    copySkippedDailyRunHistorySummary();
   }
 
   if (button.dataset.action === "export-stopped-daily-history") {
