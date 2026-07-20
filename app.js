@@ -2785,6 +2785,10 @@ function shouldDailyRunRequireEvidence() {
   return Boolean(discoveryForm.elements.dailyRequireEvidence?.checked);
 }
 
+function shouldDailyRunAutoFetchEvidence() {
+  return Boolean(discoveryForm.elements.dailyAutoFetchEvidence?.checked);
+}
+
 function isEvidenceReadyCandidate(candidate) {
   return candidate.sourceStatus === "Evidence Found" || Boolean(candidate.sourceNotes?.trim());
 }
@@ -2835,6 +2839,64 @@ async function discoverCandidatesForDailyRun(criteria) {
   renderDiscoveryQueue();
   addDailyRunLog(`Added ${newCandidates.length} new discovery candidate${newCandidates.length === 1 ? "" : "s"} to the queue.`, "done");
   return newCandidates.length;
+}
+
+async function fetchEvidenceForCandidate(candidate) {
+  const url = toExternalUrl(candidate.website || "");
+  if (!url) {
+    throw new Error(`Add a valid website before fetching source evidence for ${candidate.company}.`);
+  }
+
+  const response = await fetch(sourceFetchEndpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ url })
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || `Source fetch returned ${response.status}`);
+  }
+
+  const result = await response.json();
+  const fetchedEvidence = formatFetchedEvidence(result);
+  candidate.sourceStatus = "Evidence Found";
+  candidate.sourceNotes = candidate.sourceNotes
+    ? `${candidate.sourceNotes}\n\n${fetchedEvidence}`
+    : fetchedEvidence;
+  return candidate;
+}
+
+async function autoFetchDailyRunEvidence(limit) {
+  if (!shouldDailyRunAutoFetchEvidence()) return 0;
+
+  const candidatesToFetch = discoveryQueue
+    .filter((candidate) => candidate.sourceStatus !== "Rejected" && !isEvidenceReadyCandidate(candidate))
+    .slice(0, limit);
+  let fetchedCount = 0;
+
+  for (const candidate of candidatesToFetch) {
+    try {
+      addDailyRunLog(`Fetching source evidence for ${candidate.company}.`);
+      await fetchEvidenceForCandidate(candidate);
+      fetchedCount += 1;
+      addDailyRunLog(`Fetched source evidence for ${candidate.company}.`, "done");
+    } catch (error) {
+      candidate.sourceNotes = candidate.sourceNotes
+        ? `${candidate.sourceNotes}\n\nSource auto-fetch failed: ${error.message}`
+        : `Source auto-fetch failed: ${error.message}`;
+      addDailyRunLog(`Source fetch skipped for ${candidate.company}: ${error.message}`, "error");
+    }
+  }
+
+  if (candidatesToFetch.length > 0) {
+    saveDiscoveryQueue();
+    renderDiscoveryQueue();
+  }
+
+  return fetchedCount;
 }
 
 function addDailyRunProspects(limit) {
@@ -2909,6 +2971,7 @@ async function runDailyAiWorkflow() {
       generatedCount = await discoverCandidatesForDailyRun({ ...criteria, count: Math.max(criteria.count, limit) });
     }
 
+    const fetchedCount = await autoFetchDailyRunEvidence(limit);
     const addedProspects = addDailyRunProspects(limit);
     if (addedProspects.length === 0) {
       throw new Error(shouldDailyRunRequireEvidence()
@@ -2919,8 +2982,8 @@ async function runDailyAiWorkflow() {
     const results = await researchAndDraftDailyProspects(addedProspects);
     saveProspects();
     renderProspects();
-    setDataStatus(`Daily AI run complete: ${generatedCount} candidates generated, ${addedProspects.length} prospects added, ${results.researched} researched, ${results.drafted} emails drafted.`);
-    addDailyRunLog(`Complete: ${generatedCount} generated, ${addedProspects.length} added, ${results.researched} researched, ${results.drafted} drafted.`, "done");
+    setDataStatus(`Daily AI run complete: ${generatedCount} candidates generated, ${fetchedCount} sources fetched, ${addedProspects.length} prospects added, ${results.researched} researched, ${results.drafted} emails drafted.`);
+    addDailyRunLog(`Complete: ${generatedCount} generated, ${fetchedCount} sources fetched, ${addedProspects.length} added, ${results.researched} researched, ${results.drafted} drafted.`, "done");
   } catch (error) {
     const message = error.name === "AbortError"
       ? "Daily AI timed out. Lower the daily run limit or use qwen2.5:0.5b for a faster pass."
@@ -4624,25 +4687,7 @@ async function fetchDiscoverySource(id) {
   setDataStatus(`Fetching website evidence for ${candidate.company}...`, "working");
 
   try {
-    const response = await fetch(sourceFetchEndpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ url })
-    });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      throw new Error(error.message || `Source fetch returned ${response.status}`);
-    }
-
-    const result = await response.json();
-    const fetchedEvidence = formatFetchedEvidence(result);
-    candidate.sourceStatus = "Evidence Found";
-    candidate.sourceNotes = candidate.sourceNotes
-      ? `${candidate.sourceNotes}\n\n${fetchedEvidence}`
-      : fetchedEvidence;
+    await fetchEvidenceForCandidate(candidate);
     saveDiscoveryQueue();
     renderDiscoveryQueue();
     setDataStatus(`Fetched website evidence for ${candidate.company}.`);
