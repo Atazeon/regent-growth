@@ -175,6 +175,8 @@ let promptTemplates = loadPromptTemplates();
 let discoveryQueue = loadDiscoveryQueue();
 let editingIndex = null;
 let selectedProspectIndex = 0;
+let crmFailedQueuePage = 0;
+let crmReviewedQueuePage = 0;
 let pendingTeamRestore = null;
 let teamBackupsCache = [];
 
@@ -3036,6 +3038,10 @@ function renderHandoff() {
 
 function renderCrmRetryQueue(failedCrmLeads = getFailedCrmSyncLeads()) {
   const reviewedCrmLeads = getReviewedCrmSyncLeads();
+  const failedPage = getBoundedPage(crmFailedQueuePage, failedCrmLeads.length);
+  const failedStart = failedPage * crmQueuePageSize;
+  const failedPageLeads = failedCrmLeads.slice(failedStart, failedStart + crmQueuePageSize);
+  crmFailedQueuePage = failedPage;
   retryFailedCrmButton.disabled = failedCrmLeads.length === 0;
   markReviewedCrmButton.disabled = failedCrmLeads.length === 0;
   requeueReviewedCrmButton.disabled = reviewedCrmLeads.length === 0;
@@ -3075,7 +3081,7 @@ function renderCrmRetryQueue(failedCrmLeads = getFailedCrmSyncLeads()) {
       </div>
     </div>
     <div class="crm-retry-list">
-      ${failedCrmLeads.slice(0, 5).map((prospect) => {
+      ${failedPageLeads.map((prospect) => {
         const index = prospects.indexOf(prospect);
         return `
         <article>
@@ -3091,12 +3097,17 @@ function renderCrmRetryQueue(failedCrmLeads = getFailedCrmSyncLeads()) {
         `;
       }).join("")}
     </div>
+    ${renderCrmQueuePagination("failed", failedCrmLeads.length, failedPage)}
     ${renderReviewedCrmQueue(reviewedCrmLeads)}
   `;
 }
 
 function renderReviewedCrmQueue(reviewedCrmLeads) {
   if (reviewedCrmLeads.length === 0) return "";
+  const reviewedPage = getBoundedPage(crmReviewedQueuePage, reviewedCrmLeads.length);
+  const reviewedStart = reviewedPage * crmQueuePageSize;
+  const reviewedPageLeads = reviewedCrmLeads.slice(reviewedStart, reviewedStart + crmQueuePageSize);
+  crmReviewedQueuePage = reviewedPage;
 
   return `
     <div class="crm-reviewed-queue">
@@ -3108,7 +3119,7 @@ function renderReviewedCrmQueue(reviewedCrmLeads) {
         <button class="secondary-button" type="button" data-action="show-crm-reviewed">Show reviewed</button>
       </div>
       <div class="crm-retry-list">
-        ${reviewedCrmLeads.slice(0, 5).map((prospect) => {
+        ${reviewedPageLeads.map((prospect) => {
           const index = prospects.indexOf(prospect);
           return `
           <article>
@@ -3124,8 +3135,44 @@ function renderReviewedCrmQueue(reviewedCrmLeads) {
           `;
         }).join("")}
       </div>
+      ${renderCrmQueuePagination("reviewed", reviewedCrmLeads.length, reviewedPage)}
     </div>
   `;
+}
+
+const crmQueuePageSize = 5;
+
+function getBoundedPage(page, totalItems) {
+  const maxPage = Math.max(0, Math.ceil(totalItems / crmQueuePageSize) - 1);
+  return Math.min(Math.max(page, 0), maxPage);
+}
+
+function renderCrmQueuePagination(queue, totalItems, page) {
+  const totalPages = Math.ceil(totalItems / crmQueuePageSize);
+  if (totalPages <= 1) return "";
+
+  return `
+    <div class="crm-queue-pagination">
+      <button class="secondary-button" type="button" data-action="crm-page" data-queue="${escapeHtml(queue)}" data-direction="-1" ${page === 0 ? "disabled" : ""}>Previous</button>
+      <span>Page ${escapeHtml(page + 1)} of ${escapeHtml(totalPages)}</span>
+      <button class="secondary-button" type="button" data-action="crm-page" data-queue="${escapeHtml(queue)}" data-direction="1" ${page >= totalPages - 1 ? "disabled" : ""}>Next</button>
+    </div>
+  `;
+}
+
+function changeCrmQueuePage(queue, direction) {
+  const delta = Number(direction);
+  if (!Number.isFinite(delta)) return;
+
+  if (queue === "failed") {
+    crmFailedQueuePage = getBoundedPage(crmFailedQueuePage + delta, getFailedCrmSyncLeads().length);
+  }
+
+  if (queue === "reviewed") {
+    crmReviewedQueuePage = getBoundedPage(crmReviewedQueuePage + delta, getReviewedCrmSyncLeads().length);
+  }
+
+  renderProspects();
 }
 
 function renderCrmSyncStatusChips(failedCount, syncingCount, syncedCount, reviewedCount, notSyncedCount) {
@@ -4554,6 +4601,10 @@ crmRetryQueue.addEventListener("click", (event) => {
 
   if (button.dataset.action === "show-crm-failed") {
     showFailedCrmSyncs();
+  }
+
+  if (button.dataset.action === "crm-page") {
+    changeCrmQueuePage(button.dataset.queue, button.dataset.direction);
   }
 
   if (button.dataset.action === "show-crm-reviewed") {

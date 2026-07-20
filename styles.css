@@ -1270,6 +1270,21 @@ button:disabled {
   padding-top: 16px;
 }
 
+.crm-queue-pagination {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.crm-queue-pagination span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
 .crm-retry-list article {
   align-items: center;
   border: 1px solid var(--line);
