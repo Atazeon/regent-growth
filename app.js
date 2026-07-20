@@ -1795,6 +1795,7 @@ function renderDailyDraftReviewList(draftedProspects) {
       </div>
     </div>
     ${renderDailyReviewBlockedSummary(draftedProspects)}
+    ${renderDailyReviewVisibleLimitSummary(draftedProspects, "draft")}
     <div class="daily-review-list">
       ${draftedProspects.slice(0, 6).map(({ prospect, index }) => `
         <article>
@@ -1814,6 +1815,13 @@ function renderDailyDraftReviewList(draftedProspects) {
       `).join("")}
     </div>
   `;
+}
+
+function renderDailyReviewVisibleLimitSummary(items, label) {
+  const hiddenCount = Math.max(0, items.length - 6);
+  if (hiddenCount === 0) return "";
+
+  return `<p class="daily-review-limit">Showing first 6 ${escapeHtml(label)}${label.endsWith("s") ? "" : "s"}; ${escapeHtml(hiddenCount)} more match the current filters.</p>`;
 }
 
 function getDailyReviewBlockedSummary(draftedProspects = getDailyRunReviewProspects()) {
@@ -1888,6 +1896,7 @@ function renderDailyFailedReviewList(failedProspects) {
         <h3>${escapeHtml(failedProspects.length)} prospect${failedProspects.length === 1 ? "" : "s"} need retry</h3>
       </div>
     </div>
+    ${renderDailyReviewVisibleLimitSummary(failedProspects, "failure")}
     <div class="daily-review-list">
       ${failedProspects.slice(0, 6).map(({ prospect, index }) => `
         <article>

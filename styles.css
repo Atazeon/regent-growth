@@ -583,6 +583,13 @@ button:disabled {
   margin: 0 0 10px;
 }
 
+.daily-review-limit {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin: 0 0 10px;
+}
+
 .daily-review-summary span {
   background: #f9fafc;
   border: 1px solid var(--line);
