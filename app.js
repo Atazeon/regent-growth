@@ -3572,6 +3572,7 @@ function renderDailyRunHistory() {
             <option value="skipped" ${dailyRunHistoryStatusFilter === "skipped" ? "selected" : ""}>With skipped</option>
             <option value="Failed" ${dailyRunHistoryStatusFilter === "Failed" ? "selected" : ""}>Failed</option>
           </select>
+          <button class="secondary-button" type="button" data-action="clear-daily-history-filter">Clear filter</button>
           <button class="secondary-button" type="button" data-action="copy-daily-history-summary">Copy summary</button>
           <button class="secondary-button" type="button" data-action="toggle-compact-daily-history">${compactDailyRunHistory ? "Full history" : "Compact history"}</button>
           <button class="secondary-button" type="button" data-action="toggle-all-daily-history">${showAllDailyRunHistory ? "Show first 5" : "Show all"}</button>
@@ -3610,6 +3611,12 @@ function renderDailyRunHistoryCountBadge(visibleHistory) {
       ${escapeHtml(visibleHistory.length)} visible / ${escapeHtml(dailyRunHistory.length)} total | ${escapeHtml(filterLabel)}
     </p>
   `;
+}
+
+function clearDailyRunHistoryFilter() {
+  dailyRunHistoryStatusFilter = "all";
+  renderDailyRunHistory();
+  setDataStatus("Cleared Daily AI history filter.");
 }
 
 function getVisibleDailyRunHistoryItems(items) {
@@ -6613,6 +6620,10 @@ dailyRunHistoryList.addEventListener("click", (event) => {
   if (button.dataset.action === "toggle-all-daily-history") {
     showAllDailyRunHistory = !showAllDailyRunHistory;
     renderDailyRunHistory();
+  }
+
+  if (button.dataset.action === "clear-daily-history-filter") {
+    clearDailyRunHistoryFilter();
   }
 
   if (button.dataset.action === "copy-stopped-daily-history") {
