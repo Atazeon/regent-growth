@@ -261,6 +261,7 @@ const syncWarmCrmButton = document.querySelector("#syncWarmCrmButton");
 const retryFailedCrmButton = document.querySelector("#retryFailedCrmButton");
 const exportFailedCrmButton = document.querySelector("#exportFailedCrmButton");
 const exportFailedCrmCsvButton = document.querySelector("#exportFailedCrmCsvButton");
+const clearResolvedCrmButton = document.querySelector("#clearResolvedCrmButton");
 const clearCrmNotesButton = document.querySelector("#clearCrmNotesButton");
 const crmSetupStatus = document.querySelector("#crmSetupStatus");
 const crmPresetSelect = document.querySelector("#crmPresetSelect");
@@ -3115,6 +3116,25 @@ function cleanCrmSyncNotes() {
     : "CRM sync notes are already clean.");
 }
 
+function clearResolvedCrmQueueState() {
+  let clearedCount = 0;
+  const clearedAt = new Date().toISOString();
+
+  prospects.forEach((prospect) => {
+    if (prospect.crmSyncStatus !== "Syncing") return;
+
+    prospect.crmSyncStatus = "Not Synced";
+    appendCrmSyncNote(prospect, `${clearedAt}: Cleared stale CRM syncing state.`);
+    clearedCount += 1;
+  });
+
+  saveProspects();
+  renderProspects();
+  setCrmSetupStatus(clearedCount > 0
+    ? `Cleared ${clearedCount} stale CRM syncing record${clearedCount === 1 ? "" : "s"}.`
+    : "No stale CRM syncing records to clear.");
+}
+
 function downloadFile(filename, content, type) {
   const blob = new Blob([content], { type });
   const url = URL.createObjectURL(blob);
@@ -4371,6 +4391,7 @@ syncWarmCrmButton.addEventListener("click", syncWarmCrmLeads);
 retryFailedCrmButton.addEventListener("click", retryFailedCrmSyncs);
 exportFailedCrmButton.addEventListener("click", exportFailedCrmSyncs);
 exportFailedCrmCsvButton.addEventListener("click", exportFailedCrmSyncCsv);
+clearResolvedCrmButton.addEventListener("click", clearResolvedCrmQueueState);
 clearCrmNotesButton.addEventListener("click", cleanCrmSyncNotes);
 copyHandoffPacketButton.addEventListener("click", copySelectedHandoffPacket);
 copyCrmMappingButton.addEventListener("click", copySelectedCrmMapping);
