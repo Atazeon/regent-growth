@@ -1709,6 +1709,7 @@ function renderDailyFailedReviewList(failedProspects) {
           </div>
           <div class="daily-review-actions">
             <button class="secondary-button" type="button" data-action="open-daily-review" data-index="${escapeHtml(index)}">Open</button>
+            <button class="secondary-button" type="button" data-action="clear-daily-ai-failure" data-index="${escapeHtml(index)}">Clear</button>
             <button type="button" data-action="retry-daily-ai" data-index="${escapeHtml(index)}">Retry</button>
           </div>
         </article>
@@ -1719,6 +1720,19 @@ function renderDailyFailedReviewList(failedProspects) {
 
 function getLatestDailyAiFailureNote(prospect) {
   return (prospect.responseNotes || "").split("\n").find((note) => note.includes("Daily AI failed:")) || "";
+}
+
+function clearDailyAiFailure(index) {
+  const prospect = prospects[index];
+  if (!prospect) return;
+
+  const notes = (prospect.responseNotes || "")
+    .split("\n")
+    .filter((note) => !note.includes("Daily AI failed:"));
+  prospect.responseNotes = notes.join("\n");
+  saveProspects();
+  renderProspects();
+  setDataStatus(`Cleared Daily AI failure for ${prospect.company}.`);
 }
 
 function openDailyReviewProspect(index) {
@@ -5268,6 +5282,10 @@ dailyRunReviewQueue.addEventListener("click", (event) => {
 
   if (button.dataset.action === "retry-daily-ai") {
     retryDailyAiProspect(Number(button.dataset.index));
+  }
+
+  if (button.dataset.action === "clear-daily-ai-failure") {
+    clearDailyAiFailure(Number(button.dataset.index));
   }
 });
 prospectForm.addEventListener("submit", saveProspectFromForm);
