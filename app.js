@@ -3419,10 +3419,14 @@ function exportWarmLeadJson() {
 }
 
 function exportFailedCrmSyncs() {
-  const failedCrmLeads = getFailedCrmSyncLeads();
+  const failedCrmLeads = filterCrmLeadsByReason(getFailedCrmSyncLeads());
+  const filterSuffix = getCrmFailureReasonFileSuffix();
 
   if (failedCrmLeads.length === 0) {
-    setCrmSetupStatus("No failed CRM syncs to export.", "error");
+    setCrmSetupStatus(crmFailureReasonFilter === "all"
+      ? "No failed CRM syncs to export."
+      : `No ${crmFailureReasonFilter} CRM sync failures to export.`,
+    "error");
     return;
   }
 
@@ -3430,6 +3434,7 @@ function exportFailedCrmSyncs() {
   const payload = {
     source: "regent-growth-crm-retry-queue",
     exportedAt,
+    failureReasonFilter: crmFailureReasonFilter,
     failedCount: failedCrmLeads.length,
     records: failedCrmLeads.map((prospect) => ({
       ...getCrmRecord(prospect),
@@ -3438,15 +3443,19 @@ function exportFailedCrmSyncs() {
     }))
   };
   const stamp = exportedAt.slice(0, 19).replace(/[:T]/g, "-");
-  downloadFile(`regent-growth-crm-failed-syncs-${stamp}.json`, JSON.stringify(payload, null, 2), "application/json;charset=utf-8");
-  setCrmSetupStatus(`Exported ${failedCrmLeads.length} failed CRM sync${failedCrmLeads.length === 1 ? "" : "s"}.`);
+  downloadFile(`regent-growth-crm-failed-syncs${filterSuffix}-${stamp}.json`, JSON.stringify(payload, null, 2), "application/json;charset=utf-8");
+  setCrmSetupStatus(`Exported ${failedCrmLeads.length}${crmFailureReasonFilter === "all" ? "" : ` ${crmFailureReasonFilter}`} failed CRM sync${failedCrmLeads.length === 1 ? "" : "s"}.`);
 }
 
 function exportFailedCrmSyncCsv() {
-  const failedCrmLeads = getFailedCrmSyncLeads();
+  const failedCrmLeads = filterCrmLeadsByReason(getFailedCrmSyncLeads());
+  const filterSuffix = getCrmFailureReasonFileSuffix();
 
   if (failedCrmLeads.length === 0) {
-    setCrmSetupStatus("No failed CRM syncs to export.", "error");
+    setCrmSetupStatus(crmFailureReasonFilter === "all"
+      ? "No failed CRM syncs to export."
+      : `No ${crmFailureReasonFilter} CRM sync failures to export.`,
+    "error");
     return;
   }
 
@@ -3460,8 +3469,13 @@ function exportFailedCrmSyncCsv() {
     };
     return headers.map((header) => csvCell(exportRecord[header])).join(",");
   });
-  downloadFile("regent-growth-crm-failed-syncs.csv", [headers.join(","), ...rows].join("\n"), "text/csv;charset=utf-8");
-  setCrmSetupStatus(`Exported ${failedCrmLeads.length} failed CRM sync${failedCrmLeads.length === 1 ? "" : "s"} as CSV.`);
+  downloadFile(`regent-growth-crm-failed-syncs${filterSuffix}.csv`, [headers.join(","), ...rows].join("\n"), "text/csv;charset=utf-8");
+  setCrmSetupStatus(`Exported ${failedCrmLeads.length}${crmFailureReasonFilter === "all" ? "" : ` ${crmFailureReasonFilter}`} failed CRM sync${failedCrmLeads.length === 1 ? "" : "s"} as CSV.`);
+}
+
+function getCrmFailureReasonFileSuffix() {
+  if (crmFailureReasonFilter === "all") return "";
+  return `-${crmFailureReasonFilter.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
 }
 
 function exportReviewedCrmSyncs() {
