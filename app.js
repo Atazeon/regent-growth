@@ -263,6 +263,8 @@ const markReviewedCrmButton = document.querySelector("#markReviewedCrmButton");
 const requeueReviewedCrmButton = document.querySelector("#requeueReviewedCrmButton");
 const exportFailedCrmButton = document.querySelector("#exportFailedCrmButton");
 const exportFailedCrmCsvButton = document.querySelector("#exportFailedCrmCsvButton");
+const exportReviewedCrmButton = document.querySelector("#exportReviewedCrmButton");
+const exportReviewedCrmCsvButton = document.querySelector("#exportReviewedCrmCsvButton");
 const clearResolvedCrmButton = document.querySelector("#clearResolvedCrmButton");
 const clearCrmNotesButton = document.querySelector("#clearCrmNotesButton");
 const crmSetupStatus = document.querySelector("#crmSetupStatus");
@@ -3037,6 +3039,8 @@ function renderCrmRetryQueue(failedCrmLeads = getFailedCrmSyncLeads()) {
   requeueReviewedCrmButton.disabled = reviewedCrmLeads.length === 0;
   exportFailedCrmButton.disabled = failedCrmLeads.length === 0;
   exportFailedCrmCsvButton.disabled = failedCrmLeads.length === 0;
+  exportReviewedCrmButton.disabled = reviewedCrmLeads.length === 0;
+  exportReviewedCrmCsvButton.disabled = reviewedCrmLeads.length === 0;
   const syncedCount = prospects.filter((prospect) => prospect.crmSyncStatus === "Synced").length;
   const syncingCount = prospects.filter((prospect) => prospect.crmSyncStatus === "Syncing").length;
   const reviewedCount = reviewedCrmLeads.length;
@@ -3278,6 +3282,50 @@ function exportFailedCrmSyncCsv() {
   });
   downloadFile("regent-growth-crm-failed-syncs.csv", [headers.join(","), ...rows].join("\n"), "text/csv;charset=utf-8");
   setCrmSetupStatus(`Exported ${failedCrmLeads.length} failed CRM sync${failedCrmLeads.length === 1 ? "" : "s"} as CSV.`);
+}
+
+function exportReviewedCrmSyncs() {
+  const reviewedCrmLeads = getReviewedCrmSyncLeads();
+
+  if (reviewedCrmLeads.length === 0) {
+    setCrmSetupStatus("No reviewed CRM syncs to export.", "error");
+    return;
+  }
+
+  const exportedAt = new Date().toISOString();
+  const payload = {
+    source: "regent-growth-crm-reviewed-queue",
+    exportedAt,
+    reviewedCount: reviewedCrmLeads.length,
+    records: reviewedCrmLeads.map((prospect) => ({
+      ...getCrmRecord(prospect),
+      latestCrmSyncNote: getLatestCrmSyncNote(prospect)
+    }))
+  };
+  const stamp = exportedAt.slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-crm-reviewed-syncs-${stamp}.json`, JSON.stringify(payload, null, 2), "application/json;charset=utf-8");
+  setCrmSetupStatus(`Exported ${reviewedCrmLeads.length} reviewed CRM sync${reviewedCrmLeads.length === 1 ? "" : "s"}.`);
+}
+
+function exportReviewedCrmSyncCsv() {
+  const reviewedCrmLeads = getReviewedCrmSyncLeads();
+
+  if (reviewedCrmLeads.length === 0) {
+    setCrmSetupStatus("No reviewed CRM syncs to export.", "error");
+    return;
+  }
+
+  const headers = ["company", "email", "stage", "responseStatus", "leadScore", "leadTier", "crmSyncStatus", "crmSyncedAt", "latestCrmSyncNote", "handoffOwner", "handoffStatus", "nextTouch"];
+  const rows = reviewedCrmLeads.map((prospect) => {
+    const record = getCrmRecord(prospect);
+    const exportRecord = {
+      ...record,
+      latestCrmSyncNote: getLatestCrmSyncNote(prospect)
+    };
+    return headers.map((header) => csvCell(exportRecord[header])).join(",");
+  });
+  downloadFile("regent-growth-crm-reviewed-syncs.csv", [headers.join(","), ...rows].join("\n"), "text/csv;charset=utf-8");
+  setCrmSetupStatus(`Exported ${reviewedCrmLeads.length} reviewed CRM sync${reviewedCrmLeads.length === 1 ? "" : "s"} as CSV.`);
 }
 
 function setCrmSetupStatus(message, state = "") {
@@ -4512,6 +4560,8 @@ markReviewedCrmButton.addEventListener("click", markFailedCrmSyncsReviewed);
 requeueReviewedCrmButton.addEventListener("click", requeueReviewedCrmSyncs);
 exportFailedCrmButton.addEventListener("click", exportFailedCrmSyncs);
 exportFailedCrmCsvButton.addEventListener("click", exportFailedCrmSyncCsv);
+exportReviewedCrmButton.addEventListener("click", exportReviewedCrmSyncs);
+exportReviewedCrmCsvButton.addEventListener("click", exportReviewedCrmSyncCsv);
 clearResolvedCrmButton.addEventListener("click", clearResolvedCrmQueueState);
 clearCrmNotesButton.addEventListener("click", cleanCrmSyncNotes);
 copyHandoffPacketButton.addEventListener("click", copySelectedHandoffPacket);
