@@ -1744,6 +1744,8 @@ function renderDailyDraftReviewList(draftedProspects) {
         <button class="secondary-button" type="button" data-action="copy-daily-review">Copy packet</button>
         <button class="secondary-button" type="button" data-action="export-daily-review">Export JSON</button>
         <button class="secondary-button" type="button" data-action="export-daily-review-csv">Export CSV</button>
+        <button class="secondary-button" type="button" data-action="export-ready-daily-review">Export ready JSON</button>
+        <button class="secondary-button" type="button" data-action="export-ready-daily-review-csv">Export ready CSV</button>
         <button class="secondary-button" type="button" data-action="sequence-ready-daily-review">Sequence ready</button>
         <button class="secondary-button" type="button" data-action="sequence-all-daily-review">Sequence all</button>
       </div>
@@ -1887,8 +1889,7 @@ function sequenceAllDailyReviewProspects() {
 }
 
 function sequenceReadyDailyReviewProspects() {
-  const readyProspects = getDailyRunReviewProspects()
-    .filter(({ prospect }) => getDailyReviewSendReadiness(prospect).ready);
+  const readyProspects = getReadyDailyReviewProspects();
 
   if (readyProspects.length === 0) {
     setDataStatus("No send-ready Daily AI drafts are ready to sequence.", "error");
@@ -1906,8 +1907,13 @@ function sequenceReadyDailyReviewProspects() {
   setDataStatus(`Moved ${readyProspects.length} send-ready Daily AI draft${readyProspects.length === 1 ? "" : "s"} to Sequence.`);
 }
 
-function getDailyReviewExportRecords() {
-  return getDailyRunReviewProspects().map(({ prospect }) => ({
+function getReadyDailyReviewProspects() {
+  return getDailyRunReviewProspects()
+    .filter(({ prospect }) => getDailyReviewSendReadiness(prospect).ready);
+}
+
+function getDailyReviewExportRecords(items = getDailyRunReviewProspects()) {
+  return items.map(({ prospect }) => ({
     company: prospect.company,
     website: prospect.website,
     industry: prospect.industry,
@@ -1947,6 +1953,32 @@ function exportDailyReviewCsv() {
   const rows = records.map((record) => headers.map((header) => csvCell(record[header])).join(","));
   downloadFile("regent-growth-daily-ai-review.csv", [headers.join(","), ...rows].join("\n"), "text/csv;charset=utf-8");
   setDataStatus(`Exported ${records.length} Daily AI review draft${records.length === 1 ? "" : "s"} as CSV.`);
+}
+
+function exportReadyDailyReviewJson() {
+  const records = getDailyReviewExportRecords(getReadyDailyReviewProspects());
+  if (records.length === 0) {
+    setDataStatus("No send-ready Daily AI drafts to export.", "error");
+    return;
+  }
+
+  const exportedAt = new Date().toISOString();
+  const stamp = exportedAt.slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-daily-ai-ready-review-${stamp}.json`, JSON.stringify({ exportedAt, records }, null, 2), "application/json;charset=utf-8");
+  setDataStatus(`Exported ${records.length} send-ready Daily AI review draft${records.length === 1 ? "" : "s"} as JSON.`);
+}
+
+function exportReadyDailyReviewCsv() {
+  const records = getDailyReviewExportRecords(getReadyDailyReviewProspects());
+  if (records.length === 0) {
+    setDataStatus("No send-ready Daily AI drafts to export.", "error");
+    return;
+  }
+
+  const headers = ["company", "website", "industry", "decisionMaker", "contactEmail", "stage", "leadScore", "leadTier", "trigger", "fit", "aiBrief", "aiEmail"];
+  const rows = records.map((record) => headers.map((header) => csvCell(record[header])).join(","));
+  downloadFile("regent-growth-daily-ai-ready-review.csv", [headers.join(","), ...rows].join("\n"), "text/csv;charset=utf-8");
+  setDataStatus(`Exported ${records.length} send-ready Daily AI review draft${records.length === 1 ? "" : "s"} as CSV.`);
 }
 
 function formatDailyReviewPacket(records = getDailyReviewExportRecords()) {
@@ -5822,6 +5854,14 @@ dailyRunReviewQueue.addEventListener("click", (event) => {
 
   if (button.dataset.action === "export-daily-review-csv") {
     exportDailyReviewCsv();
+  }
+
+  if (button.dataset.action === "export-ready-daily-review") {
+    exportReadyDailyReviewJson();
+  }
+
+  if (button.dataset.action === "export-ready-daily-review-csv") {
+    exportReadyDailyReviewCsv();
   }
 
   if (button.dataset.action === "copy-daily-review") {
