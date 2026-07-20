@@ -3565,6 +3565,7 @@ function renderDailyRunHistory() {
           <option value="Completed" ${dailyRunHistoryStatusFilter === "Completed" ? "selected" : ""}>Completed</option>
           <option value="Completed with failures" ${dailyRunHistoryStatusFilter === "Completed with failures" ? "selected" : ""}>With failures</option>
           <option value="Stopped" ${dailyRunHistoryStatusFilter === "Stopped" ? "selected" : ""}>Stopped</option>
+          <option value="skipped" ${dailyRunHistoryStatusFilter === "skipped" ? "selected" : ""}>With skipped</option>
           <option value="Failed" ${dailyRunHistoryStatusFilter === "Failed" ? "selected" : ""}>Failed</option>
         </select>
         <button class="secondary-button" type="button" data-action="copy-daily-history-summary">Copy summary</button>
@@ -3583,9 +3584,12 @@ function renderDailyRunHistory() {
 }
 
 function getVisibleDailyRunHistory() {
-  return dailyRunHistoryStatusFilter === "all"
-    ? dailyRunHistory
-    : dailyRunHistory.filter((snapshot) => snapshot.status === dailyRunHistoryStatusFilter);
+  if (dailyRunHistoryStatusFilter === "all") return dailyRunHistory;
+  if (dailyRunHistoryStatusFilter === "skipped") {
+    return dailyRunHistory.filter((snapshot) => snapshot.skipped > 0);
+  }
+
+  return dailyRunHistory.filter((snapshot) => snapshot.status === dailyRunHistoryStatusFilter);
 }
 
 function renderDailyRunHistoryItem(snapshot) {
