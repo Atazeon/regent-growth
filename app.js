@@ -3601,6 +3601,7 @@ function renderDailyRunHistoryItem(snapshot) {
   ].join(" | ");
   const companyText = snapshot.companies.length > 0 ? snapshot.companies.join(", ") : "No companies processed";
   const canRetry = snapshot.companies.length > 0 && (snapshot.status !== "Completed" || snapshot.failed > 0);
+  const canRequeueStopped = snapshot.status === "Stopped" && snapshot.companies.length > 0;
 
   return `
     <article>
@@ -3614,6 +3615,7 @@ function renderDailyRunHistoryItem(snapshot) {
       ${canRetry ? `
         <div class="daily-review-actions">
           <button type="button" data-action="retry-daily-history-failures" data-id="${escapeHtml(snapshot.id)}">Retry failures</button>
+          ${canRequeueStopped ? `<button class="secondary-button" type="button" data-action="requeue-stopped-daily-history" data-id="${escapeHtml(snapshot.id)}">Requeue stopped</button>` : ""}
         </div>
       ` : ""}
     </article>
@@ -3629,8 +3631,37 @@ function getDailyHistoryFailedProspects(snapshot) {
   ));
 }
 
+function getDailyHistoryUnfinishedProspects(snapshot) {
+  const companyKeys = new Set(snapshot.companies.map(getCompanyMatchKey).filter(Boolean));
+  return prospects.filter((prospect) => (
+    companyKeys.has(getCompanyMatchKey(prospect.company))
+    && ["Research", "Email Drafted"].includes(prospect.stage)
+    && (!prospect.aiBrief || !prospect.aiEmail)
+  ));
+}
+
 function getCompanyMatchKey(company) {
   return String(company || "").trim().toLowerCase();
+}
+
+async function requeueStoppedDailyRun(id) {
+  const snapshot = dailyRunHistory.find((historyItem) => historyItem.id === id);
+  if (!snapshot) return;
+
+  const unfinishedProspects = getDailyHistoryUnfinishedProspects(snapshot);
+  if (unfinishedProspects.length === 0) {
+    setDataStatus("No unfinished prospects from that stopped run are still available.", "error");
+    return;
+  }
+
+  resetDailyRunLog();
+  addDailyRunLog(`Requeueing ${unfinishedProspects.length} unfinished prospect${unfinishedProspects.length === 1 ? "" : "s"} from stopped Daily AI run.`);
+  const results = await researchAndDraftDailyProspects(unfinishedProspects);
+  saveProspects();
+  renderProspects();
+  renderDailyRunCapacitySummary();
+  setDataStatus(`Stopped run requeue complete: ${results.researched} researched, ${results.drafted} drafted, ${results.failed} failed.`);
+  addDailyRunLog(`Stopped requeue complete: ${results.researched} researched, ${results.drafted} drafted, ${results.failed} failed.`, results.failed ? "error" : "done");
 }
 
 async function retryDailyRunHistoryFailures(id) {
@@ -6467,6 +6498,10 @@ dailyRunHistoryList.addEventListener("click", (event) => {
 
   if (button.dataset.action === "retry-daily-history-failures") {
     retryDailyRunHistoryFailures(button.dataset.id);
+  }
+
+  if (button.dataset.action === "requeue-stopped-daily-history") {
+    requeueStoppedDailyRun(button.dataset.id);
   }
 });
 dailyRunHistoryList.addEventListener("change", (event) => {
