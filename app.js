@@ -3023,6 +3023,7 @@ function renderHandoff() {
   const selectedIsWarm = selectedProspect ? isWarmLead(selectedProspect) : false;
   const failedCrmLeads = getFailedCrmSyncLeads();
   handoffSummary.textContent = `${warmLeads.length} warm lead${warmLeads.length === 1 ? "" : "s"} ready for CRM export.${selectedIsWarm ? ` Selected: ${selectedProspect.company}.` : " Select or mark a warm lead to build its packet."}`;
+  requeueSelectedReviewedCrmButton.disabled = !(selectedProspect?.crmSyncStatus === "Retry Reviewed" && selectedIsWarm);
   handoffPacket.value = formatHandoffPacket(selectedProspect);
   renderCrmFieldMappingPreview(selectedProspect);
   renderCrmRetryQueue(failedCrmLeads);
