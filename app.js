@@ -1670,7 +1670,11 @@ function renderDailyDraftReviewList(draftedProspects) {
         <p class="eyebrow">Daily AI Review</p>
         <h3>${escapeHtml(draftedProspects.length)} drafted email${draftedProspects.length === 1 ? "" : "s"} ready</h3>
       </div>
-      <button class="secondary-button" type="button" data-action="sequence-all-daily-review">Sequence all</button>
+      <div class="daily-review-actions">
+        <button class="secondary-button" type="button" data-action="export-daily-review">Export JSON</button>
+        <button class="secondary-button" type="button" data-action="export-daily-review-csv">Export CSV</button>
+        <button class="secondary-button" type="button" data-action="sequence-all-daily-review">Sequence all</button>
+      </div>
     </div>
     <div class="daily-review-list">
       ${draftedProspects.slice(0, 6).map(({ prospect, index }) => `
@@ -1776,6 +1780,49 @@ function sequenceAllDailyReviewProspects() {
   saveProspects();
   renderProspects();
   setDataStatus(`Moved ${draftedProspects.length} Daily AI draft${draftedProspects.length === 1 ? "" : "s"} to Sequence.`);
+}
+
+function getDailyReviewExportRecords() {
+  return getDailyRunReviewProspects().map(({ prospect }) => ({
+    company: prospect.company,
+    website: prospect.website,
+    industry: prospect.industry,
+    decisionMaker: prospect.decisionMaker,
+    contactEmail: prospect.contactEmail,
+    stage: prospect.stage,
+    leadScore: getLeadScoreSummary(prospect).score,
+    leadTier: getLeadScoreSummary(prospect).tier,
+    trigger: prospect.trigger,
+    fit: prospect.fit,
+    aiBrief: prospect.aiBrief,
+    aiEmail: prospect.aiEmail
+  }));
+}
+
+function exportDailyReviewJson() {
+  const records = getDailyReviewExportRecords();
+  if (records.length === 0) {
+    setDataStatus("No Daily AI drafts to export.", "error");
+    return;
+  }
+
+  const exportedAt = new Date().toISOString();
+  const stamp = exportedAt.slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-daily-ai-review-${stamp}.json`, JSON.stringify({ exportedAt, records }, null, 2), "application/json;charset=utf-8");
+  setDataStatus(`Exported ${records.length} Daily AI review draft${records.length === 1 ? "" : "s"} as JSON.`);
+}
+
+function exportDailyReviewCsv() {
+  const records = getDailyReviewExportRecords();
+  if (records.length === 0) {
+    setDataStatus("No Daily AI drafts to export.", "error");
+    return;
+  }
+
+  const headers = ["company", "website", "industry", "decisionMaker", "contactEmail", "stage", "leadScore", "leadTier", "trigger", "fit", "aiBrief", "aiEmail"];
+  const rows = records.map((record) => headers.map((header) => csvCell(record[header])).join(","));
+  downloadFile("regent-growth-daily-ai-review.csv", [headers.join(","), ...rows].join("\n"), "text/csv;charset=utf-8");
+  setDataStatus(`Exported ${records.length} Daily AI review draft${records.length === 1 ? "" : "s"} as CSV.`);
 }
 
 function sendDailyReviewProspect(index) {
@@ -5294,6 +5341,14 @@ dailyRunReviewQueue.addEventListener("click", (event) => {
 
   if (button.dataset.action === "sequence-all-daily-review") {
     sequenceAllDailyReviewProspects();
+  }
+
+  if (button.dataset.action === "export-daily-review") {
+    exportDailyReviewJson();
+  }
+
+  if (button.dataset.action === "export-daily-review-csv") {
+    exportDailyReviewCsv();
   }
 
   if (button.dataset.action === "send-daily-review") {
