@@ -3576,6 +3576,7 @@ function renderDailyRunHistory() {
           <button class="secondary-button" type="button" data-action="clear-daily-history-filter">Clear filter</button>
           <button class="secondary-button" type="button" data-action="reset-daily-history-view">Reset view</button>
           <button class="secondary-button" type="button" data-action="copy-daily-history-summary">Copy summary</button>
+          <button class="secondary-button" type="button" data-action="copy-daily-history-status-counts">Copy counts</button>
           <button class="secondary-button" type="button" data-action="toggle-compact-daily-history">${compactDailyRunHistory ? "Full history" : "Compact history"}</button>
           <button class="secondary-button" type="button" data-action="toggle-all-daily-history">${showAllDailyRunHistory ? "Show first 5" : "Show all"}</button>
           <button class="secondary-button" type="button" data-action="export-daily-history">Export visible JSON</button>
@@ -3616,7 +3617,26 @@ function renderDailyRunHistoryCountBadge(visibleHistory) {
 }
 
 function renderDailyRunHistoryStatusCounts() {
-  const statusCounts = dailyRunHistory.reduce((counts, snapshot) => {
+  const statusCounts = getDailyRunHistoryStatusCounts();
+
+  return `
+    <div class="daily-history-status-counts" aria-label="Daily AI history status counts">
+      ${statusCounts.map(({ value, label, count }) => `
+        <button
+          type="button"
+          data-action="set-daily-history-filter"
+          data-value="${escapeHtml(value)}"
+          data-active="${dailyRunHistoryStatusFilter === value}"
+        >
+          ${escapeHtml(label)} <strong>${escapeHtml(count)}</strong>
+        </button>
+      `).join("")}
+    </div>
+  `;
+}
+
+function getDailyRunHistoryStatusCounts() {
+  const rawCounts = dailyRunHistory.reduce((counts, snapshot) => {
     counts[snapshot.status] = (counts[snapshot.status] || 0) + 1;
     if (snapshot.skipped > 0) counts.skipped = (counts.skipped || 0) + 1;
     return counts;
@@ -3630,20 +3650,11 @@ function renderDailyRunHistoryStatusCounts() {
     ["skipped", "With skipped"]
   ];
 
-  return `
-    <div class="daily-history-status-counts" aria-label="Daily AI history status counts">
-      ${countItems.map(([value, label]) => `
-        <button
-          type="button"
-          data-action="set-daily-history-filter"
-          data-value="${escapeHtml(value)}"
-          data-active="${dailyRunHistoryStatusFilter === value}"
-        >
-          ${escapeHtml(label)} <strong>${escapeHtml(statusCounts[value] || 0)}</strong>
-        </button>
-      `).join("")}
-    </div>
-  `;
+  return countItems.map(([value, label]) => ({
+    value,
+    label,
+    count: rawCounts[value] || 0
+  }));
 }
 
 function clearDailyRunHistoryFilter() {
@@ -3892,6 +3903,12 @@ async function copyDailyRunHistorySummary() {
   const summary = formatDailyRunHistorySummary();
   await navigator.clipboard.writeText(summary);
   setDataStatus("Copied Daily AI run history summary.");
+}
+
+async function copyDailyRunHistoryStatusCounts() {
+  const lines = getDailyRunHistoryStatusCounts().map(({ label, count }) => `${label}: ${count}`);
+  await navigator.clipboard.writeText(`Daily AI history status counts\n${lines.join("\n")}`);
+  setDataStatus("Copied Daily AI history status counts.");
 }
 
 async function copyStoppedDailyRunHistorySummary() {
@@ -6651,6 +6668,10 @@ dailyRunHistoryList.addEventListener("click", (event) => {
 
   if (button.dataset.action === "copy-daily-history-summary") {
     copyDailyRunHistorySummary();
+  }
+
+  if (button.dataset.action === "copy-daily-history-status-counts") {
+    copyDailyRunHistoryStatusCounts();
   }
 
   if (button.dataset.action === "toggle-compact-daily-history") {
