@@ -1742,6 +1742,7 @@ function renderDailyDraftReviewList(draftedProspects) {
       </div>
       <div class="daily-review-actions">
         <button class="secondary-button" type="button" data-action="copy-daily-review">Copy packet</button>
+        <button class="secondary-button" type="button" data-action="copy-blocked-daily-review">Copy blocked</button>
         <button class="secondary-button" type="button" data-action="export-daily-review">Export JSON</button>
         <button class="secondary-button" type="button" data-action="export-daily-review-csv">Export CSV</button>
         <button class="secondary-button" type="button" data-action="export-ready-daily-review">Export ready JSON</button>
@@ -1945,6 +1946,11 @@ function getReadyDailyReviewProspects() {
     .filter(({ prospect }) => getDailyReviewSendReadiness(prospect).ready);
 }
 
+function getBlockedDailyReviewProspects() {
+  return getDailyRunReviewProspects()
+    .filter(({ prospect }) => !getDailyReviewSendReadiness(prospect).ready);
+}
+
 function getDailyReviewExportRecords(items = getDailyRunReviewProspects()) {
   return items.map(({ prospect }) => ({
     company: prospect.company,
@@ -2045,6 +2051,42 @@ async function copyDailyReviewPacket() {
   try {
     await navigator.clipboard.writeText(packet);
     setDataStatus(`Copied ${records.length} Daily AI review draft${records.length === 1 ? "" : "s"}.`);
+  } catch {
+    setDataStatus(packet);
+  }
+}
+
+function formatBlockedDailyReviewPacket(items = getBlockedDailyReviewProspects()) {
+  if (items.length === 0) return "No Daily AI drafts are blocked.";
+
+  return items.map(({ prospect }, index) => {
+    const readiness = getDailyReviewSendReadiness(prospect);
+    const missing = readiness.checks
+      .filter((check) => check.required && !check.ready)
+      .map((check) => check.label)
+      .join(", ");
+
+    return [
+      `Blocked Daily AI Draft ${index + 1}: ${prospect.company}`,
+      `Missing: ${missing || "None"}`,
+      `Contact email: ${prospect.contactEmail || "Not set"}`,
+      `Decision-maker: ${prospect.decisionMaker || "Not set"}`,
+      `Draft preview: ${previewText(prospect.aiEmail, "No draft saved.")}`
+    ].join("\n");
+  }).join("\n\n---\n\n");
+}
+
+async function copyBlockedDailyReviewPacket() {
+  const blockedProspects = getBlockedDailyReviewProspects();
+  if (blockedProspects.length === 0) {
+    setDataStatus("No blocked Daily AI drafts to copy.", "error");
+    return;
+  }
+
+  const packet = formatBlockedDailyReviewPacket(blockedProspects);
+  try {
+    await navigator.clipboard.writeText(packet);
+    setDataStatus(`Copied ${blockedProspects.length} blocked Daily AI draft${blockedProspects.length === 1 ? "" : "s"}.`);
   } catch {
     setDataStatus(packet);
   }
@@ -5899,6 +5941,10 @@ dailyRunReviewQueue.addEventListener("click", (event) => {
 
   if (button.dataset.action === "copy-daily-review") {
     copyDailyReviewPacket();
+  }
+
+  if (button.dataset.action === "copy-blocked-daily-review") {
+    copyBlockedDailyReviewPacket();
   }
 
   if (button.dataset.action === "send-daily-review") {
