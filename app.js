@@ -2901,20 +2901,36 @@ async function autoFetchDailyRunEvidence(limit) {
 
 function addDailyRunProspects(limit) {
   const requireEvidence = shouldDailyRunRequireEvidence();
-  const candidates = getDailyRunEligibleCandidates(requireEvidence).slice(0, limit);
+  const candidates = getDailyRunEligibleCandidates(requireEvidence);
+  const knownKeys = new Set();
   const addedProspects = [];
+  const promotedCandidates = [];
+  let skippedDuplicates = 0;
+
+  prospects.forEach((prospect) => addDuplicateKeys(knownKeys, prospect));
 
   candidates.forEach((candidate) => {
+    if (addedProspects.length >= limit) return;
+
     const prospect = discoveryCandidateToProspect(candidate);
+    const isDuplicate = getDuplicateKeys(prospect).some((key) => knownKeys.has(key));
+    if (isDuplicate) {
+      skippedDuplicates += 1;
+      addDailyRunLog(`Skipped duplicate discovery candidate ${candidate.company}.`, "error");
+      return;
+    }
+
     prospects.unshift(prospect);
     addedProspects.push(prospect);
+    promotedCandidates.push(candidate);
+    addDuplicateKeys(knownKeys, prospect);
   });
 
-  discoveryQueue = discoveryQueue.filter((candidate) => !candidates.includes(candidate));
+  discoveryQueue = discoveryQueue.filter((candidate) => !promotedCandidates.includes(candidate));
   saveDiscoveryQueue();
   saveProspects();
   renderDiscoveryQueue();
-  addDailyRunLog(`Moved ${addedProspects.length} candidate${addedProspects.length === 1 ? "" : "s"} into the prospect pipeline.`, "done");
+  addDailyRunLog(`Moved ${addedProspects.length} candidate${addedProspects.length === 1 ? "" : "s"} into the prospect pipeline${skippedDuplicates ? ` and skipped ${skippedDuplicates} duplicate${skippedDuplicates === 1 ? "" : "s"}` : ""}.`, "done");
   return addedProspects;
 }
 
