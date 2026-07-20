@@ -1244,15 +1244,22 @@ button:disabled {
   white-space: nowrap;
 }
 
-.crm-reason-chips span {
+.crm-reason-chips button {
   background: rgba(255, 255, 255, 0.72);
   border: 1px solid var(--line);
   border-radius: 999px;
   color: var(--ink);
+  cursor: pointer;
   font-size: 0.76rem;
   font-weight: 700;
   padding: 6px 8px;
   white-space: nowrap;
+}
+
+.crm-reason-chips button[data-active="true"] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
 }
 
 .crm-sync-chips span[data-state="failed"] {

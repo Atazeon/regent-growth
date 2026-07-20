@@ -177,6 +177,7 @@ let editingIndex = null;
 let selectedProspectIndex = 0;
 let crmFailedQueuePage = 0;
 let crmReviewedQueuePage = 0;
+let crmFailureReasonFilter = "all";
 let pendingTeamRestore = null;
 let teamBackupsCache = [];
 
@@ -3040,9 +3041,10 @@ function renderHandoff() {
 
 function renderCrmRetryQueue(failedCrmLeads = getFailedCrmSyncLeads()) {
   const reviewedCrmLeads = getReviewedCrmSyncLeads();
-  const failedPage = getBoundedPage(crmFailedQueuePage, failedCrmLeads.length);
+  const filteredFailedCrmLeads = filterCrmLeadsByReason(failedCrmLeads);
+  const failedPage = getBoundedPage(crmFailedQueuePage, filteredFailedCrmLeads.length);
   const failedStart = failedPage * crmQueuePageSize;
-  const failedPageLeads = failedCrmLeads.slice(failedStart, failedStart + crmQueuePageSize);
+  const failedPageLeads = filteredFailedCrmLeads.slice(failedStart, failedStart + crmQueuePageSize);
   crmFailedQueuePage = failedPage;
   retryFailedCrmButton.disabled = failedCrmLeads.length === 0;
   markReviewedCrmButton.disabled = failedCrmLeads.length === 0;
@@ -3076,7 +3078,7 @@ function renderCrmRetryQueue(failedCrmLeads = getFailedCrmSyncLeads()) {
     <div class="crm-retry-heading">
       <div>
         <p class="eyebrow">CRM Retry Queue</p>
-        <h3>${escapeHtml(failedCrmLeads.length)} failed sync${failedCrmLeads.length === 1 ? "" : "s"}</h3>
+          <h3>${escapeHtml(filteredFailedCrmLeads.length)} of ${escapeHtml(failedCrmLeads.length)} failed sync${failedCrmLeads.length === 1 ? "" : "s"}</h3>
       </div>
       <div class="crm-retry-actions">
         ${renderCrmSyncStatusChips(failedCrmLeads.length, syncingCount, syncedCount, reviewedCount, notSyncedCount)}
@@ -3084,8 +3086,9 @@ function renderCrmRetryQueue(failedCrmLeads = getFailedCrmSyncLeads()) {
         <button class="secondary-button" type="button" data-action="show-crm-failed">Show failed</button>
       </div>
     </div>
-    <div class="crm-retry-list">
-      ${failedPageLeads.map((prospect) => {
+    ${failedPageLeads.length === 0 ? `<p class="empty-state">No failed CRM syncs match this reason filter.</p>` : `
+      <div class="crm-retry-list">
+        ${failedPageLeads.map((prospect) => {
         const index = prospects.indexOf(prospect);
         return `
         <article>
@@ -3099,9 +3102,10 @@ function renderCrmRetryQueue(failedCrmLeads = getFailedCrmSyncLeads()) {
           </div>
         </article>
         `;
-      }).join("")}
-    </div>
-    ${renderCrmQueuePagination("failed", failedCrmLeads.length, failedPage)}
+        }).join("")}
+      </div>
+      ${renderCrmQueuePagination("failed", filteredFailedCrmLeads.length, failedPage)}
+    `}
     ${renderReviewedCrmQueue(reviewedCrmLeads)}
   `;
 }
@@ -3226,7 +3230,23 @@ function renderCrmFailureReasonChips(failedCrmLeads) {
   const groups = Object.entries(counts).sort((first, second) => second[1] - first[1] || first[0].localeCompare(second[0]));
   if (groups.length === 0) return "";
 
-  return `<div class="crm-reason-chips">${groups.map(([group, count]) => `<span>${escapeHtml(group)}: ${escapeHtml(count)}</span>`).join("")}</div>`;
+  const allButton = `<button type="button" data-action="set-crm-reason-filter" data-reason="all" data-active="${crmFailureReasonFilter === "all"}">All: ${escapeHtml(failedCrmLeads.length)}</button>`;
+  const groupButtons = groups.map(([group, count]) => (
+    `<button type="button" data-action="set-crm-reason-filter" data-reason="${escapeHtml(group)}" data-active="${crmFailureReasonFilter === group}">${escapeHtml(group)}: ${escapeHtml(count)}</button>`
+  )).join("");
+  return `<div class="crm-reason-chips">${allButton}${groupButtons}</div>`;
+}
+
+function filterCrmLeadsByReason(failedCrmLeads) {
+  if (crmFailureReasonFilter === "all") return failedCrmLeads;
+  return failedCrmLeads.filter((prospect) => getCrmFailureReasonGroup(getLatestCrmSyncNote(prospect)) === crmFailureReasonFilter);
+}
+
+function setCrmFailureReasonFilter(reason) {
+  const counts = getCrmFailureReasonCounts();
+  crmFailureReasonFilter = reason === "all" || counts[reason] ? reason : "all";
+  resetCrmQueuePages("failed");
+  renderProspects();
 }
 
 function getLatestCrmSyncNote(prospect) {
@@ -4700,6 +4720,10 @@ crmRetryQueue.addEventListener("click", (event) => {
 
   if (button.dataset.action === "crm-page") {
     changeCrmQueuePage(button.dataset.queue, button.dataset.direction);
+  }
+
+  if (button.dataset.action === "set-crm-reason-filter") {
+    setCrmFailureReasonFilter(button.dataset.reason);
   }
 
   if (button.dataset.action === "show-crm-reviewed") {
