@@ -3046,8 +3046,8 @@ function renderCrmRetryQueue(failedCrmLeads = getFailedCrmSyncLeads()) {
   const failedStart = failedPage * crmQueuePageSize;
   const failedPageLeads = filteredFailedCrmLeads.slice(failedStart, failedStart + crmQueuePageSize);
   crmFailedQueuePage = failedPage;
-  retryFailedCrmButton.disabled = failedCrmLeads.length === 0;
-  markReviewedCrmButton.disabled = failedCrmLeads.length === 0;
+  retryFailedCrmButton.disabled = filteredFailedCrmLeads.length === 0;
+  markReviewedCrmButton.disabled = filteredFailedCrmLeads.length === 0;
   requeueReviewedCrmButton.disabled = reviewedCrmLeads.length === 0;
   exportFailedCrmButton.disabled = failedCrmLeads.length === 0;
   exportFailedCrmCsvButton.disabled = failedCrmLeads.length === 0;
@@ -3727,22 +3727,27 @@ async function syncWarmCrmLeads() {
 }
 
 async function retryFailedCrmSyncs() {
-  const failedCrmLeads = getFailedCrmSyncLeads();
+  const allFailedCrmLeads = getFailedCrmSyncLeads();
+  const failedCrmLeads = filterCrmLeadsByReason(allFailedCrmLeads);
+  const filterLabel = crmFailureReasonFilter === "all" ? "" : ` (${crmFailureReasonFilter})`;
 
   if (failedCrmLeads.length === 0) {
-    setCrmSetupStatus("No failed CRM syncs to retry.", "error");
+    setCrmSetupStatus(crmFailureReasonFilter === "all"
+      ? "No failed CRM syncs to retry."
+      : `No ${crmFailureReasonFilter} CRM sync failures to retry.`,
+    "error");
     return;
   }
 
   retryFailedCrmButton.disabled = true;
   syncWarmCrmButton.disabled = true;
   syncSelectedCrmButton.disabled = true;
-  setCrmSetupStatus(`Retrying ${failedCrmLeads.length} failed CRM sync${failedCrmLeads.length === 1 ? "" : "s"}...`, "working");
+  setCrmSetupStatus(`Retrying ${failedCrmLeads.length}${filterLabel} failed CRM sync${failedCrmLeads.length === 1 ? "" : "s"}...`, "working");
 
   try {
     await syncCrmRecords(failedCrmLeads.map(getCrmRecord), failedCrmLeads);
-    setCrmSetupStatus(`Retried and synced ${failedCrmLeads.length} failed CRM record${failedCrmLeads.length === 1 ? "" : "s"}.`);
-    setDataStatus(`CRM retry queue cleared for ${failedCrmLeads.length} warm lead${failedCrmLeads.length === 1 ? "" : "s"}.`);
+    setCrmSetupStatus(`Retried and synced ${failedCrmLeads.length}${filterLabel} failed CRM record${failedCrmLeads.length === 1 ? "" : "s"}.`);
+    setDataStatus(`CRM retry queue cleared for ${failedCrmLeads.length}${filterLabel} warm lead${failedCrmLeads.length === 1 ? "" : "s"}.`);
   } catch (error) {
     const failedAt = new Date().toISOString();
     failedCrmLeads.forEach((prospect) => {
@@ -3753,7 +3758,7 @@ async function retryFailedCrmSyncs() {
     renderProspects();
     setCrmSetupStatus(`CRM retry failed: ${error.message}`, "error");
   } finally {
-    retryFailedCrmButton.disabled = getFailedCrmSyncLeads().length === 0;
+    retryFailedCrmButton.disabled = filterCrmLeadsByReason(getFailedCrmSyncLeads()).length === 0;
     syncWarmCrmButton.disabled = false;
     syncSelectedCrmButton.disabled = false;
   }
