@@ -3578,6 +3578,7 @@ function renderDailyRunHistory() {
           <button class="secondary-button" type="button" data-action="copy-daily-history-summary">Copy summary</button>
           <button class="secondary-button" type="button" data-action="copy-daily-history-status-counts">Copy counts</button>
           ${getDailyRunHistoryStatusCount("Failed") > 0 ? `<button class="secondary-button" type="button" data-action="show-failed-daily-history">View failed</button>` : ""}
+          ${visibleHistory.some((snapshot) => getDailyHistoryFailedProspects(snapshot).length > 0) ? `<button class="secondary-button" type="button" data-action="copy-visible-daily-history-failures">Copy visible failures</button>` : ""}
           ${visibleHistory.some((snapshot) => getDailyHistoryFailedProspects(snapshot).length > 0) ? `<button class="secondary-button" type="button" data-action="retry-visible-daily-history-failures">Retry visible failures</button>` : ""}
           <button class="secondary-button" type="button" data-action="toggle-compact-daily-history">${compactDailyRunHistory ? "Full history" : "Compact history"}</button>
           <button class="secondary-button" type="button" data-action="toggle-all-daily-history">${showAllDailyRunHistory ? "Show first 5" : "Show all"}</button>
@@ -3755,6 +3756,20 @@ function getDailyHistoryFailedProspects(snapshot) {
   ));
 }
 
+function getVisibleDailyHistoryFailedProspects() {
+  const failedProspects = [];
+  const seenProspects = new Set();
+  getVisibleDailyRunHistory().forEach((snapshot) => {
+    getDailyHistoryFailedProspects(snapshot).forEach((prospect) => {
+      const key = prospect.id || getCompanyMatchKey(prospect.company);
+      if (!key || seenProspects.has(key)) return;
+      seenProspects.add(key);
+      failedProspects.push(prospect);
+    });
+  });
+  return failedProspects;
+}
+
 function getDailyHistoryUnfinishedProspects(snapshot) {
   const companyKeys = new Set(snapshot.companies.map(getCompanyMatchKey).filter(Boolean));
   return prospects.filter((prospect) => (
@@ -3834,23 +3849,25 @@ async function retryDailyRunHistoryFailures(id) {
 }
 
 async function retryVisibleDailyRunHistoryFailures() {
-  const failedProspects = [];
-  const seenProspects = new Set();
-  getVisibleDailyRunHistory().forEach((snapshot) => {
-    getDailyHistoryFailedProspects(snapshot).forEach((prospect) => {
-      const key = prospect.id || getCompanyMatchKey(prospect.company);
-      if (!key || seenProspects.has(key)) return;
-      seenProspects.add(key);
-      failedProspects.push(prospect);
-    });
-  });
-
+  const failedProspects = getVisibleDailyHistoryFailedProspects();
   if (failedProspects.length === 0) {
     setDataStatus("No visible failed Daily AI prospects are still waiting for retry.", "error");
     return;
   }
 
   await retryDailyRunHistoryProspects(failedProspects, "visible Daily AI history");
+}
+
+async function copyVisibleDailyRunHistoryFailurePacket() {
+  const failedProspects = getVisibleDailyHistoryFailedProspects();
+  if (failedProspects.length === 0) {
+    setDataStatus("No visible Daily AI history failures to copy.", "error");
+    return;
+  }
+
+  const packet = formatDailyAiFailurePacket(failedProspects);
+  await navigator.clipboard.writeText(packet);
+  setDataStatus(`Copied ${failedProspects.length} visible Daily AI history failure${failedProspects.length === 1 ? "" : "s"}.`);
 }
 
 async function retryDailyRunHistoryProspects(failedProspects, sourceLabel) {
@@ -6778,6 +6795,10 @@ dailyRunHistoryList.addEventListener("click", (event) => {
 
   if (button.dataset.action === "retry-visible-daily-history-failures") {
     retryVisibleDailyRunHistoryFailures();
+  }
+
+  if (button.dataset.action === "copy-visible-daily-history-failures") {
+    copyVisibleDailyRunHistoryFailurePacket();
   }
 
   if (button.dataset.action === "requeue-stopped-daily-history") {
