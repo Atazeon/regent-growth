@@ -1640,15 +1640,31 @@ function getDailyRunReviewProspects() {
     .filter(({ prospect }) => prospect.stage === "Email Drafted" && Boolean(prospect.aiEmail));
 }
 
+function getDailyAiFailedProspects() {
+  return prospects
+    .map((prospect, index) => ({ prospect, index }))
+    .filter(({ prospect }) => !prospect.aiEmail && (prospect.responseNotes || "").includes("Daily AI failed:"));
+}
+
 function renderDailyRunReviewQueue() {
   const draftedProspects = getDailyRunReviewProspects();
+  const failedProspects = getDailyAiFailedProspects();
 
-  if (draftedProspects.length === 0) {
-    dailyRunReviewQueue.innerHTML = `<p class="empty-state">No drafted AI emails are waiting for review.</p>`;
+  if (draftedProspects.length === 0 && failedProspects.length === 0) {
+    dailyRunReviewQueue.innerHTML = `<p class="empty-state">No drafted AI emails or failed Daily AI prospects are waiting for review.</p>`;
     return;
   }
 
   dailyRunReviewQueue.innerHTML = `
+    ${renderDailyDraftReviewList(draftedProspects)}
+    ${renderDailyFailedReviewList(failedProspects)}
+  `;
+}
+
+function renderDailyDraftReviewList(draftedProspects) {
+  if (draftedProspects.length === 0) return "";
+
+  return `
     <div class="section-heading compact-heading">
       <div>
         <p class="eyebrow">Daily AI Review</p>
@@ -1672,6 +1688,37 @@ function renderDailyRunReviewQueue() {
       `).join("")}
     </div>
   `;
+}
+
+function renderDailyFailedReviewList(failedProspects) {
+  if (failedProspects.length === 0) return "";
+
+  return `
+    <div class="section-heading compact-heading">
+      <div>
+        <p class="eyebrow">Daily AI Failures</p>
+        <h3>${escapeHtml(failedProspects.length)} prospect${failedProspects.length === 1 ? "" : "s"} need retry</h3>
+      </div>
+    </div>
+    <div class="daily-review-list">
+      ${failedProspects.slice(0, 6).map(({ prospect, index }) => `
+        <article>
+          <div>
+            <strong>${escapeHtml(prospect.company)}</strong>
+            <p>${previewText(getLatestDailyAiFailureNote(prospect), "No failure note saved.")}</p>
+          </div>
+          <div class="daily-review-actions">
+            <button class="secondary-button" type="button" data-action="open-daily-review" data-index="${escapeHtml(index)}">Open</button>
+            <button type="button" data-action="retry-daily-ai" data-index="${escapeHtml(index)}">Retry</button>
+          </div>
+        </article>
+      `).join("")}
+    </div>
+  `;
+}
+
+function getLatestDailyAiFailureNote(prospect) {
+  return (prospect.responseNotes || "").split("\n").find((note) => note.includes("Daily AI failed:")) || "";
 }
 
 function openDailyReviewProspect(index) {
@@ -1720,6 +1767,17 @@ function markDailyReviewProspectSent(index) {
   responseFilter.value = "all";
   setDrafts(prospect);
   markEmailSent();
+}
+
+async function retryDailyAiProspect(index) {
+  const prospect = prospects[index];
+  if (!prospect) return;
+
+  runDailyAiButton.disabled = true;
+  addDailyRunLog(`Retrying Daily AI for ${prospect.company}.`);
+  await researchAndDraftDailyProspects([prospect]);
+  renderProspects();
+  renderDailyRunCapacitySummary();
 }
 
 function renderDiscoveryQueue() {
@@ -5206,6 +5264,10 @@ dailyRunReviewQueue.addEventListener("click", (event) => {
 
   if (button.dataset.action === "sent-daily-review") {
     markDailyReviewProspectSent(Number(button.dataset.index));
+  }
+
+  if (button.dataset.action === "retry-daily-ai") {
+    retryDailyAiProspect(Number(button.dataset.index));
   }
 });
 prospectForm.addEventListener("submit", saveProspectFromForm);
