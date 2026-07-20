@@ -1686,6 +1686,8 @@ function renderProspects() {
 }
 
 function getDailyRunReviewProspects() {
+  if (dailyReviewReadinessFilter.value === "failures") return [];
+
   return filterDailyReviewReadinessItems(filterDailyReviewItems(getDailyRunReviewItems()));
 }
 
@@ -1696,6 +1698,8 @@ function getDailyRunReviewItems() {
 }
 
 function getDailyAiFailedProspects() {
+  if (["ready", "blocked"].includes(dailyReviewReadinessFilter.value)) return [];
+
   return filterDailyReviewItems(getDailyAiFailedItems());
 }
 
