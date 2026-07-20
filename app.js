@@ -1916,6 +1916,7 @@ function renderDailyFailedReviewSection(failedProspects) {
       </div>
       <div class="daily-review-actions">
         <button class="secondary-button" type="button" data-action="retry-visible-daily-failures">Retry visible</button>
+        <button class="secondary-button" type="button" data-action="clear-visible-daily-failures">Clear visible</button>
         <button class="secondary-button" type="button" data-action="toggle-daily-review-failures">${showDailyReviewFailures ? "Hide failures" : "Show failures"}</button>
       </div>
     </div>
@@ -1954,13 +1955,31 @@ function clearDailyAiFailure(index) {
   const prospect = prospects[index];
   if (!prospect) return;
 
+  clearDailyAiFailureNotes(prospect);
+  saveProspects();
+  renderProspects();
+  setDataStatus(`Cleared Daily AI failure for ${prospect.company}.`);
+}
+
+function clearDailyAiFailureNotes(prospect) {
   const notes = (prospect.responseNotes || "")
     .split("\n")
     .filter((note) => !note.includes("Daily AI failed:"));
   prospect.responseNotes = notes.join("\n");
+}
+
+function clearVisibleDailyAiFailures() {
+  const failedProspects = getDailyAiFailedProspects();
+
+  if (failedProspects.length === 0) {
+    setDataStatus("No visible Daily AI failures to clear.", "error");
+    return;
+  }
+
+  failedProspects.forEach(({ prospect }) => clearDailyAiFailureNotes(prospect));
   saveProspects();
   renderProspects();
-  setDataStatus(`Cleared Daily AI failure for ${prospect.company}.`);
+  setDataStatus(`Cleared ${failedProspects.length} visible Daily AI failure${failedProspects.length === 1 ? "" : "s"}.`);
 }
 
 function openDailyReviewProspect(index) {
@@ -6129,6 +6148,10 @@ dailyRunReviewQueue.addEventListener("click", (event) => {
 
   if (button.dataset.action === "retry-visible-daily-failures") {
     retryVisibleDailyAiFailures();
+  }
+
+  if (button.dataset.action === "clear-visible-daily-failures") {
+    clearVisibleDailyAiFailures();
   }
 
   if (button.dataset.action === "clear-daily-ai-failure") {
