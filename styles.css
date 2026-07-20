@@ -1264,6 +1264,12 @@ button:disabled {
   margin-top: 12px;
 }
 
+.crm-reviewed-queue {
+  border-top: 1px solid var(--line);
+  margin-top: 16px;
+  padding-top: 16px;
+}
+
 .crm-retry-list article {
   align-items: center;
   border: 1px solid var(--line);

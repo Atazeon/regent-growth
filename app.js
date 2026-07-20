@@ -3058,6 +3058,7 @@ function renderCrmRetryQueue(failedCrmLeads = getFailedCrmSyncLeads()) {
         ${renderCrmSyncStatusChips(failedCrmLeads.length, syncingCount, syncedCount, reviewedCount, notSyncedCount)}
       </div>
       <p class="empty-state">No failed CRM syncs queued for retry.</p>
+      ${renderReviewedCrmQueue(reviewedCrmLeads)}
     `;
     return;
   }
@@ -3089,6 +3090,40 @@ function renderCrmRetryQueue(failedCrmLeads = getFailedCrmSyncLeads()) {
         </article>
         `;
       }).join("")}
+    </div>
+    ${renderReviewedCrmQueue(reviewedCrmLeads)}
+  `;
+}
+
+function renderReviewedCrmQueue(reviewedCrmLeads) {
+  if (reviewedCrmLeads.length === 0) return "";
+
+  return `
+    <div class="crm-reviewed-queue">
+      <div class="crm-retry-heading">
+        <div>
+          <p class="eyebrow">Reviewed CRM Syncs</p>
+          <h3>${escapeHtml(reviewedCrmLeads.length)} reviewed sync${reviewedCrmLeads.length === 1 ? "" : "s"}</h3>
+        </div>
+        <button class="secondary-button" type="button" data-action="show-crm-reviewed">Show reviewed</button>
+      </div>
+      <div class="crm-retry-list">
+        ${reviewedCrmLeads.slice(0, 5).map((prospect) => {
+          const index = prospects.indexOf(prospect);
+          return `
+          <article>
+            <div>
+              <strong>${escapeHtml(prospect.company)}</strong>
+              <p>${previewText(getLatestCrmSyncNote(prospect), "No review note recorded.")}</p>
+            </div>
+            <div class="crm-retry-item-actions">
+              <button class="secondary-button" type="button" data-action="open-crm-reviewed" data-index="${escapeHtml(index)}">Open</button>
+              <button class="secondary-button" type="button" data-action="requeue-crm-reviewed-one" data-index="${escapeHtml(index)}">Requeue</button>
+            </div>
+          </article>
+          `;
+        }).join("")}
+      </div>
     </div>
   `;
 }
@@ -3583,6 +3618,47 @@ function openFailedCrmSync(index) {
   responseFilter.value = "all";
   renderProspects();
   setDataStatus(`Opened failed CRM sync for ${prospect.company}.`);
+}
+
+function showReviewedCrmSyncs() {
+  savedViews.dataset.activeView = "crm-reviewed";
+  stageFilter.value = "all";
+  responseFilter.value = "all";
+  renderProspects();
+  setDataStatus("Showing warm leads with reviewed CRM sync failures.");
+}
+
+function openReviewedCrmSync(index) {
+  const prospect = prospects[index];
+  if (!prospect) return;
+
+  selectedProspectIndex = index;
+  savedViews.dataset.activeView = "crm-reviewed";
+  stageFilter.value = "all";
+  responseFilter.value = "all";
+  renderProspects();
+  setDataStatus(`Opened reviewed CRM sync for ${prospect.company}.`);
+}
+
+function requeueSingleReviewedCrmSync(index) {
+  const prospect = prospects[index];
+
+  if (!prospect || prospect.crmSyncStatus !== "Retry Reviewed") {
+    setCrmSetupStatus("Select a reviewed CRM sync before requeueing one record.", "error");
+    return;
+  }
+
+  if (!isWarmLead(prospect)) {
+    setCrmSetupStatus(`${prospect.company} is not warm/CRM-ready. Mark it CRM ready before requeueing.`, "error");
+    return;
+  }
+
+  prospect.crmSyncStatus = "Sync Failed";
+  appendCrmSyncNote(prospect, `${new Date().toISOString()}: Reviewed CRM retry requeued from the retry panel.`);
+  saveProspects();
+  renderProspects();
+  setCrmSetupStatus(`${prospect.company} moved back to the CRM retry queue.`);
+  setDataStatus(`${prospect.company} is ready for CRM retry.`);
 }
 
 async function retrySingleFailedCrmSync(index) {
@@ -4480,12 +4556,24 @@ crmRetryQueue.addEventListener("click", (event) => {
     showFailedCrmSyncs();
   }
 
+  if (button.dataset.action === "show-crm-reviewed") {
+    showReviewedCrmSyncs();
+  }
+
   if (button.dataset.action === "open-crm-failed") {
     openFailedCrmSync(Number(button.dataset.index));
   }
 
+  if (button.dataset.action === "open-crm-reviewed") {
+    openReviewedCrmSync(Number(button.dataset.index));
+  }
+
   if (button.dataset.action === "retry-crm-one") {
     retrySingleFailedCrmSync(Number(button.dataset.index));
+  }
+
+  if (button.dataset.action === "requeue-crm-reviewed-one") {
+    requeueSingleReviewedCrmSync(Number(button.dataset.index));
   }
 });
 clearFormButton.addEventListener("click", resetForm);
