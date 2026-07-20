@@ -180,6 +180,7 @@ let selectedProspectIndex = 0;
 let crmFailedQueuePage = 0;
 let crmReviewedQueuePage = 0;
 let crmFailureReasonFilter = "all";
+let dailyRunHistoryStatusFilter = "all";
 let dailyRunInProgress = false;
 let pendingTeamRestore = null;
 let teamBackupsCache = [];
@@ -3107,6 +3108,8 @@ function recordDailyRunHistory(snapshot) {
 }
 
 function renderDailyRunHistory() {
+  const visibleHistory = getVisibleDailyRunHistory();
+
   if (dailyRunHistory.length === 0) {
     dailyRunHistoryList.innerHTML = `<p class="empty-state">Completed Daily AI runs will appear here.</p>`;
     return;
@@ -3116,18 +3119,30 @@ function renderDailyRunHistory() {
     <div class="section-heading compact-heading">
       <div>
         <p class="eyebrow">Daily AI History</p>
-        <h3>${escapeHtml(dailyRunHistory.length)} saved run${dailyRunHistory.length === 1 ? "" : "s"}</h3>
+        <h3>${escapeHtml(visibleHistory.length)} of ${escapeHtml(dailyRunHistory.length)} saved run${dailyRunHistory.length === 1 ? "" : "s"}</h3>
       </div>
       <div class="daily-review-actions">
-        <button class="secondary-button" type="button" data-action="export-daily-history">Export JSON</button>
-        <button class="secondary-button" type="button" data-action="export-daily-history-csv">Export CSV</button>
+        <select data-action="filter-daily-history" aria-label="Filter Daily AI history">
+          <option value="all" ${dailyRunHistoryStatusFilter === "all" ? "selected" : ""}>All runs</option>
+          <option value="Completed" ${dailyRunHistoryStatusFilter === "Completed" ? "selected" : ""}>Completed</option>
+          <option value="Completed with failures" ${dailyRunHistoryStatusFilter === "Completed with failures" ? "selected" : ""}>With failures</option>
+          <option value="Failed" ${dailyRunHistoryStatusFilter === "Failed" ? "selected" : ""}>Failed</option>
+        </select>
+        <button class="secondary-button" type="button" data-action="export-daily-history">Export visible JSON</button>
+        <button class="secondary-button" type="button" data-action="export-daily-history-csv">Export visible CSV</button>
         <button class="danger-button" type="button" data-action="clear-daily-history">Clear</button>
       </div>
     </div>
-    <div class="daily-run-history-items">
-      ${dailyRunHistory.slice(0, 5).map(renderDailyRunHistoryItem).join("")}
-    </div>
+    ${visibleHistory.length === 0
+      ? `<p class="empty-state">No Daily AI runs match this status filter.</p>`
+      : `<div class="daily-run-history-items">${visibleHistory.slice(0, 5).map(renderDailyRunHistoryItem).join("")}</div>`}
   `;
+}
+
+function getVisibleDailyRunHistory() {
+  return dailyRunHistoryStatusFilter === "all"
+    ? dailyRunHistory
+    : dailyRunHistory.filter((snapshot) => snapshot.status === dailyRunHistoryStatusFilter);
 }
 
 function renderDailyRunHistoryItem(snapshot) {
@@ -3157,29 +3172,31 @@ function renderDailyRunHistoryItem(snapshot) {
 }
 
 function exportDailyRunHistoryJson() {
-  if (dailyRunHistory.length === 0) {
+  const visibleHistory = getVisibleDailyRunHistory();
+  if (visibleHistory.length === 0) {
     setDataStatus("No Daily AI run history to export.", "error");
     return;
   }
 
   const exportedAt = new Date().toISOString();
   const stamp = exportedAt.slice(0, 19).replace(/[:T]/g, "-");
-  downloadFile(`regent-growth-daily-ai-history-${stamp}.json`, JSON.stringify({ exportedAt, runs: dailyRunHistory }, null, 2), "application/json;charset=utf-8");
-  setDataStatus(`Exported ${dailyRunHistory.length} Daily AI run history snapshot${dailyRunHistory.length === 1 ? "" : "s"} as JSON.`);
+  downloadFile(`regent-growth-daily-ai-history-${stamp}.json`, JSON.stringify({ exportedAt, statusFilter: dailyRunHistoryStatusFilter, runs: visibleHistory }, null, 2), "application/json;charset=utf-8");
+  setDataStatus(`Exported ${visibleHistory.length} Daily AI run history snapshot${visibleHistory.length === 1 ? "" : "s"} as JSON.`);
 }
 
 function exportDailyRunHistoryCsv() {
-  if (dailyRunHistory.length === 0) {
+  const visibleHistory = getVisibleDailyRunHistory();
+  if (visibleHistory.length === 0) {
     setDataStatus("No Daily AI run history to export.", "error");
     return;
   }
 
   const headers = ["startedAt", "finishedAt", "status", "model", "limit", "generatedCount", "fetchedCount", "addedCount", "existingFilledCount", "researched", "drafted", "skipped", "failed", "error", "companies"];
-  const rows = dailyRunHistory.map((snapshot) => headers.map((header) => (
+  const rows = visibleHistory.map((snapshot) => headers.map((header) => (
     csvCell(header === "companies" ? snapshot.companies.join("; ") : snapshot[header])
   )).join(","));
   downloadFile("regent-growth-daily-ai-history.csv", [headers.join(","), ...rows].join("\n"), "text/csv;charset=utf-8");
-  setDataStatus(`Exported ${dailyRunHistory.length} Daily AI run history snapshot${dailyRunHistory.length === 1 ? "" : "s"} as CSV.`);
+  setDataStatus(`Exported ${visibleHistory.length} Daily AI run history snapshot${visibleHistory.length === 1 ? "" : "s"} as CSV.`);
 }
 
 function clearDailyRunHistory() {
@@ -5755,6 +5772,13 @@ dailyRunHistoryList.addEventListener("click", (event) => {
   if (button.dataset.action === "clear-daily-history") {
     clearDailyRunHistory();
   }
+});
+dailyRunHistoryList.addEventListener("change", (event) => {
+  const field = event.target.closest("[data-action='filter-daily-history']");
+  if (!field) return;
+
+  dailyRunHistoryStatusFilter = field.value;
+  renderDailyRunHistory();
 });
 generateDiscoveryButton.addEventListener("click", generateDiscoveryCandidates);
 clearDiscoveryButton.addEventListener("click", clearDiscoveryQueue);
