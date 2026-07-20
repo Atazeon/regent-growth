@@ -2918,6 +2918,13 @@ function addDailyRunProspects(limit) {
   return addedProspects;
 }
 
+function getExistingDailyRunProspects(limit) {
+  return prospects
+    .filter((prospect) => ["Research", "Email Drafted"].includes(prospect.stage))
+    .filter((prospect) => !prospect.aiBrief || !prospect.aiEmail)
+    .slice(0, limit);
+}
+
 async function researchAndDraftDailyProspects(prospectsToProcess) {
   const results = {
     researched: 0,
@@ -2985,18 +2992,26 @@ async function runDailyAiWorkflow() {
     }
 
     const fetchedCount = await autoFetchDailyRunEvidence(limit);
-    const addedProspects = addDailyRunProspects(limit);
-    if (addedProspects.length === 0) {
-      throw new Error(shouldDailyRunRequireEvidence()
-        ? "No discovery candidates with source evidence were available. Fetch or save evidence first, or turn off Require source evidence."
-        : "No discovery candidates were available to add to the pipeline.");
+    const existingProspects = getExistingDailyRunProspects(limit);
+    if (existingProspects.length > 0) {
+      addDailyRunLog(`Found ${existingProspects.length} existing unfinished prospect${existingProspects.length === 1 ? "" : "s"} to process first.`, "done");
     }
 
-    const results = await researchAndDraftDailyProspects(addedProspects);
+    const remainingCapacity = Math.max(0, limit - existingProspects.length);
+    const addedProspects = remainingCapacity > 0 ? addDailyRunProspects(remainingCapacity) : [];
+    const prospectsToProcess = [...existingProspects, ...addedProspects];
+
+    if (prospectsToProcess.length === 0) {
+      throw new Error(shouldDailyRunRequireEvidence()
+        ? "No discovery candidates with source evidence were available. Fetch or save evidence first, or turn off Require source evidence."
+        : "No unfinished prospects or discovery candidates were available for Daily AI.");
+    }
+
+    const results = await researchAndDraftDailyProspects(prospectsToProcess);
     saveProspects();
     renderProspects();
-    setDataStatus(`Daily AI run complete: ${generatedCount} candidates generated, ${fetchedCount} sources fetched, ${addedProspects.length} prospects added, ${results.researched} researched, ${results.drafted} emails drafted, ${results.skipped} skipped.`);
-    addDailyRunLog(`Complete: ${generatedCount} generated, ${fetchedCount} sources fetched, ${addedProspects.length} added, ${results.researched} researched, ${results.drafted} drafted, ${results.skipped} skipped.`, "done");
+    setDataStatus(`Daily AI run complete: ${generatedCount} candidates generated, ${fetchedCount} sources fetched, ${addedProspects.length} prospects added, ${existingProspects.length} existing filled, ${results.researched} researched, ${results.drafted} emails drafted, ${results.skipped} skipped.`);
+    addDailyRunLog(`Complete: ${generatedCount} generated, ${fetchedCount} sources fetched, ${addedProspects.length} added, ${existingProspects.length} existing filled, ${results.researched} researched, ${results.drafted} drafted, ${results.skipped} skipped.`, "done");
   } catch (error) {
     const message = error.name === "AbortError"
       ? "Daily AI timed out. Lower the daily run limit or use qwen2.5:0.5b for a faster pass."
