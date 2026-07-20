@@ -1741,15 +1741,34 @@ function clearDailyReviewFilters() {
 function renderDailyRunReviewQueue() {
   const draftedProspects = getDailyRunReviewProspects();
   const failedProspects = getDailyAiFailedProspects();
+  const reviewCountLabel = renderDailyReviewCountLabel(draftedProspects, failedProspects);
 
   if (draftedProspects.length === 0 && failedProspects.length === 0) {
-    dailyRunReviewQueue.innerHTML = `<p class="empty-state">No drafted AI emails or failed Daily AI prospects are waiting for review.</p>`;
+    dailyRunReviewQueue.innerHTML = `
+      ${reviewCountLabel}
+      <p class="empty-state">No drafted AI emails or failed Daily AI prospects are waiting for review.</p>
+    `;
     return;
   }
 
   dailyRunReviewQueue.innerHTML = `
+    ${reviewCountLabel}
     ${renderDailyDraftReviewList(draftedProspects)}
     ${renderDailyFailedReviewList(failedProspects)}
+  `;
+}
+
+function renderDailyReviewCountLabel(draftedProspects, failedProspects) {
+  const totalDrafts = getDailyRunReviewItems().length;
+  const totalFailures = filterDailyReviewItems(getDailyAiFailedItems()).length;
+  const filteredText = dailyReviewSearch.value.trim() || dailyReviewReadinessFilter.value !== "all"
+    ? `Filtered view: ${draftedProspects.length} draft${draftedProspects.length === 1 ? "" : "s"} and ${failedProspects.length} failure${failedProspects.length === 1 ? "" : "s"}.`
+    : `Review queue: ${draftedProspects.length} draft${draftedProspects.length === 1 ? "" : "s"} and ${failedProspects.length} failure${failedProspects.length === 1 ? "" : "s"}.`;
+
+  return `
+    <p class="daily-review-count">
+      ${escapeHtml(filteredText)} Total saved: ${escapeHtml(totalDrafts)} draft${totalDrafts === 1 ? "" : "s"} and ${escapeHtml(totalFailures)} searchable failure${totalFailures === 1 ? "" : "s"}.
+    </p>
   `;
 }
 

@@ -576,6 +576,13 @@ button:disabled {
   margin-bottom: 10px;
 }
 
+.daily-review-count {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+  margin: 0 0 10px;
+}
+
 .daily-review-summary span {
   background: #f9fafc;
   border: 1px solid var(--line);
