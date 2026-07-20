@@ -374,6 +374,7 @@ function normalizeProspect(prospect) {
     crmSyncStatus: prospect.crmSyncStatus || "Not Synced",
     crmSyncedAt: prospect.crmSyncedAt || "",
     crmSyncNotes: prospect.crmSyncNotes || "",
+    crmReviewedReason: prospect.crmReviewedReason || "",
     teamSyncNotes: prospect.teamSyncNotes || "",
     aiBrief: prospect.aiBrief || "",
     aiEmail: prospect.aiEmail || ""
@@ -2877,6 +2878,7 @@ function getCrmRecord(prospect) {
     crmSyncStatus: prospect.crmSyncStatus,
     crmSyncedAt: prospect.crmSyncedAt,
     crmSyncNotes: prospect.crmSyncNotes,
+    crmReviewedReason: prospect.crmReviewedReason,
     teamSyncNotes: prospect.teamSyncNotes,
     lastTouch: prospect.lastTouch,
     nextTouch: prospect.nextTouch,
@@ -3133,7 +3135,7 @@ function renderReviewedCrmQueue(reviewedCrmLeads) {
           <article>
             <div>
               <strong>${escapeHtml(prospect.company)}</strong>
-              <p>${previewText(getLatestCrmSyncNote(prospect), "No review note recorded.")}</p>
+              <p>${previewText(formatReviewedCrmSyncNote(prospect), "No review note recorded.")}</p>
             </div>
             <div class="crm-retry-item-actions">
               <button class="secondary-button" type="button" data-action="open-crm-reviewed" data-index="${escapeHtml(index)}">Open</button>
@@ -3215,6 +3217,16 @@ function getCrmFailureReasonGroup(note = "") {
   if (/(network|fetch failed|connection|dns|econn|socket)/.test(text)) return "Network";
   if (/(404|endpoint|url|not found|configured)/.test(text)) return "Endpoint";
   return "Other";
+}
+
+function getReviewedCrmReason(prospect) {
+  return prospect.crmReviewedReason || getCrmFailureReasonGroup(getLatestCrmSyncNote(prospect));
+}
+
+function formatReviewedCrmSyncNote(prospect) {
+  const reason = getReviewedCrmReason(prospect);
+  const note = getLatestCrmSyncNote(prospect);
+  return `${reason}: ${note || "No review note recorded."}`;
 }
 
 function getCrmFailureReasonCounts(failedCrmLeads = getFailedCrmSyncLeads()) {
@@ -3321,8 +3333,10 @@ function markFailedCrmSyncsReviewed() {
   const reviewedAt = new Date().toISOString();
 
   failedCrmLeads.forEach((prospect) => {
+    const reason = getCrmFailureReasonGroup(getLatestCrmSyncNote(prospect));
     prospect.crmSyncStatus = "Retry Reviewed";
-    appendCrmSyncNote(prospect, `${reviewedAt}: CRM retry failure reviewed; no automatic retry queued.`);
+    prospect.crmReviewedReason = reason;
+    appendCrmSyncNote(prospect, `${reviewedAt}: CRM retry failure reviewed as ${reason}; no automatic retry queued.`);
   });
 
   resetCrmQueuePages("all");
@@ -3344,6 +3358,7 @@ function requeueReviewedCrmSyncs() {
 
   reviewedCrmLeads.forEach((prospect) => {
     prospect.crmSyncStatus = "Sync Failed";
+    prospect.crmReviewedReason = "";
     appendCrmSyncNote(prospect, `${requeuedAt}: Reviewed CRM retry requeued for automatic retry.`);
   });
 
@@ -3373,6 +3388,7 @@ function requeueSelectedReviewedCrmSync() {
   }
 
   prospect.crmSyncStatus = "Sync Failed";
+  prospect.crmReviewedReason = "";
   appendCrmSyncNote(prospect, `${new Date().toISOString()}: Selected reviewed CRM retry requeued.`);
   resetCrmQueuePages("all");
   saveProspects();
@@ -3493,6 +3509,7 @@ function exportReviewedCrmSyncs() {
     reviewedCount: reviewedCrmLeads.length,
     records: reviewedCrmLeads.map((prospect) => ({
       ...getCrmRecord(prospect),
+      failureReasonGroup: getReviewedCrmReason(prospect),
       latestCrmSyncNote: getLatestCrmSyncNote(prospect)
     }))
   };
@@ -3509,11 +3526,12 @@ function exportReviewedCrmSyncCsv() {
     return;
   }
 
-  const headers = ["company", "email", "stage", "responseStatus", "leadScore", "leadTier", "crmSyncStatus", "crmSyncedAt", "latestCrmSyncNote", "handoffOwner", "handoffStatus", "nextTouch"];
+  const headers = ["company", "email", "stage", "responseStatus", "leadScore", "leadTier", "crmSyncStatus", "crmSyncedAt", "failureReasonGroup", "latestCrmSyncNote", "handoffOwner", "handoffStatus", "nextTouch"];
   const rows = reviewedCrmLeads.map((prospect) => {
     const record = getCrmRecord(prospect);
     const exportRecord = {
       ...record,
+      failureReasonGroup: getReviewedCrmReason(prospect),
       latestCrmSyncNote: getLatestCrmSyncNote(prospect)
     };
     return headers.map((header) => csvCell(exportRecord[header])).join(",");
@@ -3529,7 +3547,7 @@ function formatCrmStatusSummary() {
   const syncingCount = prospects.filter((prospect) => prospect.crmSyncStatus === "Syncing").length;
   const notSyncedCount = prospects.filter((prospect) => !prospect.crmSyncStatus || prospect.crmSyncStatus === "Not Synced").length;
   const failedLines = failedCrmLeads.slice(0, 5).map((prospect) => `- ${prospect.company}: ${getLatestCrmSyncNote(prospect) || "No failure note recorded."}`);
-  const reviewedLines = reviewedCrmLeads.slice(0, 5).map((prospect) => `- ${prospect.company}: ${getLatestCrmSyncNote(prospect) || "No review note recorded."}`);
+  const reviewedLines = reviewedCrmLeads.slice(0, 5).map((prospect) => `- ${prospect.company}: ${formatReviewedCrmSyncNote(prospect)}`);
 
   return [
     "Regent Growth CRM Sync Summary",
@@ -3837,6 +3855,7 @@ function requeueSingleReviewedCrmSync(index) {
   }
 
   prospect.crmSyncStatus = "Sync Failed";
+  prospect.crmReviewedReason = "";
   appendCrmSyncNote(prospect, `${new Date().toISOString()}: Reviewed CRM retry requeued from the retry panel.`);
   resetCrmQueuePages("all");
   saveProspects();
