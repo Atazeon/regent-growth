@@ -242,6 +242,7 @@ const dailyRunCapacitySummary = document.querySelector("#dailyRunCapacitySummary
 const dailyRunStats = document.querySelector("#dailyRunStats");
 const dailyReviewSearch = document.querySelector("#dailyReviewSearch");
 const dailyReviewReadinessFilter = document.querySelector("#dailyReviewReadinessFilter");
+const clearDailyReviewFiltersButton = document.querySelector("#clearDailyReviewFiltersButton");
 const runDailyAiButton = document.querySelector("#runDailyAiButton");
 const generateDiscoveryButton = document.querySelector("#generateDiscoveryButton");
 const clearDiscoveryButton = document.querySelector("#clearDiscoveryButton");
@@ -1728,6 +1729,13 @@ function filterDailyReviewReadinessItems(items) {
   }
 
   return items;
+}
+
+function clearDailyReviewFilters() {
+  dailyReviewSearch.value = "";
+  dailyReviewReadinessFilter.value = "all";
+  renderDailyRunReviewQueue();
+  setDataStatus("Cleared Daily AI review filters.");
 }
 
 function renderDailyRunReviewQueue() {
@@ -6151,6 +6159,7 @@ runDailyAiButton.addEventListener("click", runDailyAiWorkflow);
 discoveryForm.addEventListener("input", renderDailyRunCapacitySummary);
 dailyReviewSearch.addEventListener("input", renderDailyRunReviewQueue);
 dailyReviewReadinessFilter.addEventListener("change", renderDailyRunReviewQueue);
+clearDailyReviewFiltersButton.addEventListener("click", clearDailyReviewFilters);
 dailyRunHistoryList.addEventListener("click", (event) => {
   const button = event.target.closest("button");
   if (!button) return;
