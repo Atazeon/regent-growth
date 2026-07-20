@@ -1228,11 +1228,28 @@ button:disabled {
   gap: 6px;
 }
 
+.crm-reason-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 .crm-sync-chips span {
   border: 1px solid var(--line);
   border-radius: 999px;
   color: var(--muted);
   font-size: 0.78rem;
+  font-weight: 700;
+  padding: 6px 8px;
+  white-space: nowrap;
+}
+
+.crm-reason-chips span {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  font-size: 0.76rem;
   font-weight: 700;
   padding: 6px 8px;
   white-space: nowrap;

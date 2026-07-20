@@ -3064,6 +3064,7 @@ function renderCrmRetryQueue(failedCrmLeads = getFailedCrmSyncLeads()) {
           <h3>No failed syncs</h3>
         </div>
         ${renderCrmSyncStatusChips(failedCrmLeads.length, syncingCount, syncedCount, reviewedCount, notSyncedCount)}
+        ${renderCrmFailureReasonChips(failedCrmLeads)}
       </div>
       <p class="empty-state">No failed CRM syncs queued for retry.</p>
       ${renderReviewedCrmQueue(reviewedCrmLeads)}
@@ -3079,6 +3080,7 @@ function renderCrmRetryQueue(failedCrmLeads = getFailedCrmSyncLeads()) {
       </div>
       <div class="crm-retry-actions">
         ${renderCrmSyncStatusChips(failedCrmLeads.length, syncingCount, syncedCount, reviewedCount, notSyncedCount)}
+        ${renderCrmFailureReasonChips(failedCrmLeads)}
         <button class="secondary-button" type="button" data-action="show-crm-failed">Show failed</button>
       </div>
     </div>
@@ -3197,6 +3199,34 @@ function renderCrmSyncStatusChips(failedCount, syncingCount, syncedCount, review
   ];
 
   return `<div class="crm-sync-chips">${chips.map((chip) => `<span data-state="${escapeHtml(chip.state)}">${escapeHtml(chip.label)}</span>`).join("")}</div>`;
+}
+
+function getCrmFailureReasonGroup(note = "") {
+  const text = String(note).toLowerCase();
+
+  if (/(401|403|unauthorized|forbidden|auth|api key|token)/.test(text)) return "Auth";
+  if (/(400|422|validation|required|invalid|field|schema)/.test(text)) return "Validation";
+  if (/(429|rate limit|too many requests|quota)/.test(text)) return "Rate Limit";
+  if (/(timeout|timed out|abort)/.test(text)) return "Timeout";
+  if (/(network|fetch failed|connection|dns|econn|socket)/.test(text)) return "Network";
+  if (/(404|endpoint|url|not found|configured)/.test(text)) return "Endpoint";
+  return "Other";
+}
+
+function getCrmFailureReasonCounts(failedCrmLeads = getFailedCrmSyncLeads()) {
+  return failedCrmLeads.reduce((counts, prospect) => {
+    const group = getCrmFailureReasonGroup(getLatestCrmSyncNote(prospect));
+    counts[group] = (counts[group] || 0) + 1;
+    return counts;
+  }, {});
+}
+
+function renderCrmFailureReasonChips(failedCrmLeads) {
+  const counts = getCrmFailureReasonCounts(failedCrmLeads);
+  const groups = Object.entries(counts).sort((first, second) => second[1] - first[1] || first[0].localeCompare(second[0]));
+  if (groups.length === 0) return "";
+
+  return `<div class="crm-reason-chips">${groups.map(([group, count]) => `<span>${escapeHtml(group)}: ${escapeHtml(count)}</span>`).join("")}</div>`;
 }
 
 function getLatestCrmSyncNote(prospect) {
@@ -3380,6 +3410,7 @@ function exportFailedCrmSyncs() {
     failedCount: failedCrmLeads.length,
     records: failedCrmLeads.map((prospect) => ({
       ...getCrmRecord(prospect),
+      failureReasonGroup: getCrmFailureReasonGroup(getLatestCrmSyncNote(prospect)),
       latestCrmSyncNote: getLatestCrmSyncNote(prospect)
     }))
   };
@@ -3396,11 +3427,12 @@ function exportFailedCrmSyncCsv() {
     return;
   }
 
-  const headers = ["company", "email", "stage", "responseStatus", "leadScore", "leadTier", "crmSyncStatus", "crmSyncedAt", "latestCrmSyncNote", "handoffOwner", "handoffStatus", "nextTouch"];
+  const headers = ["company", "email", "stage", "responseStatus", "leadScore", "leadTier", "crmSyncStatus", "crmSyncedAt", "failureReasonGroup", "latestCrmSyncNote", "handoffOwner", "handoffStatus", "nextTouch"];
   const rows = failedCrmLeads.map((prospect) => {
     const record = getCrmRecord(prospect);
     const exportRecord = {
       ...record,
+      failureReasonGroup: getCrmFailureReasonGroup(getLatestCrmSyncNote(prospect)),
       latestCrmSyncNote: getLatestCrmSyncNote(prospect)
     };
     return headers.map((header) => csvCell(exportRecord[header])).join(",");
@@ -3470,6 +3502,7 @@ function formatCrmStatusSummary() {
     `Syncing: ${syncingCount}`,
     `Synced: ${syncedCount}`,
     `Not Synced: ${notSyncedCount}`,
+    `Failure Reasons: ${Object.entries(getCrmFailureReasonCounts(failedCrmLeads)).map(([group, count]) => `${group} ${count}`).join(", ") || "None"}`,
     "",
     "Failed queue:",
     failedLines.length ? failedLines.join("\n") : "- None",
