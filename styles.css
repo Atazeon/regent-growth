@@ -492,6 +492,10 @@ button:disabled {
   padding: 12px;
 }
 
+.daily-review-search {
+  margin-top: 14px;
+}
+
 .compact-heading {
   margin-bottom: 10px;
 }

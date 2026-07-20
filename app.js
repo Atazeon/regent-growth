@@ -235,6 +235,7 @@ const discoveryList = document.querySelector("#discoveryList");
 const dailyRunLog = document.querySelector("#dailyRunLog");
 const dailyRunReviewQueue = document.querySelector("#dailyRunReviewQueue");
 const dailyRunCapacitySummary = document.querySelector("#dailyRunCapacitySummary");
+const dailyReviewSearch = document.querySelector("#dailyReviewSearch");
 const runDailyAiButton = document.querySelector("#runDailyAiButton");
 const generateDiscoveryButton = document.querySelector("#generateDiscoveryButton");
 const clearDiscoveryButton = document.querySelector("#clearDiscoveryButton");
@@ -1635,15 +1636,31 @@ function renderProspects() {
 }
 
 function getDailyRunReviewProspects() {
-  return prospects
+  return filterDailyReviewItems(prospects
     .map((prospect, index) => ({ prospect, index }))
-    .filter(({ prospect }) => prospect.stage === "Email Drafted" && Boolean(prospect.aiEmail));
+    .filter(({ prospect }) => prospect.stage === "Email Drafted" && Boolean(prospect.aiEmail)));
 }
 
 function getDailyAiFailedProspects() {
-  return prospects
+  return filterDailyReviewItems(prospects
     .map((prospect, index) => ({ prospect, index }))
-    .filter(({ prospect }) => !prospect.aiEmail && (prospect.responseNotes || "").includes("Daily AI failed:"));
+    .filter(({ prospect }) => !prospect.aiEmail && (prospect.responseNotes || "").includes("Daily AI failed:")));
+}
+
+function filterDailyReviewItems(items) {
+  const query = dailyReviewSearch.value.trim().toLowerCase();
+  if (!query) return items;
+
+  return items.filter(({ prospect }) => [
+    prospect.company,
+    prospect.contactEmail,
+    prospect.decisionMaker,
+    prospect.trigger,
+    prospect.fit,
+    prospect.aiBrief,
+    prospect.aiEmail,
+    prospect.responseNotes
+  ].some((value) => String(value || "").toLowerCase().includes(query)));
 }
 
 function renderDailyRunReviewQueue() {
@@ -5521,6 +5538,7 @@ teamRestorePreview.addEventListener("click", (event) => {
 });
 runDailyAiButton.addEventListener("click", runDailyAiWorkflow);
 discoveryForm.addEventListener("input", renderDailyRunCapacitySummary);
+dailyReviewSearch.addEventListener("input", renderDailyRunReviewQueue);
 generateDiscoveryButton.addEventListener("click", generateDiscoveryCandidates);
 clearDiscoveryButton.addEventListener("click", clearDiscoveryQueue);
 checkSearchSetupButton.addEventListener("click", checkSearchSetup);
