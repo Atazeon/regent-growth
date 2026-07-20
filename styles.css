@@ -436,6 +436,16 @@ button:disabled {
   line-height: 1.5;
 }
 
+.checkbox-label {
+  align-items: center;
+  flex-direction: row;
+  gap: 8px;
+}
+
+.checkbox-label input {
+  width: auto;
+}
+
 .discovery-list {
   display: grid;
   gap: 12px;

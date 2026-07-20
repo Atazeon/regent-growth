@@ -2781,6 +2781,21 @@ function getDailyRunLimit() {
   return Math.min(10, Math.max(1, Number.isFinite(value) ? value : 3));
 }
 
+function shouldDailyRunRequireEvidence() {
+  return Boolean(discoveryForm.elements.dailyRequireEvidence?.checked);
+}
+
+function isEvidenceReadyCandidate(candidate) {
+  return candidate.sourceStatus === "Evidence Found" || Boolean(candidate.sourceNotes?.trim());
+}
+
+function getDailyRunEligibleCandidates(requireEvidence = shouldDailyRunRequireEvidence()) {
+  return discoveryQueue.filter((candidate) => (
+    candidate.sourceStatus !== "Rejected"
+    && (!requireEvidence || isEvidenceReadyCandidate(candidate))
+  ));
+}
+
 function resetDailyRunLog() {
   dailyRunLog.innerHTML = "";
 }
@@ -2823,9 +2838,8 @@ async function discoverCandidatesForDailyRun(criteria) {
 }
 
 function addDailyRunProspects(limit) {
-  const candidates = discoveryQueue
-    .filter((candidate) => candidate.sourceStatus !== "Rejected")
-    .slice(0, limit);
+  const requireEvidence = shouldDailyRunRequireEvidence();
+  const candidates = getDailyRunEligibleCandidates(requireEvidence).slice(0, limit);
   const addedProspects = [];
 
   candidates.forEach((candidate) => {
@@ -2890,14 +2904,16 @@ async function runDailyAiWorkflow() {
     addDailyRunLog(`Starting Daily AI run for up to ${limit} prospect${limit === 1 ? "" : "s"}.`);
     let generatedCount = 0;
 
-    if (discoveryQueue.filter((candidate) => candidate.sourceStatus !== "Rejected").length < limit) {
+    if (getDailyRunEligibleCandidates().length < limit) {
       setDataStatus("Daily AI generating discovery candidates...", "working");
       generatedCount = await discoverCandidatesForDailyRun({ ...criteria, count: Math.max(criteria.count, limit) });
     }
 
     const addedProspects = addDailyRunProspects(limit);
     if (addedProspects.length === 0) {
-      throw new Error("No discovery candidates were available to add to the pipeline.");
+      throw new Error(shouldDailyRunRequireEvidence()
+        ? "No discovery candidates with source evidence were available. Fetch or save evidence first, or turn off Require source evidence."
+        : "No discovery candidates were available to add to the pipeline.");
     }
 
     const results = await researchAndDraftDailyProspects(addedProspects);
