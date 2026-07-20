@@ -3602,6 +3602,7 @@ function renderDailyRunHistoryItem(snapshot) {
   const companyText = snapshot.companies.length > 0 ? snapshot.companies.join(", ") : "No companies processed";
   const canRetry = snapshot.companies.length > 0 && (snapshot.status !== "Completed" || snapshot.failed > 0);
   const canRequeueStopped = snapshot.status === "Stopped" && snapshot.companies.length > 0;
+  const stoppedUnfinishedCount = canRequeueStopped ? getDailyHistoryUnfinishedProspects(snapshot).length : 0;
 
   return `
     <article>
@@ -3610,6 +3611,7 @@ function renderDailyRunHistoryItem(snapshot) {
         <p>${escapeHtml(formatDateTime(snapshot.finishedAt || snapshot.startedAt))} | ${escapeHtml(snapshot.model || "No model")} | limit ${escapeHtml(snapshot.limit)}</p>
         <p>${escapeHtml(counts)}</p>
         <p>${escapeHtml(companyText)}</p>
+        ${canRequeueStopped ? `<p>${escapeHtml(stoppedUnfinishedCount)} unfinished prospect${stoppedUnfinishedCount === 1 ? "" : "s"} still available to requeue.</p>` : ""}
         ${snapshot.error ? `<p class="history-error">${escapeHtml(snapshot.error)}</p>` : ""}
       </div>
       ${canRetry ? `
