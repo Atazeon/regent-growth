@@ -3573,6 +3573,7 @@ function renderDailyRunHistory() {
             <option value="Failed" ${dailyRunHistoryStatusFilter === "Failed" ? "selected" : ""}>Failed</option>
           </select>
           <button class="secondary-button" type="button" data-action="clear-daily-history-filter">Clear filter</button>
+          <button class="secondary-button" type="button" data-action="reset-daily-history-view">Reset view</button>
           <button class="secondary-button" type="button" data-action="copy-daily-history-summary">Copy summary</button>
           <button class="secondary-button" type="button" data-action="toggle-compact-daily-history">${compactDailyRunHistory ? "Full history" : "Compact history"}</button>
           <button class="secondary-button" type="button" data-action="toggle-all-daily-history">${showAllDailyRunHistory ? "Show first 5" : "Show all"}</button>
@@ -3617,6 +3618,14 @@ function clearDailyRunHistoryFilter() {
   dailyRunHistoryStatusFilter = "all";
   renderDailyRunHistory();
   setDataStatus("Cleared Daily AI history filter.");
+}
+
+function resetDailyRunHistoryView() {
+  dailyRunHistoryStatusFilter = "all";
+  compactDailyRunHistory = false;
+  showAllDailyRunHistory = false;
+  renderDailyRunHistory();
+  setDataStatus("Reset Daily AI history view.");
 }
 
 function getVisibleDailyRunHistoryItems(items) {
@@ -6624,6 +6633,10 @@ dailyRunHistoryList.addEventListener("click", (event) => {
 
   if (button.dataset.action === "clear-daily-history-filter") {
     clearDailyRunHistoryFilter();
+  }
+
+  if (button.dataset.action === "reset-daily-history-view") {
+    resetDailyRunHistoryView();
   }
 
   if (button.dataset.action === "copy-stopped-daily-history") {
