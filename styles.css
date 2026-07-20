@@ -1253,6 +1253,11 @@ button:disabled {
   color: #247247;
 }
 
+.crm-sync-chips span[data-state="reviewed"] {
+  border-color: #64748b;
+  color: #475569;
+}
+
 .crm-retry-list {
   display: grid;
   gap: 8px;

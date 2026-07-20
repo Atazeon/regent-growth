@@ -259,6 +259,7 @@ const checkCrmSetupButton = document.querySelector("#checkCrmSetupButton");
 const syncSelectedCrmButton = document.querySelector("#syncSelectedCrmButton");
 const syncWarmCrmButton = document.querySelector("#syncWarmCrmButton");
 const retryFailedCrmButton = document.querySelector("#retryFailedCrmButton");
+const markReviewedCrmButton = document.querySelector("#markReviewedCrmButton");
 const exportFailedCrmButton = document.querySelector("#exportFailedCrmButton");
 const exportFailedCrmCsvButton = document.querySelector("#exportFailedCrmCsvButton");
 const clearResolvedCrmButton = document.querySelector("#clearResolvedCrmButton");
@@ -1693,6 +1694,7 @@ function matchesSavedView(prospect, selectedView) {
     "no-response": (item) => item.responseStatus === "No Response",
     "follow-up-due": isFollowUpDue,
     "crm-failed": (item) => item.crmSyncStatus === "Sync Failed",
+    "crm-reviewed": (item) => item.crmSyncStatus === "Retry Reviewed",
     "crm-syncing": (item) => item.crmSyncStatus === "Syncing",
     "crm-synced": (item) => item.crmSyncStatus === "Synced",
     "crm-not-synced": (item) => !item.crmSyncStatus || item.crmSyncStatus === "Not Synced"
@@ -1713,6 +1715,7 @@ function getSavedViewLabel(selectedView) {
     "no-response": "No Response",
     "follow-up-due": "Follow-up Due",
     "crm-failed": "CRM Failed",
+    "crm-reviewed": "CRM Reviewed",
     "crm-syncing": "CRM Syncing",
     "crm-synced": "CRM Synced",
     "crm-not-synced": "CRM Not Synced"
@@ -3024,10 +3027,12 @@ function renderHandoff() {
 
 function renderCrmRetryQueue(failedCrmLeads = getFailedCrmSyncLeads()) {
   retryFailedCrmButton.disabled = failedCrmLeads.length === 0;
+  markReviewedCrmButton.disabled = failedCrmLeads.length === 0;
   exportFailedCrmButton.disabled = failedCrmLeads.length === 0;
   exportFailedCrmCsvButton.disabled = failedCrmLeads.length === 0;
   const syncedCount = prospects.filter((prospect) => prospect.crmSyncStatus === "Synced").length;
   const syncingCount = prospects.filter((prospect) => prospect.crmSyncStatus === "Syncing").length;
+  const reviewedCount = prospects.filter((prospect) => prospect.crmSyncStatus === "Retry Reviewed").length;
   const notSyncedCount = prospects.filter((prospect) => !prospect.crmSyncStatus || prospect.crmSyncStatus === "Not Synced").length;
 
   if (failedCrmLeads.length === 0) {
@@ -3037,7 +3042,7 @@ function renderCrmRetryQueue(failedCrmLeads = getFailedCrmSyncLeads()) {
           <p class="eyebrow">CRM Retry Queue</p>
           <h3>No failed syncs</h3>
         </div>
-        ${renderCrmSyncStatusChips(failedCrmLeads.length, syncingCount, syncedCount, notSyncedCount)}
+        ${renderCrmSyncStatusChips(failedCrmLeads.length, syncingCount, syncedCount, reviewedCount, notSyncedCount)}
       </div>
       <p class="empty-state">No failed CRM syncs queued for retry.</p>
     `;
@@ -3051,7 +3056,7 @@ function renderCrmRetryQueue(failedCrmLeads = getFailedCrmSyncLeads()) {
         <h3>${escapeHtml(failedCrmLeads.length)} failed sync${failedCrmLeads.length === 1 ? "" : "s"}</h3>
       </div>
       <div class="crm-retry-actions">
-        ${renderCrmSyncStatusChips(failedCrmLeads.length, syncingCount, syncedCount, notSyncedCount)}
+        ${renderCrmSyncStatusChips(failedCrmLeads.length, syncingCount, syncedCount, reviewedCount, notSyncedCount)}
         <button class="secondary-button" type="button" data-action="show-crm-failed">Show failed</button>
       </div>
     </div>
@@ -3075,11 +3080,12 @@ function renderCrmRetryQueue(failedCrmLeads = getFailedCrmSyncLeads()) {
   `;
 }
 
-function renderCrmSyncStatusChips(failedCount, syncingCount, syncedCount, notSyncedCount) {
+function renderCrmSyncStatusChips(failedCount, syncingCount, syncedCount, reviewedCount, notSyncedCount) {
   const chips = [
     { label: `${failedCount} failed`, state: "failed" },
     { label: `${syncingCount} syncing`, state: "syncing" },
     { label: `${syncedCount} synced`, state: "synced" },
+    { label: `${reviewedCount} reviewed`, state: "reviewed" },
     { label: `${notSyncedCount} not synced`, state: "idle" }
   ];
 
@@ -3142,6 +3148,27 @@ function clearResolvedCrmQueueState() {
   setCrmSetupStatus(clearedCount > 0
     ? `Cleared ${clearedCount} stale CRM syncing record${clearedCount === 1 ? "" : "s"}.`
     : "No stale CRM syncing records to clear.");
+}
+
+function markFailedCrmSyncsReviewed() {
+  const failedCrmLeads = getFailedCrmSyncLeads();
+
+  if (failedCrmLeads.length === 0) {
+    setCrmSetupStatus("No failed CRM syncs to mark reviewed.");
+    return;
+  }
+
+  const reviewedAt = new Date().toISOString();
+
+  failedCrmLeads.forEach((prospect) => {
+    prospect.crmSyncStatus = "Retry Reviewed";
+    appendCrmSyncNote(prospect, `${reviewedAt}: CRM retry failure reviewed; no automatic retry queued.`);
+  });
+
+  saveProspects();
+  renderProspects();
+  setCrmSetupStatus(`Marked ${failedCrmLeads.length} failed CRM sync${failedCrmLeads.length === 1 ? "" : "s"} reviewed.`);
+  setDataStatus("Reviewed CRM failures are preserved in the CRM Reviewed view.");
 }
 
 function downloadFile(filename, content, type) {
@@ -4453,6 +4480,7 @@ checkCrmSetupButton.addEventListener("click", checkCrmSetup);
 syncSelectedCrmButton.addEventListener("click", syncSelectedCrmLead);
 syncWarmCrmButton.addEventListener("click", syncWarmCrmLeads);
 retryFailedCrmButton.addEventListener("click", retryFailedCrmSyncs);
+markReviewedCrmButton.addEventListener("click", markFailedCrmSyncsReviewed);
 exportFailedCrmButton.addEventListener("click", exportFailedCrmSyncs);
 exportFailedCrmCsvButton.addEventListener("click", exportFailedCrmSyncCsv);
 clearResolvedCrmButton.addEventListener("click", clearResolvedCrmQueueState);
