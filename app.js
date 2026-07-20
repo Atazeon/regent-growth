@@ -3569,6 +3569,8 @@ function renderDailyRunHistory() {
         </select>
         <button class="secondary-button" type="button" data-action="copy-daily-history-summary">Copy summary</button>
         <button class="secondary-button" type="button" data-action="copy-stopped-daily-history">Copy stopped</button>
+        <button class="secondary-button" type="button" data-action="export-stopped-daily-history">Export stopped JSON</button>
+        <button class="secondary-button" type="button" data-action="export-stopped-daily-history-csv">Export stopped CSV</button>
         <button class="secondary-button" type="button" data-action="export-daily-history">Export visible JSON</button>
         <button class="secondary-button" type="button" data-action="export-daily-history-csv">Export visible CSV</button>
         <button class="danger-button" type="button" data-action="clear-daily-history">Clear</button>
@@ -3744,6 +3746,38 @@ async function copyStoppedDailyRunHistorySummary() {
   dailyRunHistoryStatusFilter = currentFilter;
   await navigator.clipboard.writeText(summary);
   setDataStatus(`Copied ${stoppedRuns.length} stopped Daily AI run summar${stoppedRuns.length === 1 ? "y" : "ies"}.`);
+}
+
+function getStoppedDailyRunHistory() {
+  return dailyRunHistory.filter((snapshot) => snapshot.status === "Stopped");
+}
+
+function exportStoppedDailyRunHistoryJson() {
+  const stoppedRuns = getStoppedDailyRunHistory();
+  if (stoppedRuns.length === 0) {
+    setDataStatus("No stopped Daily AI runs to export.", "error");
+    return;
+  }
+
+  const exportedAt = new Date().toISOString();
+  const stamp = exportedAt.slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-daily-ai-stopped-history-${stamp}.json`, JSON.stringify({ exportedAt, runs: stoppedRuns }, null, 2), "application/json;charset=utf-8");
+  setDataStatus(`Exported ${stoppedRuns.length} stopped Daily AI run${stoppedRuns.length === 1 ? "" : "s"} as JSON.`);
+}
+
+function exportStoppedDailyRunHistoryCsv() {
+  const stoppedRuns = getStoppedDailyRunHistory();
+  if (stoppedRuns.length === 0) {
+    setDataStatus("No stopped Daily AI runs to export.", "error");
+    return;
+  }
+
+  const headers = ["startedAt", "finishedAt", "status", "model", "limit", "generatedCount", "fetchedCount", "addedCount", "existingFilledCount", "researched", "drafted", "skipped", "failed", "error", "companies"];
+  const rows = stoppedRuns.map((snapshot) => headers.map((header) => (
+    csvCell(header === "companies" ? snapshot.companies.join("; ") : snapshot[header])
+  )).join(","));
+  downloadFile("regent-growth-daily-ai-stopped-history.csv", [headers.join(","), ...rows].join("\n"), "text/csv;charset=utf-8");
+  setDataStatus(`Exported ${stoppedRuns.length} stopped Daily AI run${stoppedRuns.length === 1 ? "" : "s"} as CSV.`);
 }
 
 function exportDailyRunHistoryCsv() {
@@ -6413,6 +6447,14 @@ dailyRunHistoryList.addEventListener("click", (event) => {
 
   if (button.dataset.action === "copy-stopped-daily-history") {
     copyStoppedDailyRunHistorySummary();
+  }
+
+  if (button.dataset.action === "export-stopped-daily-history") {
+    exportStoppedDailyRunHistoryJson();
+  }
+
+  if (button.dataset.action === "export-stopped-daily-history-csv") {
+    exportStoppedDailyRunHistoryCsv();
   }
 
   if (button.dataset.action === "export-daily-history-csv") {
