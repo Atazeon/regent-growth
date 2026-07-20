@@ -1917,6 +1917,8 @@ function renderDailyFailedReviewSection(failedProspects) {
       <div class="daily-review-actions">
         <button class="secondary-button" type="button" data-action="retry-visible-daily-failures">Retry visible</button>
         <button class="secondary-button" type="button" data-action="copy-visible-daily-failures">Copy visible</button>
+        <button class="secondary-button" type="button" data-action="export-visible-daily-failures">Export JSON</button>
+        <button class="secondary-button" type="button" data-action="export-visible-daily-failures-csv">Export CSV</button>
         <button class="secondary-button" type="button" data-action="clear-visible-daily-failures">Clear visible</button>
         <button class="secondary-button" type="button" data-action="toggle-daily-review-failures">${showDailyReviewFailures ? "Hide failures" : "Show failures"}</button>
       </div>
@@ -2011,6 +2013,47 @@ async function copyVisibleDailyAiFailures() {
   } catch {
     setDataStatus(packet);
   }
+}
+
+function getDailyAiFailureExportRecords(items = getDailyAiFailedProspects()) {
+  return items.map(({ prospect }) => ({
+    company: prospect.company,
+    website: prospect.website,
+    industry: prospect.industry,
+    decisionMaker: prospect.decisionMaker,
+    contactEmail: prospect.contactEmail,
+    stage: prospect.stage,
+    failure: getLatestDailyAiFailureNote(prospect),
+    trigger: prospect.trigger,
+    fit: prospect.fit,
+    responseNotes: prospect.responseNotes
+  }));
+}
+
+function exportVisibleDailyAiFailuresJson() {
+  const records = getDailyAiFailureExportRecords();
+  if (records.length === 0) {
+    setDataStatus("No visible Daily AI failures to export.", "error");
+    return;
+  }
+
+  const exportedAt = new Date().toISOString();
+  const stamp = exportedAt.slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-daily-ai-failures-${stamp}.json`, JSON.stringify({ exportedAt, records }, null, 2), "application/json;charset=utf-8");
+  setDataStatus(`Exported ${records.length} visible Daily AI failure${records.length === 1 ? "" : "s"} as JSON.`);
+}
+
+function exportVisibleDailyAiFailuresCsv() {
+  const records = getDailyAiFailureExportRecords();
+  if (records.length === 0) {
+    setDataStatus("No visible Daily AI failures to export.", "error");
+    return;
+  }
+
+  const headers = ["company", "website", "industry", "decisionMaker", "contactEmail", "stage", "failure", "trigger", "fit", "responseNotes"];
+  const rows = records.map((record) => headers.map((header) => csvCell(record[header])).join(","));
+  downloadFile("regent-growth-daily-ai-failures.csv", [headers.join(","), ...rows].join("\n"), "text/csv;charset=utf-8");
+  setDataStatus(`Exported ${records.length} visible Daily AI failure${records.length === 1 ? "" : "s"} as CSV.`);
 }
 
 function openDailyReviewProspect(index) {
@@ -6187,6 +6230,14 @@ dailyRunReviewQueue.addEventListener("click", (event) => {
 
   if (button.dataset.action === "copy-visible-daily-failures") {
     copyVisibleDailyAiFailures();
+  }
+
+  if (button.dataset.action === "export-visible-daily-failures") {
+    exportVisibleDailyAiFailuresJson();
+  }
+
+  if (button.dataset.action === "export-visible-daily-failures-csv") {
+    exportVisibleDailyAiFailuresCsv();
   }
 
   if (button.dataset.action === "clear-daily-ai-failure") {
