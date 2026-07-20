@@ -3175,6 +3175,16 @@ function changeCrmQueuePage(queue, direction) {
   renderProspects();
 }
 
+function resetCrmQueuePages(queue = "all") {
+  if (queue === "all" || queue === "failed") {
+    crmFailedQueuePage = 0;
+  }
+
+  if (queue === "all" || queue === "reviewed") {
+    crmReviewedQueuePage = 0;
+  }
+}
+
 function renderCrmSyncStatusChips(failedCount, syncingCount, syncedCount, reviewedCount, notSyncedCount) {
   const chips = [
     { label: `${failedCount} failed`, state: "failed" },
@@ -3260,6 +3270,7 @@ function markFailedCrmSyncsReviewed() {
     appendCrmSyncNote(prospect, `${reviewedAt}: CRM retry failure reviewed; no automatic retry queued.`);
   });
 
+  resetCrmQueuePages("all");
   saveProspects();
   renderProspects();
   setCrmSetupStatus(`Marked ${failedCrmLeads.length} failed CRM sync${failedCrmLeads.length === 1 ? "" : "s"} reviewed.`);
@@ -3281,6 +3292,7 @@ function requeueReviewedCrmSyncs() {
     appendCrmSyncNote(prospect, `${requeuedAt}: Reviewed CRM retry requeued for automatic retry.`);
   });
 
+  resetCrmQueuePages("all");
   saveProspects();
   renderProspects();
   setCrmSetupStatus(`Requeued ${reviewedCrmLeads.length} reviewed CRM sync${reviewedCrmLeads.length === 1 ? "" : "s"}.`);
@@ -3307,6 +3319,7 @@ function requeueSelectedReviewedCrmSync() {
 
   prospect.crmSyncStatus = "Sync Failed";
   appendCrmSyncNote(prospect, `${new Date().toISOString()}: Selected reviewed CRM retry requeued.`);
+  resetCrmQueuePages("all");
   saveProspects();
   renderProspects();
   setCrmSetupStatus(`${prospect.company} moved back to the CRM retry queue.`);
@@ -3648,6 +3661,7 @@ async function retryFailedCrmSyncs() {
 }
 
 function showFailedCrmSyncs() {
+  resetCrmQueuePages("failed");
   savedViews.dataset.activeView = "crm-failed";
   stageFilter.value = "all";
   responseFilter.value = "all";
@@ -3668,6 +3682,7 @@ function openFailedCrmSync(index) {
 }
 
 function showReviewedCrmSyncs() {
+  resetCrmQueuePages("reviewed");
   savedViews.dataset.activeView = "crm-reviewed";
   stageFilter.value = "all";
   responseFilter.value = "all";
@@ -3702,6 +3717,7 @@ function requeueSingleReviewedCrmSync(index) {
 
   prospect.crmSyncStatus = "Sync Failed";
   appendCrmSyncNote(prospect, `${new Date().toISOString()}: Reviewed CRM retry requeued from the retry panel.`);
+  resetCrmQueuePages("all");
   saveProspects();
   renderProspects();
   setCrmSetupStatus(`${prospect.company} moved back to the CRM retry queue.`);
