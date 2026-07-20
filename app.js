@@ -1753,14 +1753,45 @@ function renderDailyDraftReviewList(draftedProspects) {
           <div>
             <strong>${escapeHtml(prospect.company)}</strong>
             <p>${previewText(prospect.aiEmail, "No draft saved.")}</p>
+            ${renderDailyReviewSendChecklist(prospect)}
           </div>
           <div class="daily-review-actions">
             <button class="secondary-button" type="button" data-action="open-daily-review" data-index="${escapeHtml(index)}">Open</button>
-            <button class="secondary-button" type="button" data-action="send-daily-review" data-index="${escapeHtml(index)}">Send</button>
-            <button class="secondary-button" type="button" data-action="sent-daily-review" data-index="${escapeHtml(index)}">Sent</button>
+            <button class="secondary-button" type="button" data-action="send-daily-review" data-index="${escapeHtml(index)}" ${getDailyReviewSendReadiness(prospect).ready ? "" : "disabled"}>Send</button>
+            <button class="secondary-button" type="button" data-action="sent-daily-review" data-index="${escapeHtml(index)}" ${getDailyReviewSendReadiness(prospect).ready ? "" : "disabled"}>Sent</button>
             <button type="button" data-action="sequence-daily-review" data-index="${escapeHtml(index)}">Sequence</button>
           </div>
         </article>
+      `).join("")}
+    </div>
+  `;
+}
+
+function getDailyReviewSendReadiness(prospect) {
+  const draft = (prospect.aiEmail || "").trim();
+  const { subject, body } = getDraftParts(draft);
+  const recipient = getEmailRecipient(prospect).trim();
+  const checks = [
+    { label: "Contact email", ready: Boolean(recipient) && isValidEmailAddress(recipient), required: true },
+    { label: "Subject", ready: Boolean(subject), required: true },
+    { label: "Body", ready: Boolean(body), required: true },
+    { label: "Decision-maker", ready: Boolean(prospect.decisionMaker?.trim()), required: false },
+    { label: "Booking link", ready: Boolean(prospect.bookingLink?.trim()), required: false }
+  ];
+
+  return {
+    ready: checks.filter((check) => check.required).every((check) => check.ready),
+    checks
+  };
+}
+
+function renderDailyReviewSendChecklist(prospect) {
+  const readiness = getDailyReviewSendReadiness(prospect);
+
+  return `
+    <div class="daily-send-checklist" aria-label="Send readiness checklist">
+      ${readiness.checks.map((check) => `
+        <span data-state="${check.ready ? "ready" : "missing"}">${escapeHtml(check.ready ? check.label : `Missing ${check.label.toLowerCase()}`)}</span>
       `).join("")}
     </div>
   `;
@@ -1935,6 +1966,12 @@ async function copyDailyReviewPacket() {
 function sendDailyReviewProspect(index) {
   const prospect = prospects[index];
   if (!prospect) return;
+  const readiness = getDailyReviewSendReadiness(prospect);
+
+  if (!readiness.ready) {
+    setDataStatus(`Cannot send ${prospect.company} yet: complete the required send checklist.`, "error");
+    return;
+  }
 
   selectedProspectIndex = index;
   savedViews.dataset.activeView = "all";
@@ -1948,6 +1985,12 @@ function sendDailyReviewProspect(index) {
 function markDailyReviewProspectSent(index) {
   const prospect = prospects[index];
   if (!prospect) return;
+  const readiness = getDailyReviewSendReadiness(prospect);
+
+  if (!readiness.ready) {
+    setDataStatus(`Cannot mark ${prospect.company} sent yet: complete the required send checklist.`, "error");
+    return;
+  }
 
   selectedProspectIndex = index;
   savedViews.dataset.activeView = "all";

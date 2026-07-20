@@ -582,6 +582,34 @@ button:disabled {
   margin: 4px 0 0;
 }
 
+.daily-send-checklist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.daily-send-checklist span {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 4px 8px;
+}
+
+.daily-send-checklist span[data-state="ready"] {
+  background: #eef8f2;
+  border-color: #b9dcc7;
+  color: #247247;
+}
+
+.daily-send-checklist span[data-state="missing"] {
+  background: #fff6ed;
+  border-color: #f0cfaa;
+  color: #8a5a00;
+}
+
 .daily-review-actions {
   display: flex;
   flex-wrap: wrap;
