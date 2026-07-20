@@ -3939,7 +3939,10 @@ function clearVisibleDailyRunHistoryFailures() {
   }
 
   const confirmed = window.confirm(`Clear ${failedItems.length} visible Daily AI history failure${failedItems.length === 1 ? "" : "s"}? This removes the saved failure notes from matching prospects.`);
-  if (!confirmed) return;
+  if (!confirmed) {
+    setDataStatus("Daily AI history failure clear canceled.");
+    return;
+  }
 
   failedItems.forEach(({ prospect }) => clearDailyAiFailureNotes(prospect));
   saveProspects();

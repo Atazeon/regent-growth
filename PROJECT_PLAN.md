@@ -31,7 +31,7 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 
 ### Later
 
-- Daily AI run history failed retry confirmation status
+- Daily AI run history failed retry post-clear badge refresh
 
 ## Data Model Draft
 
