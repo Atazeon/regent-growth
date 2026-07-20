@@ -1965,6 +1965,7 @@ function clearDailyAiFailure(index) {
   clearDailyAiFailureNotes(prospect);
   saveProspects();
   renderProspects();
+  renderDailyRunHistory();
   setDataStatus(`Cleared Daily AI failure for ${prospect.company}.`);
 }
 
@@ -1986,6 +1987,7 @@ function clearVisibleDailyAiFailures() {
   failedProspects.forEach(({ prospect }) => clearDailyAiFailureNotes(prospect));
   saveProspects();
   renderProspects();
+  renderDailyRunHistory();
   setDataStatus(`Cleared ${failedProspects.length} visible Daily AI failure${failedProspects.length === 1 ? "" : "s"}.`);
 }
 
