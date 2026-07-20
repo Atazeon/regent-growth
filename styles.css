@@ -557,10 +557,17 @@ button:disabled {
 }
 
 .daily-history-actions div {
+  align-items: center;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   justify-content: flex-end;
+}
+
+.daily-history-action-label {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
 }
 
 .daily-history-count {
