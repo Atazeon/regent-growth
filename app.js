@@ -241,6 +241,7 @@ const dailyRunReviewQueue = document.querySelector("#dailyRunReviewQueue");
 const dailyRunCapacitySummary = document.querySelector("#dailyRunCapacitySummary");
 const dailyRunStats = document.querySelector("#dailyRunStats");
 const dailyReviewSearch = document.querySelector("#dailyReviewSearch");
+const dailyReviewReadinessFilter = document.querySelector("#dailyReviewReadinessFilter");
 const runDailyAiButton = document.querySelector("#runDailyAiButton");
 const generateDiscoveryButton = document.querySelector("#generateDiscoveryButton");
 const clearDiscoveryButton = document.querySelector("#clearDiscoveryButton");
@@ -1681,7 +1682,7 @@ function renderProspects() {
 }
 
 function getDailyRunReviewProspects() {
-  return filterDailyReviewItems(getDailyRunReviewItems());
+  return filterDailyReviewReadinessItems(filterDailyReviewItems(getDailyRunReviewItems()));
 }
 
 function getDailyRunReviewItems() {
@@ -1714,6 +1715,19 @@ function filterDailyReviewItems(items) {
     prospect.aiEmail,
     prospect.responseNotes
   ].some((value) => String(value || "").toLowerCase().includes(query)));
+}
+
+function filterDailyReviewReadinessItems(items) {
+  const filter = dailyReviewReadinessFilter.value;
+  if (filter === "ready") {
+    return items.filter(({ prospect }) => getDailyReviewSendReadiness(prospect).ready);
+  }
+
+  if (filter === "blocked") {
+    return items.filter(({ prospect }) => !getDailyReviewSendReadiness(prospect).ready);
+  }
+
+  return items;
 }
 
 function renderDailyRunReviewQueue() {
@@ -6136,6 +6150,7 @@ teamRestorePreview.addEventListener("click", (event) => {
 runDailyAiButton.addEventListener("click", runDailyAiWorkflow);
 discoveryForm.addEventListener("input", renderDailyRunCapacitySummary);
 dailyReviewSearch.addEventListener("input", renderDailyRunReviewQueue);
+dailyReviewReadinessFilter.addEventListener("change", renderDailyRunReviewQueue);
 dailyRunHistoryList.addEventListener("click", (event) => {
   const button = event.target.closest("button");
   if (!button) return;

@@ -553,8 +553,19 @@ button:disabled {
   padding: 12px;
 }
 
-.daily-review-search {
+.daily-review-filters {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(220px, 1fr) minmax(140px, 180px);
   margin-top: 14px;
+}
+
+.daily-review-filters label {
+  color: var(--muted);
+  display: grid;
+  font-size: 0.9rem;
+  font-weight: 700;
+  gap: 8px;
 }
 
 .daily-review-summary {
@@ -1648,6 +1659,7 @@ textarea {
   .response-form,
   .discovery-form,
   .daily-run-stats,
+  .daily-review-filters,
   .team-dashboard-grid,
   .crm-field-groups,
   .crm-field-row {

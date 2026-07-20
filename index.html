@@ -307,10 +307,20 @@ $env:REGENT_SEARCH_API_KEY="your_api_key"
         <div id="dailyRunHistoryList" class="daily-run-history">
           <p class="empty-state">Completed Daily AI runs will appear here.</p>
         </div>
-        <label class="daily-review-search">
-          Review search
-          <input id="dailyReviewSearch" placeholder="Search drafted emails, company, trigger, or failure">
-        </label>
+        <div class="daily-review-filters">
+          <label>
+            Review search
+            <input id="dailyReviewSearch" placeholder="Search drafted emails, company, trigger, or failure">
+          </label>
+          <label>
+            Draft status
+            <select id="dailyReviewReadinessFilter">
+              <option value="all">All drafts</option>
+              <option value="ready">Send-ready</option>
+              <option value="blocked">Blocked</option>
+            </select>
+          </label>
+        </div>
         <div id="dailyRunReviewQueue" class="daily-run-review-queue">
           <p class="empty-state">Daily AI drafted emails will appear here for review.</p>
         </div>
