@@ -3607,6 +3607,7 @@ function renderDailyRunHistory() {
     ${visibleHistory.length === 0
       ? `<p class="empty-state">No Daily AI runs match this status filter.</p>`
       : `
+        ${renderDailyRunHistoryFailureRetryGuidance(visibleHistory)}
         ${renderDailyRunHistoryVisibleLimitSummary(visibleHistory)}
         <div class="daily-run-history-items">${getVisibleDailyRunHistoryItems(visibleHistory).map(renderDailyRunHistoryItem).join("")}</div>
       `}
@@ -3647,6 +3648,17 @@ function renderDailyRunHistoryFailureRetryBadge(visibleHistory) {
   return `
     <p class="daily-history-failure-count" data-state="${retryableFailureCount > 0 ? "warning" : "clear"}">
       ${escapeHtml(retryableFailureCount)} visible retryable Daily AI failure${retryableFailureCount === 1 ? "" : "s"}
+    </p>
+  `;
+}
+
+function renderDailyRunHistoryFailureRetryGuidance(visibleHistory) {
+  const hasFailedRun = visibleHistory.some((snapshot) => ["Failed", "Completed with failures"].includes(snapshot.status));
+  if (!hasFailedRun || getVisibleDailyHistoryFailedItems(visibleHistory).length > 0) return "";
+
+  return `
+    <p class="daily-review-limit">
+      Failed run records are visible, but no matching prospects still have retryable Daily AI failure notes.
     </p>
   `;
 }
