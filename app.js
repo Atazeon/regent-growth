@@ -3582,6 +3582,7 @@ function renderDailyRunHistory() {
           ${visibleHistory.some((snapshot) => getDailyHistoryFailedProspects(snapshot).length > 0) ? `<button class="secondary-button" type="button" data-action="export-visible-daily-history-failures">Export failures JSON</button>` : ""}
           ${visibleHistory.some((snapshot) => getDailyHistoryFailedProspects(snapshot).length > 0) ? `<button class="secondary-button" type="button" data-action="export-visible-daily-history-failures-csv">Export failures CSV</button>` : ""}
           ${visibleHistory.some((snapshot) => getDailyHistoryFailedProspects(snapshot).length > 0) ? `<button class="secondary-button" type="button" data-action="retry-visible-daily-history-failures">Retry visible failures</button>` : ""}
+          ${visibleHistory.some((snapshot) => getDailyHistoryFailedProspects(snapshot).length > 0) ? `<button class="secondary-button" type="button" data-action="clear-visible-daily-history-failures">Clear visible failures</button>` : ""}
           <button class="secondary-button" type="button" data-action="toggle-compact-daily-history">${compactDailyRunHistory ? "Full history" : "Compact history"}</button>
           <button class="secondary-button" type="button" data-action="toggle-all-daily-history">${showAllDailyRunHistory ? "Show first 5" : "Show all"}</button>
           <button class="secondary-button" type="button" data-action="export-daily-history">Export visible JSON</button>
@@ -3900,6 +3901,20 @@ function exportVisibleDailyRunHistoryFailuresCsv() {
   const rows = records.map((record) => headers.map((header) => csvCell(record[header])).join(","));
   downloadFile("regent-growth-daily-ai-history-failures.csv", [headers.join(","), ...rows].join("\n"), "text/csv;charset=utf-8");
   setDataStatus(`Exported ${records.length} visible Daily AI history failure${records.length === 1 ? "" : "s"} as CSV.`);
+}
+
+function clearVisibleDailyRunHistoryFailures() {
+  const failedItems = getVisibleDailyHistoryFailedItems();
+  if (failedItems.length === 0) {
+    setDataStatus("No visible Daily AI history failures to clear.", "error");
+    return;
+  }
+
+  failedItems.forEach(({ prospect }) => clearDailyAiFailureNotes(prospect));
+  saveProspects();
+  renderProspects();
+  renderDailyRunHistory();
+  setDataStatus(`Cleared ${failedItems.length} visible Daily AI history failure${failedItems.length === 1 ? "" : "s"}.`);
 }
 
 async function retryDailyRunHistoryProspects(failedProspects, sourceLabel) {
@@ -6839,6 +6854,10 @@ dailyRunHistoryList.addEventListener("click", (event) => {
 
   if (button.dataset.action === "export-visible-daily-history-failures-csv") {
     exportVisibleDailyRunHistoryFailuresCsv();
+  }
+
+  if (button.dataset.action === "clear-visible-daily-history-failures") {
+    clearVisibleDailyRunHistoryFailures();
   }
 
   if (button.dataset.action === "requeue-stopped-daily-history") {
