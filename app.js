@@ -1916,6 +1916,7 @@ function renderDailyFailedReviewSection(failedProspects) {
       </div>
       <div class="daily-review-actions">
         <button class="secondary-button" type="button" data-action="retry-visible-daily-failures">Retry visible</button>
+        <button class="secondary-button" type="button" data-action="copy-visible-daily-failures">Copy visible</button>
         <button class="secondary-button" type="button" data-action="clear-visible-daily-failures">Clear visible</button>
         <button class="secondary-button" type="button" data-action="toggle-daily-review-failures">${showDailyReviewFailures ? "Hide failures" : "Show failures"}</button>
       </div>
@@ -1980,6 +1981,36 @@ function clearVisibleDailyAiFailures() {
   saveProspects();
   renderProspects();
   setDataStatus(`Cleared ${failedProspects.length} visible Daily AI failure${failedProspects.length === 1 ? "" : "s"}.`);
+}
+
+function formatDailyAiFailurePacket(items = getDailyAiFailedProspects()) {
+  if (items.length === 0) return "No visible Daily AI failures.";
+
+  return items.map(({ prospect }, index) => [
+    `Daily AI Failure ${index + 1}: ${prospect.company}`,
+    `Website: ${prospect.website || "Not set"}`,
+    `Industry: ${prospect.industry || "Not set"}`,
+    `Decision-maker: ${prospect.decisionMaker || "Not set"}`,
+    `Failure: ${getLatestDailyAiFailureNote(prospect) || "No failure note saved."}`,
+    `Trigger: ${prospect.trigger || "Not set"}`,
+    `Fit: ${prospect.fit || "Not set"}`
+  ].join("\n")).join("\n\n---\n\n");
+}
+
+async function copyVisibleDailyAiFailures() {
+  const failedProspects = getDailyAiFailedProspects();
+  if (failedProspects.length === 0) {
+    setDataStatus("No visible Daily AI failures to copy.", "error");
+    return;
+  }
+
+  const packet = formatDailyAiFailurePacket(failedProspects);
+  try {
+    await navigator.clipboard.writeText(packet);
+    setDataStatus(`Copied ${failedProspects.length} visible Daily AI failure${failedProspects.length === 1 ? "" : "s"}.`);
+  } catch {
+    setDataStatus(packet);
+  }
 }
 
 function openDailyReviewProspect(index) {
@@ -6152,6 +6183,10 @@ dailyRunReviewQueue.addEventListener("click", (event) => {
 
   if (button.dataset.action === "clear-visible-daily-failures") {
     clearVisibleDailyAiFailures();
+  }
+
+  if (button.dataset.action === "copy-visible-daily-failures") {
+    copyVisibleDailyAiFailures();
   }
 
   if (button.dataset.action === "clear-daily-ai-failure") {
