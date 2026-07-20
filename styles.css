@@ -557,6 +557,23 @@ button:disabled {
   margin-top: 14px;
 }
 
+.daily-review-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.daily-review-summary span {
+  background: #f9fafc;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 6px 10px;
+}
+
 .compact-heading {
   margin-bottom: 10px;
 }

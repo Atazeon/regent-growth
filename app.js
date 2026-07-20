@@ -1750,6 +1750,7 @@ function renderDailyDraftReviewList(draftedProspects) {
         <button class="secondary-button" type="button" data-action="sequence-all-daily-review">Sequence all</button>
       </div>
     </div>
+    ${renderDailyReviewBlockedSummary(draftedProspects)}
     <div class="daily-review-list">
       ${draftedProspects.slice(0, 6).map(({ prospect, index }) => `
         <article>
@@ -1767,6 +1768,38 @@ function renderDailyDraftReviewList(draftedProspects) {
           </div>
         </article>
       `).join("")}
+    </div>
+  `;
+}
+
+function getDailyReviewBlockedSummary(draftedProspects = getDailyRunReviewProspects()) {
+  return draftedProspects.reduce((summary, { prospect }) => {
+    const readiness = getDailyReviewSendReadiness(prospect);
+    if (readiness.ready) {
+      summary.ready += 1;
+    } else {
+      summary.blocked += 1;
+      readiness.checks
+        .filter((check) => check.required && !check.ready)
+        .forEach((check) => {
+          summary.missing[check.label] = (summary.missing[check.label] || 0) + 1;
+        });
+    }
+    return summary;
+  }, { ready: 0, blocked: 0, missing: {} });
+}
+
+function renderDailyReviewBlockedSummary(draftedProspects) {
+  const summary = getDailyReviewBlockedSummary(draftedProspects);
+  const missingItems = Object.entries(summary.missing);
+
+  return `
+    <div class="daily-review-summary">
+      <span>${escapeHtml(summary.ready)} ready</span>
+      <span>${escapeHtml(summary.blocked)} blocked</span>
+      ${missingItems.length === 0
+        ? `<span>No required fields missing</span>`
+        : missingItems.map(([label, count]) => `<span>${escapeHtml(count)} missing ${escapeHtml(label.toLowerCase())}</span>`).join("")}
     </div>
   `;
 }
