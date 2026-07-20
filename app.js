@@ -2642,6 +2642,41 @@ async function generateWithOllama(prompt, numPredict = 260) {
   }
 }
 
+async function preflightDailyAiModel() {
+  const model = modelSelect.value;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 12000);
+  addDailyRunLog(`Checking local AI model ${model}.`);
+
+  try {
+    const response = await fetch(ollamaEndpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model,
+        prompt: "Reply with OK only.",
+        stream: false,
+        think: false,
+        options: {
+          temperature: 0,
+          num_predict: 4
+        }
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Ollama returned ${response.status}`);
+    }
+
+    addDailyRunLog(`Local AI model ready: ${model}.`, "done");
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 async function generateCompanyBrief() {
   const prospect = getSelectedProspect();
   if (!prospect) return;
@@ -3045,6 +3080,7 @@ async function runDailyAiWorkflow() {
   try {
     resetDailyRunLog();
     addDailyRunLog(`Starting Daily AI run for up to ${limit} prospect${limit === 1 ? "" : "s"}.`);
+    await preflightDailyAiModel();
     let generatedCount = 0;
 
     if (hasDiscoveryCriteria && getDailyRunEligibleCandidates().length < limit) {
