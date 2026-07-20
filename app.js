@@ -182,6 +182,7 @@ let crmReviewedQueuePage = 0;
 let crmFailureReasonFilter = "all";
 let dailyRunHistoryStatusFilter = "all";
 let showAllDailyReviewItems = false;
+let showDailyReviewFailures = true;
 let dailyRunInProgress = false;
 let pendingTeamRestore = null;
 let teamBackupsCache = [];
@@ -1755,7 +1756,7 @@ function renderDailyRunReviewQueue() {
   dailyRunReviewQueue.innerHTML = `
     ${reviewCountLabel}
     ${renderDailyDraftReviewList(draftedProspects)}
-    ${renderDailyFailedReviewList(failedProspects)}
+    ${renderDailyFailedReviewSection(failedProspects)}
   `;
 }
 
@@ -1892,7 +1893,7 @@ function renderDailyReviewSendChecklist(prospect) {
   `;
 }
 
-function renderDailyFailedReviewList(failedProspects) {
+function renderDailyFailedReviewSection(failedProspects) {
   if (failedProspects.length === 0) return "";
 
   return `
@@ -1901,7 +1902,18 @@ function renderDailyFailedReviewList(failedProspects) {
         <p class="eyebrow">Daily AI Failures</p>
         <h3>${escapeHtml(failedProspects.length)} prospect${failedProspects.length === 1 ? "" : "s"} need retry</h3>
       </div>
+      <div class="daily-review-actions">
+        <button class="secondary-button" type="button" data-action="toggle-daily-review-failures">${showDailyReviewFailures ? "Hide failures" : "Show failures"}</button>
+      </div>
     </div>
+    ${showDailyReviewFailures ? renderDailyFailedReviewList(failedProspects) : `<p class="daily-review-limit">Daily AI failures hidden.</p>`}
+  `;
+}
+
+function renderDailyFailedReviewList(failedProspects) {
+  if (failedProspects.length === 0) return "";
+
+  return `
     ${renderDailyReviewVisibleLimitSummary(failedProspects, "failure")}
     <div class="daily-review-list">
       ${getVisibleDailyReviewItems(failedProspects).map(({ prospect, index }) => `
@@ -6024,6 +6036,11 @@ dailyRunReviewQueue.addEventListener("click", (event) => {
 
   if (button.dataset.action === "toggle-daily-review-visible") {
     showAllDailyReviewItems = !showAllDailyReviewItems;
+    renderDailyRunReviewQueue();
+  }
+
+  if (button.dataset.action === "toggle-daily-review-failures") {
+    showDailyReviewFailures = !showDailyReviewFailures;
     renderDailyRunReviewQueue();
   }
 
