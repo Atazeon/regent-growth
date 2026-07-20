@@ -1915,6 +1915,7 @@ function renderDailyFailedReviewSection(failedProspects) {
         <h3>${escapeHtml(failedProspects.length)} prospect${failedProspects.length === 1 ? "" : "s"} need retry</h3>
       </div>
       <div class="daily-review-actions">
+        <button class="secondary-button" type="button" data-action="retry-visible-daily-failures">Retry visible</button>
         <button class="secondary-button" type="button" data-action="toggle-daily-review-failures">${showDailyReviewFailures ? "Hide failures" : "Show failures"}</button>
       </div>
     </div>
@@ -2290,6 +2291,24 @@ async function retryDailyAiProspect(index) {
   await researchAndDraftDailyProspects([prospect]);
   renderProspects();
   renderDailyRunCapacitySummary();
+}
+
+async function retryVisibleDailyAiFailures() {
+  const failedProspects = getDailyAiFailedProspects().map(({ prospect }) => prospect);
+
+  if (failedProspects.length === 0) {
+    setDataStatus("No visible Daily AI failures to retry.", "error");
+    return;
+  }
+
+  runDailyAiButton.disabled = true;
+  resetDailyRunLog();
+  addDailyRunLog(`Retrying ${failedProspects.length} visible Daily AI failure${failedProspects.length === 1 ? "" : "s"}.`);
+  const results = await researchAndDraftDailyProspects(failedProspects);
+  renderProspects();
+  renderDailyRunCapacitySummary();
+  setDataStatus(`Retried ${failedProspects.length} visible Daily AI failure${failedProspects.length === 1 ? "" : "s"}: ${results.drafted} drafted, ${results.failed} failed.`);
+  addDailyRunLog(`Visible failure retry complete: ${results.researched} researched, ${results.drafted} drafted, ${results.failed} failed.`, results.failed ? "error" : "done");
 }
 
 function renderDiscoveryQueue() {
@@ -6106,6 +6125,10 @@ dailyRunReviewQueue.addEventListener("click", (event) => {
 
   if (button.dataset.action === "retry-daily-ai") {
     retryDailyAiProspect(Number(button.dataset.index));
+  }
+
+  if (button.dataset.action === "retry-visible-daily-failures") {
+    retryVisibleDailyAiFailures();
   }
 
   if (button.dataset.action === "clear-daily-ai-failure") {
