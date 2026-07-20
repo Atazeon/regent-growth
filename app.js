@@ -181,6 +181,7 @@ let crmFailedQueuePage = 0;
 let crmReviewedQueuePage = 0;
 let crmFailureReasonFilter = "all";
 let dailyRunHistoryStatusFilter = "all";
+let showAllDailyReviewItems = false;
 let dailyRunInProgress = false;
 let pendingTeamRestore = null;
 let teamBackupsCache = [];
@@ -1784,6 +1785,7 @@ function renderDailyDraftReviewList(draftedProspects) {
       <div class="daily-review-actions">
         <button class="secondary-button" type="button" data-action="copy-daily-review">Copy packet</button>
         <button class="secondary-button" type="button" data-action="copy-blocked-daily-review">Copy blocked</button>
+        <button class="secondary-button" type="button" data-action="toggle-daily-review-visible">${showAllDailyReviewItems ? "Show first 6" : "Show all"}</button>
         <button class="secondary-button" type="button" data-action="export-daily-review">Export JSON</button>
         <button class="secondary-button" type="button" data-action="export-daily-review-csv">Export CSV</button>
         <button class="secondary-button" type="button" data-action="export-blocked-daily-review">Export blocked JSON</button>
@@ -1797,7 +1799,7 @@ function renderDailyDraftReviewList(draftedProspects) {
     ${renderDailyReviewBlockedSummary(draftedProspects)}
     ${renderDailyReviewVisibleLimitSummary(draftedProspects, "draft")}
     <div class="daily-review-list">
-      ${draftedProspects.slice(0, 6).map(({ prospect, index }) => `
+      ${getVisibleDailyReviewItems(draftedProspects).map(({ prospect, index }) => `
         <article>
           <div>
             <strong>${escapeHtml(prospect.company)}</strong>
@@ -1818,10 +1820,14 @@ function renderDailyDraftReviewList(draftedProspects) {
 }
 
 function renderDailyReviewVisibleLimitSummary(items, label) {
-  const hiddenCount = Math.max(0, items.length - 6);
+  const hiddenCount = showAllDailyReviewItems ? 0 : Math.max(0, items.length - 6);
   if (hiddenCount === 0) return "";
 
   return `<p class="daily-review-limit">Showing first 6 ${escapeHtml(label)}${label.endsWith("s") ? "" : "s"}; ${escapeHtml(hiddenCount)} more match the current filters.</p>`;
+}
+
+function getVisibleDailyReviewItems(items) {
+  return showAllDailyReviewItems ? items : items.slice(0, 6);
 }
 
 function getDailyReviewBlockedSummary(draftedProspects = getDailyRunReviewProspects()) {
@@ -1898,7 +1904,7 @@ function renderDailyFailedReviewList(failedProspects) {
     </div>
     ${renderDailyReviewVisibleLimitSummary(failedProspects, "failure")}
     <div class="daily-review-list">
-      ${failedProspects.slice(0, 6).map(({ prospect, index }) => `
+      ${getVisibleDailyReviewItems(failedProspects).map(({ prospect, index }) => `
         <article>
           <div>
             <strong>${escapeHtml(prospect.company)}</strong>
@@ -6014,6 +6020,11 @@ dailyRunReviewQueue.addEventListener("click", (event) => {
 
   if (button.dataset.action === "sequence-all-daily-review") {
     sequenceAllDailyReviewProspects();
+  }
+
+  if (button.dataset.action === "toggle-daily-review-visible") {
+    showAllDailyReviewItems = !showAllDailyReviewItems;
+    renderDailyRunReviewQueue();
   }
 
   if (button.dataset.action === "sequence-ready-daily-review") {
