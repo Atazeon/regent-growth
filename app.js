@@ -6435,9 +6435,9 @@ async function retrySingleFailedCrmSync(index) {
     return;
   }
 
-  retryFailedCrmButton.disabled = true;
-  syncWarmCrmButton.disabled = true;
-  syncSelectedCrmButton.disabled = true;
+  crmSyncInProgress = true;
+  updateCrmSyncActionHints();
+  renderHandoff();
   setCrmSetupStatus(`Retrying CRM sync for ${prospect.company}...`, "working");
 
   try {
@@ -6451,9 +6451,9 @@ async function retrySingleFailedCrmSync(index) {
     renderProspects();
     setCrmSetupStatus(`CRM retry failed for ${prospect.company}: ${error.message}`, "error");
   } finally {
-    retryFailedCrmButton.disabled = getFailedCrmSyncLeads().length === 0;
-    syncWarmCrmButton.disabled = false;
-    syncSelectedCrmButton.disabled = false;
+    crmSyncInProgress = false;
+    updateCrmSyncActionHints();
+    renderHandoff();
   }
 }
 
