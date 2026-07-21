@@ -1839,6 +1839,18 @@ textarea {
   font: 0.95rem/1.5 Consolas, Monaco, monospace;
 }
 
+.checklist-heading {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-top: 22px;
+}
+
+.checklist-heading h3 {
+  margin: 0;
+}
+
 .checklist {
   display: grid;
   grid-template-columns: repeat(2, minmax(220px, 1fr));

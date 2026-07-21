@@ -323,6 +323,7 @@ const handoffOwnerInput = document.querySelector("#handoffOwnerInput");
 const handoffStatusInput = document.querySelector("#handoffStatusInput");
 const handoffDueInput = document.querySelector("#handoffDueInput");
 const handoffNotesInput = document.querySelector("#handoffNotesInput");
+const resetCrmChecklistButton = document.querySelector("#resetCrmChecklistButton");
 const aiStatus = document.querySelector("#aiStatus");
 const dataStatus = document.querySelector("#dataStatus");
 
@@ -641,6 +642,14 @@ function restoreCrmChecklistState() {
 function bindCrmChecklistState() {
   restoreCrmChecklistState();
   getCrmChecklistInputs().forEach((input) => input.addEventListener("change", saveCrmChecklistState));
+}
+
+function resetCrmChecklistState() {
+  localStorage.removeItem(crmChecklistStorageKey);
+  getCrmChecklistInputs().forEach((input) => {
+    input.checked = false;
+  });
+  setDataStatus("CRM checklist progress reset.");
 }
 
 function getProspectFieldNames() {
@@ -7825,6 +7834,7 @@ clearCrmNotesButton.addEventListener("click", cleanCrmSyncNotes);
 copyHandoffPacketButton.addEventListener("click", copySelectedHandoffPacket);
 copyCrmMappingButton.addEventListener("click", copySelectedCrmMapping);
 markCrmReadyButton.addEventListener("click", markSelectedCrmReady);
+resetCrmChecklistButton.addEventListener("click", resetCrmChecklistState);
 
 bindCrmChecklistState();
 renderPromptTemplates();
