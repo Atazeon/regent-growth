@@ -756,7 +756,8 @@ $env:REGENT_CRM_API_KEY="your_api_key"
               <button type="submit">Save handoff</button>
             </form>
           </div>
-          <textarea id="handoffPacket" readonly></textarea>
+          <label class="sr-only" for="handoffPacket">CRM handoff packet</label>
+          <textarea id="handoffPacket" aria-describedby="handoffSummary" readonly></textarea>
         </div>
         <div id="crmFieldPreview" class="crm-field-preview" role="region" aria-labelledby="crmFieldPreviewHeading">
           <h3 id="crmFieldPreviewHeading" class="sr-only">CRM field mapping preview</h3>
