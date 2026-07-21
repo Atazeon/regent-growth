@@ -31,7 +31,7 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 
 ### Later
 
-- CRM retry pagination status text
+- CRM retry empty-state counts
 
 ## Data Model Draft
 

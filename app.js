@@ -5690,11 +5690,13 @@ function renderCrmQueuePagination(queue, totalItems, page) {
   const queueLabel = queue === "reviewed" ? "reviewed CRM syncs" : "failed CRM syncs";
   const previousLabel = `Previous page of ${queueLabel}`;
   const nextLabel = `Next page of ${queueLabel}`;
+  const firstItem = page * crmQueuePageSize + 1;
+  const lastItem = Math.min(totalItems, firstItem + crmQueuePageSize - 1);
 
   return `
     <div class="crm-queue-pagination">
       <button class="secondary-button" type="button" data-action="crm-page" data-queue="${escapeHtml(queue)}" data-direction="-1" title="${escapeHtml(previousLabel)}" aria-label="${escapeHtml(previousLabel)}" ${page === 0 ? "disabled" : ""}>Previous</button>
-      <span>Page ${escapeHtml(page + 1)} of ${escapeHtml(totalPages)}</span>
+      <span>Page ${escapeHtml(page + 1)} of ${escapeHtml(totalPages)} - Showing ${escapeHtml(firstItem)}-${escapeHtml(lastItem)} of ${escapeHtml(totalItems)}</span>
       <button class="secondary-button" type="button" data-action="crm-page" data-queue="${escapeHtml(queue)}" data-direction="1" title="${escapeHtml(nextLabel)}" aria-label="${escapeHtml(nextLabel)}" ${page >= totalPages - 1 ? "disabled" : ""}>Next</button>
     </div>
   `;
