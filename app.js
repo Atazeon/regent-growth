@@ -5435,6 +5435,7 @@ function renderCrmFieldMappingPreview(prospect) {
         return `
         <section role="region" aria-labelledby="${escapeHtml(groupId)}">
           <h4 id="${escapeHtml(groupId)}">${escapeHtml(group.label)}</h4>
+          <div class="crm-field-row-list" role="list" aria-label="${escapeHtml(group.label)} CRM fields">
           ${group.fields.map(({ field, value }) => {
             const formattedValue = formatCrmPreviewValue(value);
             return `
@@ -5444,6 +5445,7 @@ function renderCrmFieldMappingPreview(prospect) {
             </div>
           `;
           }).join("")}
+          </div>
         </section>
       `;
       }).join("")}
