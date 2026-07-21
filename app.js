@@ -303,6 +303,7 @@ const exportReviewedCrmCsvButton = document.querySelector("#exportReviewedCrmCsv
 const copyCrmStatusSummaryButton = document.querySelector("#copyCrmStatusSummaryButton");
 const downloadCrmStatusSummaryButton = document.querySelector("#downloadCrmStatusSummaryButton");
 const downloadCrmStatusJsonButton = document.querySelector("#downloadCrmStatusJsonButton");
+const copyCrmStatusJsonButton = document.querySelector("#copyCrmStatusJsonButton");
 const clearResolvedCrmButton = document.querySelector("#clearResolvedCrmButton");
 const clearCrmNotesButton = document.querySelector("#clearCrmNotesButton");
 const crmSetupStatus = document.querySelector("#crmSetupStatus");
@@ -6036,6 +6037,11 @@ function downloadCrmStatusJson() {
   setCrmSetupStatus("Downloaded CRM sync summary JSON.");
 }
 
+async function copyCrmStatusJson() {
+  const copiedDirectly = await copyTextWithFallback(JSON.stringify(getCrmStatusSummaryRecord(), null, 2));
+  setCrmSetupStatus(copiedDirectly ? "CRM sync summary JSON copied." : "CRM sync summary JSON selected and copied.");
+}
+
 function setCrmSetupStatus(message, state = "") {
   crmSetupStatus.textContent = message;
   crmSetupStatus.dataset.state = state;
@@ -7654,6 +7660,7 @@ exportReviewedCrmCsvButton.addEventListener("click", exportReviewedCrmSyncCsv);
 copyCrmStatusSummaryButton.addEventListener("click", copyCrmStatusSummary);
 downloadCrmStatusSummaryButton.addEventListener("click", downloadCrmStatusSummary);
 downloadCrmStatusJsonButton.addEventListener("click", downloadCrmStatusJson);
+copyCrmStatusJsonButton.addEventListener("click", copyCrmStatusJson);
 clearResolvedCrmButton.addEventListener("click", clearResolvedCrmQueueState);
 clearCrmNotesButton.addEventListener("click", cleanCrmSyncNotes);
 copyHandoffPacketButton.addEventListener("click", copySelectedHandoffPacket);
