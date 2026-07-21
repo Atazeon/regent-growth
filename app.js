@@ -3402,7 +3402,7 @@ async function generateCompanyBrief() {
   const prospect = getSelectedProspect();
   if (!prospect) return;
 
-  generateBriefButton.disabled = true;
+  setResearchControlsDisabled(true);
   try {
     prospect.aiBrief = await generateWithOllama(renderTemplate(promptTemplates.brief, prospect), 220);
     researchPrompt.value = prospect.aiBrief;
@@ -3414,8 +3414,17 @@ async function generateCompanyBrief() {
       : "Local AI error: make sure Ollama is running and the model is installed.";
     setAiStatus(message, "error");
   } finally {
-    generateBriefButton.disabled = false;
+    setResearchControlsDisabled(false);
   }
+}
+
+function setResearchControlsDisabled(disabled) {
+  researchAccountButton.disabled = disabled;
+  searchProspectSourcesButton.disabled = disabled;
+  fetchProspectSourceButton.disabled = disabled;
+  generateBriefButton.disabled = disabled;
+  copyResearchBriefButton.disabled = disabled;
+  clearResearchBriefButton.disabled = disabled;
 }
 
 async function fetchSelectedProspectSource() {
@@ -3428,7 +3437,7 @@ async function fetchSelectedProspectSource() {
     return;
   }
 
-  fetchProspectSourceButton.disabled = true;
+  setResearchControlsDisabled(true);
   setDataStatus(`Fetching website evidence for ${prospect.company}...`, "working");
 
   try {
@@ -3453,7 +3462,7 @@ async function fetchSelectedProspectSource() {
       : `Source fetch error: ${error.message}`;
     setDataStatus(message, "error");
   } finally {
-    fetchProspectSourceButton.disabled = false;
+    setResearchControlsDisabled(false);
   }
 }
 
@@ -3461,7 +3470,7 @@ async function searchSelectedProspectSources() {
   const prospect = getSelectedProspect();
   if (!prospect) return;
 
-  searchProspectSourcesButton.disabled = true;
+  setResearchControlsDisabled(true);
   setDataStatus(`Searching sources for ${prospect.company}...`, "working");
 
   try {
@@ -3501,7 +3510,7 @@ async function searchSelectedProspectSources() {
       : `Source search error: ${error.message}`;
     setDataStatus(message, "error");
   } finally {
-    searchProspectSourcesButton.disabled = false;
+    setResearchControlsDisabled(false);
   }
 }
 
@@ -3509,10 +3518,7 @@ async function researchSelectedAccount() {
   const prospect = getSelectedProspect();
   if (!prospect) return;
 
-  researchAccountButton.disabled = true;
-  searchProspectSourcesButton.disabled = true;
-  fetchProspectSourceButton.disabled = true;
-  generateBriefButton.disabled = true;
+  setResearchControlsDisabled(true);
   try {
     const rawResearch = await generateWithOllama(buildResearchAgentPrompt(prospect), 420);
     const research = parseJsonFromText(rawResearch);
@@ -3527,10 +3533,7 @@ async function researchSelectedAccount() {
       : "Local AI research error: make sure Ollama is running and the model returned valid JSON.";
     setAiStatus(message, "error");
   } finally {
-    researchAccountButton.disabled = false;
-    searchProspectSourcesButton.disabled = false;
-    fetchProspectSourceButton.disabled = false;
-    generateBriefButton.disabled = false;
+    setResearchControlsDisabled(false);
   }
 }
 
@@ -4634,7 +4637,7 @@ async function runDailyAiWorkflow() {
   runDailyAiButton.disabled = true;
   stopDailyAiButton.disabled = false;
   generateDiscoveryButton.disabled = true;
-  researchAccountButton.disabled = true;
+  setResearchControlsDisabled(true);
   generateEmailButton.disabled = true;
 
   try {
@@ -4696,7 +4699,7 @@ async function runDailyAiWorkflow() {
     dailyRunStopRequested = false;
     renderDailyRunCapacitySummary();
     generateDiscoveryButton.disabled = false;
-    researchAccountButton.disabled = false;
+    setResearchControlsDisabled(false);
     generateEmailButton.disabled = false;
   }
 }

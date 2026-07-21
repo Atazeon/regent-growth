@@ -12,7 +12,7 @@ const checks = [
   ["source endpoint reuse", app.includes("await fetchEvidenceForCandidate(evidenceTarget);")],
   ["brief evidence append", app.includes("Website evidence\\n${evidenceTarget.sourceNotes}")],
   ["response note audit", app.includes("Website evidence fetched from ${url}.")],
-  ["research lockout", app.includes("fetchProspectSourceButton.disabled = true;")],
+  ["research lockout", app.includes("setResearchControlsDisabled(true);")],
   ["click listener", app.includes('fetchProspectSourceButton.addEventListener("click", fetchSelectedProspectSource);')]
 ];
 

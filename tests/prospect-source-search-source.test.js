@@ -13,7 +13,7 @@ const checks = [
   ["search endpoint reuse", app.includes("const response = await fetch(sourceSearchEndpoint")],
   ["source evidence label", app.includes("Source search evidence\\n${formatSearchEvidence(result)}")],
   ["result count status", app.includes("source result${result.results.length === 1 ? \"\" : \"s\"}")],
-  ["research lockout", app.includes("searchProspectSourcesButton.disabled = true;")],
+  ["research lockout", app.includes("setResearchControlsDisabled(true);")],
   ["click listener", app.includes('searchProspectSourcesButton.addEventListener("click", searchSelectedProspectSources);')]
 ];
 
