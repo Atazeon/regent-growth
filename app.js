@@ -712,14 +712,16 @@ function getCrmChecklistSummaryRecord() {
     label: input.parentElement.textContent.trim(),
     completed: input.checked
   }));
+  const completedCount = items.filter((item) => item.completed).length;
+  const complete = items.length > 0 && completedCount === items.length;
 
   return {
     exportedAt: new Date().toISOString(),
     completedAt: loadCrmChecklistState().__completedAt || "",
-    completedCount: items.filter((item) => item.completed).length,
+    completedCount,
     totalCount: items.length,
-    completionPercent: items.length ? Math.round((items.filter((item) => item.completed).length / items.length) * 100) : 0,
-    complete: items.length > 0 && items.every((item) => item.completed),
+    completionPercent: items.length ? Math.round((completedCount / items.length) * 100) : 0,
+    complete,
     items
   };
 }

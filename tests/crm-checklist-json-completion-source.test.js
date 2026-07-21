@@ -5,9 +5,9 @@ const root = path.resolve(__dirname, "..");
 const app = fs.readFileSync(path.join(root, "app.js"), "utf8");
 
 const checks = [
-  ["json completion percent exists", app.includes("completionPercent: items.length ? Math.round((items.filter((item) => item.completed).length / items.length) * 100) : 0,")],
-  ["json complete boolean exists", app.includes("complete: items.length > 0 && items.every((item) => item.completed),")],
-  ["json completed count retained", app.includes("completedCount: items.filter((item) => item.completed).length,")],
+  ["json completion percent exists", app.includes("completionPercent: items.length ? Math.round((completedCount / items.length) * 100) : 0,")],
+  ["json complete boolean exists", app.includes("complete,\n    items")],
+  ["json completed count retained", app.includes("completedCount,\n    totalCount: items.length,")],
   ["json total count retained", app.includes("totalCount: items.length,")]
 ];
 
