@@ -14,7 +14,10 @@ const checks = [
   ["summary includes active", app.includes("${totalHandoffs} active")],
   ["summary includes overdue", app.includes("${overdueHandoffs} overdue")],
   ["summary includes blocked", app.includes("${blockedHandoffs} blocked")],
-  ["summary includes accepted", app.includes("${acceptedHandoffs} accepted")]
+  ["summary includes accepted", app.includes("${acceptedHandoffs} accepted")],
+  ["empty workload guidance", app.includes("No assigned handoffs yet. Mark a warm lead CRM ready, then assign an owner.")],
+  ["owner row overdue", app.includes("${escapeHtml(workload.overdue)} overdue")],
+  ["owner row due today", app.includes("${escapeHtml(workload.due)} due today")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
