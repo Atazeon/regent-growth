@@ -3995,7 +3995,7 @@ async function retryDailyRunHistoryProspects(failedProspects, sourceLabel) {
     retrySnapshot.failed = results.failed;
     retrySnapshot.status = results.failed ? "Completed with failures" : "Completed";
     recordDailyRunHistory(retrySnapshot);
-    setDataStatus(`${sourceLabel} retry complete: ${results.researched} researched, ${results.drafted} drafted, ${results.failed} failed.`);
+    setDataStatus(`${sourceLabel} retry complete: ${failedProspects.length} attempted, ${results.researched} researched, ${results.drafted} drafted, ${results.failed} failed.`);
     addDailyRunLog(`History retry complete: ${results.researched} researched, ${results.drafted} drafted, ${results.failed} failed.`, results.failed ? "error" : "done");
   } catch (error) {
     retrySnapshot.status = "Failed";
