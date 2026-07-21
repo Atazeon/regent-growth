@@ -282,6 +282,7 @@ const openMailClientButton = document.querySelector("#openMailClientButton");
 const openGmailButton = document.querySelector("#openGmailButton");
 const openOutlookButton = document.querySelector("#openOutlookButton");
 const copyEmailDraftButton = document.querySelector("#copyEmailDraftButton");
+const exportEmailDraftButton = document.querySelector("#exportEmailDraftButton");
 const markEmailSentButton = document.querySelector("#markEmailSentButton");
 const emailSendSummary = document.querySelector("#emailSendSummary");
 const exportWarmCsvButton = document.querySelector("#exportWarmCsvButton");
@@ -4914,6 +4915,39 @@ async function copyEmailDraft() {
     : `Email draft selected and copied for ${prospect.company}.`);
 }
 
+function getEmailDraftExportText(prospect, draft) {
+  const { subject, body } = getDraftParts(draft);
+  return [
+    "Regent Growth email draft",
+    `Exported: ${new Date().toISOString()}`,
+    `Company: ${prospect.company}`,
+    `Recipient: ${getEmailRecipient(prospect) || "Not set"}`,
+    `Subject: ${subject}`,
+    "",
+    body
+  ].join("\n");
+}
+
+function getEmailDraftFilename(prospect) {
+  const slug = normalizeCompanyName(prospect.company || "prospect").replace(/\s+/g, "-") || "prospect";
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  return `regent-growth-${slug}-email-${stamp}.txt`;
+}
+
+function exportEmailDraft() {
+  const prospect = saveCurrentEmailDraft();
+  if (!prospect) return;
+
+  const draft = emailDraft.value.trim();
+  if (!draft) {
+    setDataStatus(`No email draft to export for ${prospect.company}.`, "error");
+    return;
+  }
+
+  downloadFile(getEmailDraftFilename(prospect), getEmailDraftExportText(prospect, draft), "text/plain;charset=utf-8");
+  setDataStatus(`Email draft exported for ${prospect.company}.`);
+}
+
 function saveCurrentResearchBrief() {
   const prospect = getSelectedProspect();
   if (!prospect) return null;
@@ -7432,6 +7466,7 @@ openMailClientButton.addEventListener("click", () => openEmailHandoff("mailto"))
 openGmailButton.addEventListener("click", () => openEmailHandoff("gmail"));
 openOutlookButton.addEventListener("click", () => openEmailHandoff("outlook"));
 copyEmailDraftButton.addEventListener("click", copyEmailDraft);
+exportEmailDraftButton.addEventListener("click", exportEmailDraft);
 markEmailSentButton.addEventListener("click", markEmailSent);
 exportWarmCsvButton.addEventListener("click", exportWarmLeadCsv);
 exportWarmJsonButton.addEventListener("click", exportWarmLeadJson);
