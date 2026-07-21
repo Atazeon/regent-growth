@@ -31,7 +31,7 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 
 ### Later
 
-- Prospect research JSON copy
+- Clipboard helper reuse
 
 ## Data Model Draft
 

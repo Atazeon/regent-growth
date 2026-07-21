@@ -274,6 +274,7 @@ const generateBriefButton = document.querySelector("#generateBriefButton");
 const copyResearchBriefButton = document.querySelector("#copyResearchBriefButton");
 const exportResearchBriefButton = document.querySelector("#exportResearchBriefButton");
 const exportResearchJsonButton = document.querySelector("#exportResearchJsonButton");
+const copyResearchJsonButton = document.querySelector("#copyResearchJsonButton");
 const clearResearchBriefButton = document.querySelector("#clearResearchBriefButton");
 const generateEmailButton = document.querySelector("#generateEmailButton");
 const saveEmailDraftButton = document.querySelector("#saveEmailDraftButton");
@@ -3444,6 +3445,7 @@ function setResearchControlsDisabled(disabled) {
   copyResearchBriefButton.disabled = disabled;
   exportResearchBriefButton.disabled = disabled;
   exportResearchJsonButton.disabled = disabled;
+  copyResearchJsonButton.disabled = disabled;
   clearResearchBriefButton.disabled = disabled;
 }
 
@@ -4982,6 +4984,24 @@ function getProspectResearchExportRecord(prospect) {
   };
 }
 
+async function copyTextWithFallback(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    const fallback = document.createElement("textarea");
+    fallback.value = text;
+    fallback.setAttribute("readonly", "");
+    fallback.style.position = "fixed";
+    fallback.style.left = "-9999px";
+    document.body.appendChild(fallback);
+    fallback.select();
+    document.execCommand("copy");
+    fallback.remove();
+    return false;
+  }
+}
+
 function exportResearchBrief() {
   const prospect = saveCurrentResearchBrief();
   if (!prospect) return;
@@ -5007,6 +5027,21 @@ function exportResearchJson() {
   const filename = getProspectResearchFilename(prospect).replace(/\.txt$/, ".json");
   downloadFile(filename, JSON.stringify(getProspectResearchExportRecord(prospect), null, 2), "application/json;charset=utf-8");
   setDataStatus(`Research JSON exported for ${prospect.company}.`);
+}
+
+async function copyResearchJson() {
+  const prospect = saveCurrentResearchBrief();
+  if (!prospect) return;
+
+  if (!prospect.aiBrief) {
+    setDataStatus(`No research brief to copy as JSON for ${prospect.company}.`, "error");
+    return;
+  }
+
+  const copiedDirectly = await copyTextWithFallback(JSON.stringify(getProspectResearchExportRecord(prospect), null, 2));
+  setDataStatus(copiedDirectly
+    ? `Research JSON copied for ${prospect.company}.`
+    : `Research JSON selected and copied for ${prospect.company}.`);
 }
 
 function clearResearchBrief() {
@@ -7390,6 +7425,7 @@ generateBriefButton.addEventListener("click", generateCompanyBrief);
 copyResearchBriefButton.addEventListener("click", copyResearchBrief);
 exportResearchBriefButton.addEventListener("click", exportResearchBrief);
 exportResearchJsonButton.addEventListener("click", exportResearchJson);
+copyResearchJsonButton.addEventListener("click", copyResearchJson);
 clearResearchBriefButton.addEventListener("click", clearResearchBrief);
 generateEmailButton.addEventListener("click", generatePersonalizedEmail);
 saveEmailDraftButton.addEventListener("click", saveCurrentEmailDraft);
