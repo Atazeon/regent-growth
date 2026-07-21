@@ -270,6 +270,7 @@ const researchAccountButton = document.querySelector("#researchAccountButton");
 const searchProspectSourcesButton = document.querySelector("#searchProspectSourcesButton");
 const fetchProspectSourceButton = document.querySelector("#fetchProspectSourceButton");
 const generateBriefButton = document.querySelector("#generateBriefButton");
+const copyResearchBriefButton = document.querySelector("#copyResearchBriefButton");
 const generateEmailButton = document.querySelector("#generateEmailButton");
 const saveEmailDraftButton = document.querySelector("#saveEmailDraftButton");
 const openMailClientButton = document.querySelector("#openMailClientButton");
@@ -4840,6 +4841,35 @@ async function copyEmailDraft() {
   }
 }
 
+function saveCurrentResearchBrief() {
+  const prospect = getSelectedProspect();
+  if (!prospect) return null;
+
+  prospect.aiBrief = researchPrompt.value.trim();
+  saveProspects();
+  renderSelectedDetail();
+  return prospect;
+}
+
+async function copyResearchBrief() {
+  const prospect = saveCurrentResearchBrief();
+  if (!prospect) return;
+
+  if (!prospect.aiBrief) {
+    setDataStatus(`No research brief to copy for ${prospect.company}.`, "error");
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(prospect.aiBrief);
+    setDataStatus(`Research brief copied for ${prospect.company}.`);
+  } catch {
+    researchPrompt.select();
+    document.execCommand("copy");
+    setDataStatus(`Research brief selected for ${prospect.company}.`);
+  }
+}
+
 function markEmailSent() {
   const prospect = saveCurrentEmailDraft();
   if (!prospect) return;
@@ -7195,6 +7225,7 @@ researchAccountButton.addEventListener("click", researchSelectedAccount);
 searchProspectSourcesButton.addEventListener("click", searchSelectedProspectSources);
 fetchProspectSourceButton.addEventListener("click", fetchSelectedProspectSource);
 generateBriefButton.addEventListener("click", generateCompanyBrief);
+copyResearchBriefButton.addEventListener("click", copyResearchBrief);
 generateEmailButton.addEventListener("click", generatePersonalizedEmail);
 saveEmailDraftButton.addEventListener("click", saveCurrentEmailDraft);
 emailDraft.addEventListener("input", () => renderEmailSendStatus());
