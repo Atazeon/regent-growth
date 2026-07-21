@@ -2805,7 +2805,7 @@ function renderReminders() {
     .sort((first, second) => first.days - second.days);
 
   const sequenceCount = reminders.filter(({ prospect }) => prospect.stage === "Sequence").length;
-  reminderCount.textContent = `${reminders.length} scheduled | ${sequenceCount} sequence`;
+  reminderCount.textContent = `${reminders.length} scheduled | ${sequenceCount} sequence task${sequenceCount === 1 ? "" : "s"}`;
 
   if (reminders.length === 0) {
     reminderList.innerHTML = `<p class="empty-state">No follow-up reminders scheduled yet. Add a next touch date on any prospect to place it here.</p>`;
