@@ -15,7 +15,7 @@ const checks = [
   ["record includes availability", app.includes("available: items.length > 0,")],
   ["record includes items", app.includes("items\n  };")],
   ["json download exists", app.includes("function downloadCrmChecklistJson()")],
-  ["json download uses record", app.includes('JSON.stringify(getCrmChecklistSummaryRecord(), null, 2)')],
+  ["json download uses record", app.includes('downloadFile(getCrmChecklistExportFilename(getCrmChecklistExportStamp(), "json"), JSON.stringify(getCrmChecklistSummaryRecord(), null, 2), "application/json;charset=utf-8");')],
   ["json listener exists", app.includes('downloadCrmChecklistJsonButton.addEventListener("click", downloadCrmChecklistJson);')]
 ];
 

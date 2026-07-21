@@ -741,15 +741,21 @@ async function copyCrmChecklistSummary() {
   setDataStatus(copiedDirectly ? "CRM checklist summary copied." : "CRM checklist summary selected and copied.");
 }
 
+function getCrmChecklistExportStamp() {
+  return new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+}
+
+function getCrmChecklistExportFilename(stamp, extension) {
+  return `regent-growth-crm-checklist-${stamp}.${extension}`;
+}
+
 function downloadCrmChecklistSummary() {
-  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
-  downloadFile(`regent-growth-crm-checklist-${stamp}.txt`, formatCrmChecklistSummary(), "text/plain;charset=utf-8");
+  downloadFile(getCrmChecklistExportFilename(getCrmChecklistExportStamp(), "txt"), formatCrmChecklistSummary(), "text/plain;charset=utf-8");
   setDataStatus("CRM checklist summary downloaded.");
 }
 
 function downloadCrmChecklistJson() {
-  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
-  downloadFile(`regent-growth-crm-checklist-${stamp}.json`, JSON.stringify(getCrmChecklistSummaryRecord(), null, 2), "application/json;charset=utf-8");
+  downloadFile(getCrmChecklistExportFilename(getCrmChecklistExportStamp(), "json"), JSON.stringify(getCrmChecklistSummaryRecord(), null, 2), "application/json;charset=utf-8");
   setDataStatus("CRM checklist JSON downloaded.");
 }
 
