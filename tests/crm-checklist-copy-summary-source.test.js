@@ -11,6 +11,7 @@ const checks = [
   ["summary formatter exists", app.includes("function formatCrmChecklistSummary()")],
   ["summary includes checked markers", app.includes('${input.checked ? "[x]" : "[ ]"} ${input.parentElement.textContent.trim()}')],
   ["copy helper used", app.includes("await copyTextWithFallback(formatCrmChecklistSummary());")],
+  ["copy status uses helper", app.includes('getCrmChecklistActionStatus("Copied")')],
   ["copy listener exists", app.includes('copyCrmChecklistButton.addEventListener("click", copyCrmChecklistSummary);')]
 ];
 

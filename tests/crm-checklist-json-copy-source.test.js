@@ -11,7 +11,7 @@ const checks = [
   ["copy json function exists", app.includes("async function copyCrmChecklistJson()")],
   ["copy json uses record", app.includes("await copyTextWithFallback(JSON.stringify(getCrmChecklistSummaryRecord(), null, 2));")],
   ["copy json listener exists", app.includes('copyCrmChecklistJsonButton.addEventListener("click", copyCrmChecklistJson);')],
-  ["copy json status exists", app.includes('"CRM checklist JSON copied."')]
+  ["copy json status exists", app.includes('getCrmChecklistActionStatus("Copied JSON")')]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);

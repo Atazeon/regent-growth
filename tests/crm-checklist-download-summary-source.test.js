@@ -11,6 +11,7 @@ const checks = [
   ["download function exists", app.includes("function downloadCrmChecklistSummary()")],
   ["download filename exists", app.includes("function getCrmChecklistExportFilename(stamp, extension)")],
   ["download uses formatter", app.includes('downloadFile(getCrmChecklistExportFilename(getCrmChecklistExportStamp(), "txt"), formatCrmChecklistSummary(), "text/plain;charset=utf-8");')],
+  ["download status uses helper", app.includes('setDataStatus(getCrmChecklistActionStatus("Downloaded"));')],
   ["download listener exists", app.includes('downloadCrmChecklistButton.addEventListener("click", downloadCrmChecklistSummary);')]
 ];
 

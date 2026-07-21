@@ -738,7 +738,7 @@ function getCrmChecklistSummaryRecord() {
 
 async function copyCrmChecklistSummary() {
   const copiedDirectly = await copyTextWithFallback(formatCrmChecklistSummary());
-  setDataStatus(copiedDirectly ? "CRM checklist summary copied." : "CRM checklist summary selected and copied.");
+  setDataStatus(copiedDirectly ? getCrmChecklistActionStatus("Copied") : getCrmChecklistActionStatus("Selected and copied"));
 }
 
 function getCrmChecklistExportStamp() {
@@ -749,19 +749,24 @@ function getCrmChecklistExportFilename(stamp, extension) {
   return `regent-growth-crm-checklist-${stamp}.${extension}`;
 }
 
+function getCrmChecklistActionStatus(action) {
+  const { completedCount, totalCount, completionPercent } = getCrmChecklistSummaryRecord();
+  return `${action} CRM checklist (${completedCount}/${totalCount}, ${completionPercent}%).`;
+}
+
 function downloadCrmChecklistSummary() {
   downloadFile(getCrmChecklistExportFilename(getCrmChecklistExportStamp(), "txt"), formatCrmChecklistSummary(), "text/plain;charset=utf-8");
-  setDataStatus("CRM checklist summary downloaded.");
+  setDataStatus(getCrmChecklistActionStatus("Downloaded"));
 }
 
 function downloadCrmChecklistJson() {
   downloadFile(getCrmChecklistExportFilename(getCrmChecklistExportStamp(), "json"), JSON.stringify(getCrmChecklistSummaryRecord(), null, 2), "application/json;charset=utf-8");
-  setDataStatus("CRM checklist JSON downloaded.");
+  setDataStatus(getCrmChecklistActionStatus("Downloaded JSON"));
 }
 
 async function copyCrmChecklistJson() {
   const copiedDirectly = await copyTextWithFallback(JSON.stringify(getCrmChecklistSummaryRecord(), null, 2));
-  setDataStatus(copiedDirectly ? "CRM checklist JSON copied." : "CRM checklist JSON selected and copied.");
+  setDataStatus(copiedDirectly ? getCrmChecklistActionStatus("Copied JSON") : getCrmChecklistActionStatus("Selected and copied JSON"));
 }
 
 function getProspectFieldNames() {
