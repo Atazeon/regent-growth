@@ -906,6 +906,16 @@ button:disabled {
   background: #f9fafc;
 }
 
+.setup-action-group-primary {
+  border-color: #2f6f94;
+  background: #f4fbfd;
+}
+
+.setup-action-group-maintenance {
+  border-color: #d7b98b;
+  background: #fffaf2;
+}
+
 .setup-actions > button,
 .setup-action-group button {
   flex: 1 1 150px;
