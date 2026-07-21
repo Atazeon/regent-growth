@@ -272,6 +272,7 @@ const searchProspectSourcesButton = document.querySelector("#searchProspectSourc
 const fetchProspectSourceButton = document.querySelector("#fetchProspectSourceButton");
 const generateBriefButton = document.querySelector("#generateBriefButton");
 const copyResearchBriefButton = document.querySelector("#copyResearchBriefButton");
+const exportResearchBriefButton = document.querySelector("#exportResearchBriefButton");
 const clearResearchBriefButton = document.querySelector("#clearResearchBriefButton");
 const generateEmailButton = document.querySelector("#generateEmailButton");
 const saveEmailDraftButton = document.querySelector("#saveEmailDraftButton");
@@ -3440,6 +3441,7 @@ function setResearchControlsDisabled(disabled) {
   fetchProspectSourceButton.disabled = disabled;
   generateBriefButton.disabled = disabled;
   copyResearchBriefButton.disabled = disabled;
+  exportResearchBriefButton.disabled = disabled;
   clearResearchBriefButton.disabled = disabled;
 }
 
@@ -4933,6 +4935,44 @@ async function copyResearchBrief() {
     document.execCommand("copy");
     setDataStatus(`Research brief selected for ${prospect.company}.`);
   }
+}
+
+function getProspectResearchExportText(prospect) {
+  const leadScore = getLeadScoreSummary(prospect);
+  return [
+    "Regent Growth prospect research",
+    `Exported: ${new Date().toISOString()}`,
+    `Company: ${prospect.company}`,
+    `Website: ${prospect.website || "Not set"}`,
+    `Industry: ${prospect.industry || "Not set"}`,
+    `Decision-maker: ${prospect.decisionMaker || "Unknown"}`,
+    `Stage: ${prospect.stage}`,
+    `Lead score: ${leadScore.score} (${leadScore.tier})`,
+    `Buying trigger: ${prospect.trigger || "Not set"}`,
+    `Fit reason: ${prospect.fit || "Not set"}`,
+    "",
+    "Research brief",
+    prospect.aiBrief
+  ].join("\n");
+}
+
+function getProspectResearchFilename(prospect) {
+  const slug = normalizeCompanyName(prospect.company || "prospect").replace(/\s+/g, "-") || "prospect";
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  return `regent-growth-${slug}-research-${stamp}.txt`;
+}
+
+function exportResearchBrief() {
+  const prospect = saveCurrentResearchBrief();
+  if (!prospect) return;
+
+  if (!prospect.aiBrief) {
+    setDataStatus(`No research brief to export for ${prospect.company}.`, "error");
+    return;
+  }
+
+  downloadFile(getProspectResearchFilename(prospect), getProspectResearchExportText(prospect), "text/plain;charset=utf-8");
+  setDataStatus(`Research brief exported for ${prospect.company}.`);
 }
 
 function clearResearchBrief() {
@@ -7314,6 +7354,7 @@ searchProspectSourcesButton.addEventListener("click", searchSelectedProspectSour
 fetchProspectSourceButton.addEventListener("click", fetchSelectedProspectSource);
 generateBriefButton.addEventListener("click", generateCompanyBrief);
 copyResearchBriefButton.addEventListener("click", copyResearchBrief);
+exportResearchBriefButton.addEventListener("click", exportResearchBrief);
 clearResearchBriefButton.addEventListener("click", clearResearchBrief);
 generateEmailButton.addEventListener("click", generatePersonalizedEmail);
 saveEmailDraftButton.addEventListener("click", saveCurrentEmailDraft);
