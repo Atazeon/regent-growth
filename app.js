@@ -2806,7 +2806,7 @@ function renderReminders() {
 
   const sequenceCount = reminders.filter(({ prospect }) => prospect.stage === "Sequence").length;
   const dueCount = reminders.filter(({ days }) => days <= 0).length;
-  reminderCount.textContent = `${reminders.length} scheduled | ${dueCount} due | ${sequenceCount} sequence task${sequenceCount === 1 ? "" : "s"}`;
+  reminderCount.textContent = `${reminders.length} scheduled | ${dueCount} due task${dueCount === 1 ? "" : "s"} | ${sequenceCount} sequence task${sequenceCount === 1 ? "" : "s"}`;
 
   if (reminders.length === 0) {
     reminderList.innerHTML = `<p class="empty-state">No follow-up reminders scheduled yet. Add a next touch date on any prospect to place it here.</p>`;
