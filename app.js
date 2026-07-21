@@ -267,6 +267,7 @@ const exportButton = document.querySelector("#exportButton");
 const resetButton = document.querySelector("#resetButton");
 const modelSelect = document.querySelector("#modelSelect");
 const researchAccountButton = document.querySelector("#researchAccountButton");
+const checkResearchSourcesButton = document.querySelector("#checkResearchSourcesButton");
 const searchProspectSourcesButton = document.querySelector("#searchProspectSourcesButton");
 const fetchProspectSourceButton = document.querySelector("#fetchProspectSourceButton");
 const generateBriefButton = document.querySelector("#generateBriefButton");
@@ -3434,6 +3435,7 @@ function setButtonWorkingLabel(button, label = "") {
 
 function setResearchControlsDisabled(disabled) {
   researchAccountButton.disabled = disabled;
+  checkResearchSourcesButton.disabled = disabled;
   searchProspectSourcesButton.disabled = disabled;
   fetchProspectSourceButton.disabled = disabled;
   generateBriefButton.disabled = disabled;
@@ -3551,6 +3553,20 @@ async function searchSelectedProspectSources() {
     setDataStatus(message, "error");
   } finally {
     setButtonWorkingLabel(searchProspectSourcesButton);
+    setResearchControlsDisabled(false);
+  }
+}
+
+async function checkResearchSourceSetup() {
+  setResearchControlsDisabled(true);
+  setButtonWorkingLabel(checkResearchSourcesButton, "Checking...");
+  setDataStatus("Checking source setup...", "working");
+
+  try {
+    await checkSearchSetup();
+    setDataStatus("Source setup check complete. Review the search connector status.");
+  } finally {
+    setButtonWorkingLabel(checkResearchSourcesButton);
     setResearchControlsDisabled(false);
   }
 }
@@ -7293,6 +7309,7 @@ savePromptsButton.addEventListener("click", savePromptTemplateEdits);
 resetPromptsButton.addEventListener("click", resetPromptTemplates);
 modelSelect.addEventListener("change", () => setAiStatus(`Local AI ready: ${modelSelect.value}`));
 researchAccountButton.addEventListener("click", researchSelectedAccount);
+checkResearchSourcesButton.addEventListener("click", checkResearchSourceSetup);
 searchProspectSourcesButton.addEventListener("click", searchSelectedProspectSources);
 fetchProspectSourceButton.addEventListener("click", fetchSelectedProspectSource);
 generateBriefButton.addEventListener("click", generateCompanyBrief);

@@ -11,6 +11,7 @@ const helperBody = helperEnd === -1 ? "" : app.slice(helperStart, helperEnd);
 const checks = [
   ["disabled helper exists", helperStart !== -1],
   ["research button controlled", helperBody.includes("researchAccountButton.disabled = disabled;")],
+  ["check sources button controlled", helperBody.includes("checkResearchSourcesButton.disabled = disabled;")],
   ["search button controlled", helperBody.includes("searchProspectSourcesButton.disabled = disabled;")],
   ["fetch button controlled", helperBody.includes("fetchProspectSourceButton.disabled = disabled;")],
   ["generate button controlled", helperBody.includes("generateBriefButton.disabled = disabled;")],
