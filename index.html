@@ -732,11 +732,13 @@ $env:REGENT_CRM_API_KEY="your_api_key"
             <form id="handoffForm" class="handoff-form" aria-label="CRM handoff owner and status">
               <label>
                 Owner
-                <input id="handoffOwnerInput" name="handoffOwner" placeholder="Ibrahim, closer, ops lead">
+                <span id="handoffOwnerHelp" class="sr-only">Person responsible for the CRM handoff follow-up.</span>
+                <input id="handoffOwnerInput" name="handoffOwner" aria-describedby="handoffOwnerHelp" placeholder="Ibrahim, closer, ops lead">
               </label>
               <label>
                 Handoff status
-                <select id="handoffStatusInput" name="handoffStatus">
+                <span id="handoffStatusHelp" class="sr-only">Current handoff stage for the selected warm lead.</span>
+                <select id="handoffStatusInput" name="handoffStatus" aria-describedby="handoffStatusHelp">
                   <option value="Unassigned">Unassigned</option>
                   <option value="Assigned">Assigned</option>
                   <option value="In Review">In Review</option>
@@ -747,7 +749,8 @@ $env:REGENT_CRM_API_KEY="your_api_key"
               </label>
               <label>
                 Due date
-                <input id="handoffDueInput" name="handoffDue" type="date">
+                <span id="handoffDueHelp" class="sr-only">Date the next CRM handoff action is due.</span>
+                <input id="handoffDueInput" name="handoffDue" type="date" aria-describedby="handoffDueHelp">
               </label>
               <label class="full-span">
                 Handoff notes
