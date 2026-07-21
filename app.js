@@ -4005,6 +4005,7 @@ async function retryDailyRunHistoryProspects(failedProspects, sourceLabel) {
     addDailyRunLog(`History retry failed: ${retrySnapshot.error}`, "error");
   } finally {
     renderProspects();
+    renderDailyRunHistory();
     renderDailyRunCapacitySummary();
   }
 }
