@@ -659,7 +659,9 @@ function resetCrmChecklistState() {
 function updateCrmChecklistProgress() {
   const inputs = getCrmChecklistInputs();
   const completed = inputs.filter((input) => input.checked).length;
-  crmChecklistProgress.textContent = `${completed} of ${inputs.length} complete`;
+  crmChecklistProgress.textContent = completed === inputs.length
+    ? "Checklist complete"
+    : `${completed} of ${inputs.length} complete`;
   resetCrmChecklistButton.disabled = completed === 0;
   resetCrmChecklistButton.title = completed === 0
     ? "No CRM checklist progress to clear"
