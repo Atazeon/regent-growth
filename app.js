@@ -283,6 +283,7 @@ const openGmailButton = document.querySelector("#openGmailButton");
 const openOutlookButton = document.querySelector("#openOutlookButton");
 const copyEmailDraftButton = document.querySelector("#copyEmailDraftButton");
 const exportEmailDraftButton = document.querySelector("#exportEmailDraftButton");
+const exportEmailJsonButton = document.querySelector("#exportEmailJsonButton");
 const markEmailSentButton = document.querySelector("#markEmailSentButton");
 const emailSendSummary = document.querySelector("#emailSendSummary");
 const exportWarmCsvButton = document.querySelector("#exportWarmCsvButton");
@@ -4934,6 +4935,22 @@ function getEmailDraftFilename(prospect) {
   return `regent-growth-${slug}-email-${stamp}.txt`;
 }
 
+function getEmailDraftExportRecord(prospect, draft) {
+  const { subject, body } = getDraftParts(draft);
+  return {
+    exportedAt: new Date().toISOString(),
+    company: prospect.company,
+    website: prospect.website,
+    recipient: getEmailRecipient(prospect),
+    decisionMaker: prospect.decisionMaker,
+    stage: prospect.stage,
+    responseStatus: prospect.responseStatus,
+    subject,
+    body,
+    draft
+  };
+}
+
 function exportEmailDraft() {
   const prospect = saveCurrentEmailDraft();
   if (!prospect) return;
@@ -4946,6 +4963,21 @@ function exportEmailDraft() {
 
   downloadFile(getEmailDraftFilename(prospect), getEmailDraftExportText(prospect, draft), "text/plain;charset=utf-8");
   setDataStatus(`Email draft exported for ${prospect.company}.`);
+}
+
+function exportEmailJson() {
+  const prospect = saveCurrentEmailDraft();
+  if (!prospect) return;
+
+  const draft = emailDraft.value.trim();
+  if (!draft) {
+    setDataStatus(`No email draft to export as JSON for ${prospect.company}.`, "error");
+    return;
+  }
+
+  const filename = getEmailDraftFilename(prospect).replace(/\.txt$/, ".json");
+  downloadFile(filename, JSON.stringify(getEmailDraftExportRecord(prospect, draft), null, 2), "application/json;charset=utf-8");
+  setDataStatus(`Email draft JSON exported for ${prospect.company}.`);
 }
 
 function saveCurrentResearchBrief() {
@@ -7467,6 +7499,7 @@ openGmailButton.addEventListener("click", () => openEmailHandoff("gmail"));
 openOutlookButton.addEventListener("click", () => openEmailHandoff("outlook"));
 copyEmailDraftButton.addEventListener("click", copyEmailDraft);
 exportEmailDraftButton.addEventListener("click", exportEmailDraft);
+exportEmailJsonButton.addEventListener("click", exportEmailJson);
 markEmailSentButton.addEventListener("click", markEmailSent);
 exportWarmCsvButton.addEventListener("click", exportWarmLeadCsv);
 exportWarmJsonButton.addEventListener("click", exportWarmLeadJson);
