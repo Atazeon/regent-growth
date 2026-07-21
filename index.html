@@ -606,16 +606,16 @@ $env:REGENT_SEARCH_API_KEY="your_api_key"
               <h2>Company Brief</h2>
             </div>
             <div class="action-row">
-              <button id="researchAccountButton" type="button">Research account</button>
-              <button id="checkResearchSourcesButton" class="secondary-button" type="button">Check sources</button>
-              <button id="searchProspectSourcesButton" class="secondary-button" type="button">Search sources</button>
-              <button id="fetchProspectSourceButton" class="secondary-button" type="button">Fetch website</button>
-              <button id="generateBriefButton" class="secondary-button" type="button">Generate brief</button>
-              <button id="copyResearchBriefButton" class="secondary-button" type="button">Copy brief</button>
-              <button id="exportResearchBriefButton" class="secondary-button" type="button">Export brief</button>
-              <button id="exportResearchJsonButton" class="secondary-button" type="button">Export JSON</button>
-              <button id="copyResearchJsonButton" class="secondary-button" type="button">Copy JSON</button>
-              <button id="clearResearchBriefButton" class="secondary-button" type="button">Clear brief</button>
+              <button id="researchAccountButton" type="button" title="Use local AI to research the selected account" aria-label="Use local AI to research the selected account">Research account</button>
+              <button id="checkResearchSourcesButton" class="secondary-button" type="button" title="Check whether source search is configured" aria-label="Check whether source search is configured">Check sources</button>
+              <button id="searchProspectSourcesButton" class="secondary-button" type="button" title="Search source evidence for the selected prospect" aria-label="Search source evidence for the selected prospect">Search sources</button>
+              <button id="fetchProspectSourceButton" class="secondary-button" type="button" title="Fetch evidence from the selected prospect website" aria-label="Fetch evidence from the selected prospect website">Fetch website</button>
+              <button id="generateBriefButton" class="secondary-button" type="button" title="Generate a shorter brief from selected prospect fields" aria-label="Generate a shorter brief from selected prospect fields">Generate brief</button>
+              <button id="copyResearchBriefButton" class="secondary-button" type="button" title="Copy the selected research brief" aria-label="Copy the selected research brief">Copy brief</button>
+              <button id="exportResearchBriefButton" class="secondary-button" type="button" title="Export the selected research brief as text" aria-label="Export the selected research brief as text">Export brief</button>
+              <button id="exportResearchJsonButton" class="secondary-button" type="button" title="Export the selected research brief as JSON" aria-label="Export the selected research brief as JSON">Export JSON</button>
+              <button id="copyResearchJsonButton" class="secondary-button" type="button" title="Copy the selected research brief as JSON" aria-label="Copy the selected research brief as JSON">Copy JSON</button>
+              <button id="clearResearchBriefButton" class="secondary-button" type="button" title="Clear the selected research brief after confirmation" aria-label="Clear the selected research brief after confirmation">Clear brief</button>
             </div>
           </div>
           <textarea id="researchPrompt"></textarea>
