@@ -3581,6 +3581,7 @@ function renderDailyRunHistory() {
           <button class="secondary-button" type="button" data-action="reset-daily-history-view">Reset view</button>
           <button class="secondary-button" type="button" data-action="copy-daily-history-summary">Copy summary</button>
           <button class="secondary-button" type="button" data-action="copy-daily-history-status-counts">Copy counts</button>
+          <button class="secondary-button" type="button" data-action="copy-daily-history-source-summary">Copy sources</button>
           ${getDailyRunHistoryStatusCount("Failed") > 0 ? `<button class="secondary-button" type="button" data-action="show-failed-daily-history">View failed</button>` : ""}
           <button class="secondary-button" type="button" data-action="toggle-compact-daily-history">${compactDailyRunHistory ? "Full history" : "Compact history"}</button>
           <button class="secondary-button" type="button" data-action="toggle-all-daily-history">${showAllDailyRunHistory ? "Show first 5" : "Show all"}</button>
@@ -4071,6 +4072,14 @@ async function copyDailyRunHistoryStatusCounts() {
   const lines = getDailyRunHistoryStatusCounts().map(({ label, count }) => `${label}: ${count}`);
   await navigator.clipboard.writeText(`Daily AI history status counts\n${lines.join("\n")}`);
   setDataStatus("Copied Daily AI history status counts.");
+}
+
+async function copyDailyRunHistorySourceSummary() {
+  const visibleHistory = getVisibleDailyRunHistory();
+  const summary = getDailyRunHistorySourceSummary(visibleHistory);
+  const lines = Object.entries(summary).map(([source, count]) => `${source}: ${count}`);
+  await navigator.clipboard.writeText(`Daily AI history source summary\n${lines.join("\n")}`);
+  setDataStatus("Copied Daily AI history source summary.");
 }
 
 async function copyStoppedDailyRunHistorySummary() {
@@ -6834,6 +6843,10 @@ dailyRunHistoryList.addEventListener("click", (event) => {
 
   if (button.dataset.action === "copy-daily-history-status-counts") {
     copyDailyRunHistoryStatusCounts();
+  }
+
+  if (button.dataset.action === "copy-daily-history-source-summary") {
+    copyDailyRunHistorySourceSummary();
   }
 
   if (button.dataset.action === "show-failed-daily-history") {
