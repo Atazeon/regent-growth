@@ -1865,6 +1865,10 @@ textarea {
   font-weight: 700;
 }
 
+.checklist-progress[data-state="complete"] {
+  color: #247247;
+}
+
 .checklist {
   display: grid;
   grid-template-columns: repeat(2, minmax(220px, 1fr));

@@ -662,6 +662,7 @@ function updateCrmChecklistProgress() {
   crmChecklistProgress.textContent = completed === inputs.length
     ? "Checklist complete"
     : `${completed} of ${inputs.length} complete`;
+  crmChecklistProgress.dataset.state = completed === inputs.length ? "complete" : "active";
   resetCrmChecklistButton.disabled = completed === 0;
   resetCrmChecklistButton.title = completed === 0
     ? "No CRM checklist progress to clear"
