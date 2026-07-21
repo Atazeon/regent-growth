@@ -660,6 +660,11 @@ function updateCrmChecklistProgress() {
   const inputs = getCrmChecklistInputs();
   const completed = inputs.filter((input) => input.checked).length;
   crmChecklistProgress.textContent = `${completed} of ${inputs.length} complete`;
+  resetCrmChecklistButton.disabled = completed === 0;
+  resetCrmChecklistButton.title = completed === 0
+    ? "No CRM checklist progress to clear"
+    : "Clear saved CRM checklist progress";
+  resetCrmChecklistButton.setAttribute("aria-label", resetCrmChecklistButton.title);
 }
 
 function getProspectFieldNames() {
