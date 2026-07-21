@@ -5687,12 +5687,15 @@ function getBoundedPage(page, totalItems) {
 function renderCrmQueuePagination(queue, totalItems, page) {
   const totalPages = Math.ceil(totalItems / crmQueuePageSize);
   if (totalPages <= 1) return "";
+  const queueLabel = queue === "reviewed" ? "reviewed CRM syncs" : "failed CRM syncs";
+  const previousLabel = `Previous page of ${queueLabel}`;
+  const nextLabel = `Next page of ${queueLabel}`;
 
   return `
     <div class="crm-queue-pagination">
-      <button class="secondary-button" type="button" data-action="crm-page" data-queue="${escapeHtml(queue)}" data-direction="-1" ${page === 0 ? "disabled" : ""}>Previous</button>
+      <button class="secondary-button" type="button" data-action="crm-page" data-queue="${escapeHtml(queue)}" data-direction="-1" title="${escapeHtml(previousLabel)}" aria-label="${escapeHtml(previousLabel)}" ${page === 0 ? "disabled" : ""}>Previous</button>
       <span>Page ${escapeHtml(page + 1)} of ${escapeHtml(totalPages)}</span>
-      <button class="secondary-button" type="button" data-action="crm-page" data-queue="${escapeHtml(queue)}" data-direction="1" ${page >= totalPages - 1 ? "disabled" : ""}>Next</button>
+      <button class="secondary-button" type="button" data-action="crm-page" data-queue="${escapeHtml(queue)}" data-direction="1" title="${escapeHtml(nextLabel)}" aria-label="${escapeHtml(nextLabel)}" ${page >= totalPages - 1 ? "disabled" : ""}>Next</button>
     </div>
   `;
 }
