@@ -12,6 +12,7 @@ const checks = [
   ["selected search function", app.includes("async function searchSelectedProspectSources()")],
   ["search endpoint reuse", app.includes("const response = await fetch(sourceSearchEndpoint")],
   ["source evidence label", app.includes('appendProspectEvidenceBlock(prospect, "Source search evidence", formatSearchEvidence(result));')],
+  ["duplicate status", app.includes("Source search evidence already saved for ${prospect.company}.")],
   ["result count status", app.includes("source result${result.results.length === 1 ? \"\" : \"s\"}")],
   ["research lockout", app.includes("setResearchControlsDisabled(true);")],
   ["click listener", app.includes('searchProspectSourcesButton.addEventListener("click", searchSelectedProspectSources);')]

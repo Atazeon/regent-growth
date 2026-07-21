@@ -3438,9 +3438,14 @@ function setResearchControlsDisabled(disabled) {
 }
 
 function appendProspectEvidenceBlock(prospect, title, evidence) {
+  const evidenceText = String(evidence || "").trim();
+  if (!evidenceText || (prospect.aiBrief || "").includes(evidenceText)) {
+    return "";
+  }
+
   const evidenceBlock = [
     `${title} (${formatDateTime(new Date().toISOString())})`,
-    String(evidence || "").trim()
+    evidenceText
   ].filter(Boolean).join("\n");
 
   prospect.aiBrief = prospect.aiBrief
@@ -3470,7 +3475,13 @@ async function fetchSelectedProspectSource() {
       sourceNotes: ""
     };
     await fetchEvidenceForCandidate(evidenceTarget);
-    appendProspectEvidenceBlock(prospect, "Website evidence", evidenceTarget.sourceNotes);
+    const evidenceBlock = appendProspectEvidenceBlock(prospect, "Website evidence", evidenceTarget.sourceNotes);
+    if (!evidenceBlock) {
+      researchPrompt.value = prospect.aiBrief;
+      setDataStatus(`Website evidence already saved for ${prospect.company}.`);
+      return;
+    }
+
     prospect.responseNotes = [prospect.responseNotes, `${new Date().toISOString()}: Website evidence fetched from ${url}.`].filter(Boolean).join("\n");
     researchPrompt.value = prospect.aiBrief;
     saveProspects();
@@ -3517,7 +3528,13 @@ async function searchSelectedProspectSources() {
       throw new Error("Search API returned no source results.");
     }
 
-    appendProspectEvidenceBlock(prospect, "Source search evidence", formatSearchEvidence(result));
+    const evidenceBlock = appendProspectEvidenceBlock(prospect, "Source search evidence", formatSearchEvidence(result));
+    if (!evidenceBlock) {
+      researchPrompt.value = prospect.aiBrief;
+      setDataStatus(`Source search evidence already saved for ${prospect.company}.`);
+      return;
+    }
+
     prospect.responseNotes = [prospect.responseNotes, `${new Date().toISOString()}: Source search saved for query "${result.query}".`].filter(Boolean).join("\n");
     researchPrompt.value = prospect.aiBrief;
     saveProspects();
