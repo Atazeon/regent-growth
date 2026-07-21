@@ -13,6 +13,7 @@ const checks = [
   ["progress selected", app.includes('const crmChecklistProgress = document.querySelector("#crmChecklistProgress");')],
   ["progress helper exists", app.includes("function updateCrmChecklistProgress()")],
   ["progress counts checked inputs", app.includes("const completed = inputs.filter((input) => input.checked).length;")],
+  ["progress percent calculated", app.includes("const completionPercent = inputs.length ? Math.round((completed / inputs.length) * 100) : 0;")],
   ["save updates progress", app.includes("localStorage.setItem(crmChecklistStorageKey, JSON.stringify(state));\n  updateCrmChecklistProgress();")],
   ["restore updates progress", app.includes("input.checked = Boolean(state[input.id]);\n  });\n  updateCrmChecklistProgress();")],
   ["reset updates progress", app.includes("setDataStatus(`CRM checklist reset. Cleared ${clearedCount} completed item")]

@@ -6,7 +6,7 @@ const app = fs.readFileSync(path.join(root, "app.js"), "utf8");
 
 const checks = [
   ["complete message exists", app.includes('? "Checklist complete"')],
-  ["partial message retained", app.includes(': `${completed} of ${inputs.length} complete`;')],
+  ["partial message retained", app.includes(': `${completed} of ${inputs.length} complete (${completionPercent}%)`;')],
   ["completion compares count", app.includes("completed === inputs.length")]
 ];
 

@@ -669,10 +669,11 @@ function updateCrmChecklistProgress() {
   const inputs = getCrmChecklistInputs();
   const completed = inputs.filter((input) => input.checked).length;
   const hasItems = inputs.length > 0;
+  const completionPercent = inputs.length ? Math.round((completed / inputs.length) * 100) : 0;
   const progressLabel = `${completed} of ${inputs.length} CRM checklist items complete`;
   crmChecklistProgress.textContent = completed === inputs.length
     ? "Checklist complete"
-    : `${completed} of ${inputs.length} complete`;
+    : `${completed} of ${inputs.length} complete (${completionPercent}%)`;
   crmChecklistProgress.dataset.state = completed === inputs.length ? "complete" : "active";
   [copyCrmChecklistButton, copyCrmChecklistJsonButton, downloadCrmChecklistButton, downloadCrmChecklistJsonButton].forEach((button) => {
     button.disabled = !hasItems;
