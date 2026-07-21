@@ -5622,7 +5622,7 @@ function renderCrmRetryQueue(failedCrmLeads = getFailedCrmSyncLeads()) {
       <div class="crm-retry-actions">
         ${renderCrmSyncStatusChips(failedCrmLeads.length, syncingCount, syncedCount, reviewedCount, notSyncedCount)}
         ${renderCrmFailureReasonChips(failedCrmLeads)}
-        <button class="secondary-button" type="button" data-action="show-crm-failed">Show failed</button>
+        <button class="secondary-button" type="button" data-action="show-crm-failed" title="Show all failed CRM syncs" aria-label="Show all failed CRM syncs">Show failed</button>
       </div>
     </div>
     ${failedPageLeads.length === 0 ? `<p class="empty-state">No failed CRM syncs match this reason filter.</p>` : `
