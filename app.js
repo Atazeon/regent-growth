@@ -5430,9 +5430,11 @@ function renderCrmFieldMappingPreview(prospect) {
     </div>
     ${warmLeadWarning}
     <div class="crm-field-groups">
-      ${groups.map((group) => `
-        <section>
-          <h4>${escapeHtml(group.label)}</h4>
+      ${groups.map((group) => {
+        const groupId = `crmFieldGroup${group.label.replace(/[^a-z0-9]/gi, "")}`;
+        return `
+        <section role="region" aria-labelledby="${escapeHtml(groupId)}">
+          <h4 id="${escapeHtml(groupId)}">${escapeHtml(group.label)}</h4>
           ${group.fields.map(({ field, value }) => `
             <div class="crm-field-row">
               <code>${escapeHtml(field)}</code>
@@ -5440,7 +5442,8 @@ function renderCrmFieldMappingPreview(prospect) {
             </div>
           `).join("")}
         </section>
-      `).join("")}
+      `;
+      }).join("")}
     </div>
   `;
 }
