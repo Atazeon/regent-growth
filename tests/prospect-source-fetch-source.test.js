@@ -10,7 +10,7 @@ const checks = [
   ["button selector", app.includes('const fetchProspectSourceButton = document.querySelector("#fetchProspectSourceButton");')],
   ["selected prospect fetch function", app.includes("async function fetchSelectedProspectSource()")],
   ["source endpoint reuse", app.includes("await fetchEvidenceForCandidate(evidenceTarget);")],
-  ["brief evidence append", app.includes("Website evidence\\n${evidenceTarget.sourceNotes}")],
+  ["brief evidence append", app.includes('appendProspectEvidenceBlock(prospect, "Website evidence", evidenceTarget.sourceNotes);')],
   ["response note audit", app.includes("Website evidence fetched from ${url}.")],
   ["research lockout", app.includes("setResearchControlsDisabled(true);")],
   ["click listener", app.includes('fetchProspectSourceButton.addEventListener("click", fetchSelectedProspectSource);')]

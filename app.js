@@ -3437,6 +3437,18 @@ function setResearchControlsDisabled(disabled) {
   clearResearchBriefButton.disabled = disabled;
 }
 
+function appendProspectEvidenceBlock(prospect, title, evidence) {
+  const evidenceBlock = [
+    `${title} (${formatDateTime(new Date().toISOString())})`,
+    String(evidence || "").trim()
+  ].filter(Boolean).join("\n");
+
+  prospect.aiBrief = prospect.aiBrief
+    ? `${prospect.aiBrief}\n\n${evidenceBlock}`
+    : evidenceBlock;
+  return evidenceBlock;
+}
+
 async function fetchSelectedProspectSource() {
   const prospect = getSelectedProspect();
   if (!prospect) return;
@@ -3458,10 +3470,7 @@ async function fetchSelectedProspectSource() {
       sourceNotes: ""
     };
     await fetchEvidenceForCandidate(evidenceTarget);
-    const evidenceBlock = `Website evidence\n${evidenceTarget.sourceNotes}`;
-    prospect.aiBrief = prospect.aiBrief
-      ? `${prospect.aiBrief}\n\n${evidenceBlock}`
-      : evidenceBlock;
+    appendProspectEvidenceBlock(prospect, "Website evidence", evidenceTarget.sourceNotes);
     prospect.responseNotes = [prospect.responseNotes, `${new Date().toISOString()}: Website evidence fetched from ${url}.`].filter(Boolean).join("\n");
     researchPrompt.value = prospect.aiBrief;
     saveProspects();
@@ -3508,10 +3517,7 @@ async function searchSelectedProspectSources() {
       throw new Error("Search API returned no source results.");
     }
 
-    const searchEvidence = `Source search evidence\n${formatSearchEvidence(result)}`;
-    prospect.aiBrief = prospect.aiBrief
-      ? `${prospect.aiBrief}\n\n${searchEvidence}`
-      : searchEvidence;
+    appendProspectEvidenceBlock(prospect, "Source search evidence", formatSearchEvidence(result));
     prospect.responseNotes = [prospect.responseNotes, `${new Date().toISOString()}: Source search saved for query "${result.query}".`].filter(Boolean).join("\n");
     researchPrompt.value = prospect.aiBrief;
     saveProspects();
