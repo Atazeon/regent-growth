@@ -707,6 +707,7 @@ function formatCrmChecklistSummary() {
 
   return [
     "CRM Checklist",
+    inputs.length > 0 ? "Status: Available" : "Status: Checklist unavailable",
     `${completed} of ${inputs.length} complete (${completionPercent}%)`,
     completedAt ? `Completed at: ${formatDateTime(completedAt)}` : "Completed at: Not complete",
     "",
@@ -726,6 +727,7 @@ function getCrmChecklistSummaryRecord() {
   return {
     exportedAt: new Date().toISOString(),
     completedAt: loadCrmChecklistState().__completedAt || "",
+    available: items.length > 0,
     completedCount,
     totalCount: items.length,
     completionPercent: items.length ? Math.round((completedCount / items.length) * 100) : 0,
