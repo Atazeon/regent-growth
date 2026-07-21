@@ -2823,9 +2823,9 @@ function renderReminders() {
       </div>
       <div class="reminder-actions">
         <button type="button" data-action="complete-reminder" data-index="${index}">Mark touched</button>
-        ${prospect.stage === "Sequence" ? `<button class="secondary-button" type="button" data-action="sequence-email-sent" data-index="${index}">Email sent</button>` : ""}
-        ${prospect.stage === "Sequence" ? `<button class="secondary-button" type="button" data-action="sequence-linkedin-sent" data-index="${index}">LinkedIn sent</button>` : ""}
-        ${prospect.stage === "Sequence" ? `<button class="secondary-button" type="button" data-action="sequence-plan-call" data-index="${index}">Plan call</button>` : ""}
+        ${prospect.stage === "Sequence" ? `<button class="secondary-button" type="button" data-action="sequence-email-sent" data-index="${index}">Email</button>` : ""}
+        ${prospect.stage === "Sequence" ? `<button class="secondary-button" type="button" data-action="sequence-linkedin-sent" data-index="${index}">LinkedIn</button>` : ""}
+        ${prospect.stage === "Sequence" ? `<button class="secondary-button" type="button" data-action="sequence-plan-call" data-index="${index}">Call</button>` : ""}
         <button class="secondary-button" type="button" data-action="snooze-reminder" data-days="2" data-index="${index}">Snooze 2d</button>
         <button class="secondary-button" type="button" data-action="snooze-reminder" data-days="7" data-index="${index}">Snooze 7d</button>
       </div>
