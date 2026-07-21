@@ -101,6 +101,17 @@ main {
   gap: 10px;
 }
 
+.action-row {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.action-row button {
+  min-height: 38px;
+  white-space: nowrap;
+}
+
 .saved-views {
   display: flex;
   flex-wrap: wrap;
