@@ -5556,6 +5556,16 @@ function updateSelectedReviewedCrmActionHint(selectedProspect, selectedIsWarm) {
   );
 }
 
+function formatCrmRetryEmptyState(reviewedCount, syncingCount) {
+  const details = [];
+  if (reviewedCount > 0) details.push(`${reviewedCount} reviewed sync${reviewedCount === 1 ? "" : "s"} parked`);
+  if (syncingCount > 0) details.push(`${syncingCount} sync${syncingCount === 1 ? "" : "s"} in progress`);
+
+  return details.length > 0
+    ? `No failed CRM syncs queued for retry. ${details.join("; ")}.`
+    : "No failed CRM syncs queued for retry.";
+}
+
 function renderHandoff() {
   const warmLeads = getWarmLeads();
   const selectedProspect = getSelectedProspect();
@@ -5597,7 +5607,7 @@ function renderCrmRetryQueue(failedCrmLeads = getFailedCrmSyncLeads()) {
         ${renderCrmSyncStatusChips(failedCrmLeads.length, syncingCount, syncedCount, reviewedCount, notSyncedCount)}
         ${renderCrmFailureReasonChips(failedCrmLeads)}
       </div>
-      <p class="empty-state">No failed CRM syncs queued for retry.</p>
+      <p class="empty-state">${escapeHtml(formatCrmRetryEmptyState(reviewedCount, syncingCount))}</p>
       ${renderReviewedCrmQueue(reviewedCrmLeads)}
     `;
     return;
