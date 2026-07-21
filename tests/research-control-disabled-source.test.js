@@ -17,6 +17,7 @@ const checks = [
   ["generate button controlled", helperBody.includes("generateBriefButton.disabled = disabled;")],
   ["copy button controlled", helperBody.includes("copyResearchBriefButton.disabled = disabled;")],
   ["export button controlled", helperBody.includes("exportResearchBriefButton.disabled = disabled;")],
+  ["json export button controlled", helperBody.includes("exportResearchJsonButton.disabled = disabled;")],
   ["clear button controlled", helperBody.includes("clearResearchBriefButton.disabled = disabled;")],
   ["generate uses helper", app.includes("async function generateCompanyBrief()") && app.includes("setResearchControlsDisabled(true);")],
   ["daily ai uses helper", app.includes("runDailyAiButton.disabled = true;") && app.includes("setResearchControlsDisabled(false);")]

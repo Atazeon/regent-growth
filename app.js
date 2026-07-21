@@ -273,6 +273,7 @@ const fetchProspectSourceButton = document.querySelector("#fetchProspectSourceBu
 const generateBriefButton = document.querySelector("#generateBriefButton");
 const copyResearchBriefButton = document.querySelector("#copyResearchBriefButton");
 const exportResearchBriefButton = document.querySelector("#exportResearchBriefButton");
+const exportResearchJsonButton = document.querySelector("#exportResearchJsonButton");
 const clearResearchBriefButton = document.querySelector("#clearResearchBriefButton");
 const generateEmailButton = document.querySelector("#generateEmailButton");
 const saveEmailDraftButton = document.querySelector("#saveEmailDraftButton");
@@ -3442,6 +3443,7 @@ function setResearchControlsDisabled(disabled) {
   generateBriefButton.disabled = disabled;
   copyResearchBriefButton.disabled = disabled;
   exportResearchBriefButton.disabled = disabled;
+  exportResearchJsonButton.disabled = disabled;
   clearResearchBriefButton.disabled = disabled;
 }
 
@@ -4962,6 +4964,24 @@ function getProspectResearchFilename(prospect) {
   return `regent-growth-${slug}-research-${stamp}.txt`;
 }
 
+function getProspectResearchExportRecord(prospect) {
+  const leadScore = getLeadScoreSummary(prospect);
+  return {
+    exportedAt: new Date().toISOString(),
+    company: prospect.company,
+    website: prospect.website,
+    industry: prospect.industry,
+    decisionMaker: prospect.decisionMaker,
+    stage: prospect.stage,
+    leadScore: leadScore.score,
+    leadTier: leadScore.tier,
+    trigger: prospect.trigger,
+    fit: prospect.fit,
+    aiBrief: prospect.aiBrief,
+    responseNotes: prospect.responseNotes
+  };
+}
+
 function exportResearchBrief() {
   const prospect = saveCurrentResearchBrief();
   if (!prospect) return;
@@ -4973,6 +4993,20 @@ function exportResearchBrief() {
 
   downloadFile(getProspectResearchFilename(prospect), getProspectResearchExportText(prospect), "text/plain;charset=utf-8");
   setDataStatus(`Research brief exported for ${prospect.company}.`);
+}
+
+function exportResearchJson() {
+  const prospect = saveCurrentResearchBrief();
+  if (!prospect) return;
+
+  if (!prospect.aiBrief) {
+    setDataStatus(`No research brief to export for ${prospect.company}.`, "error");
+    return;
+  }
+
+  const filename = getProspectResearchFilename(prospect).replace(/\.txt$/, ".json");
+  downloadFile(filename, JSON.stringify(getProspectResearchExportRecord(prospect), null, 2), "application/json;charset=utf-8");
+  setDataStatus(`Research JSON exported for ${prospect.company}.`);
 }
 
 function clearResearchBrief() {
@@ -7355,6 +7389,7 @@ fetchProspectSourceButton.addEventListener("click", fetchSelectedProspectSource)
 generateBriefButton.addEventListener("click", generateCompanyBrief);
 copyResearchBriefButton.addEventListener("click", copyResearchBrief);
 exportResearchBriefButton.addEventListener("click", exportResearchBrief);
+exportResearchJsonButton.addEventListener("click", exportResearchJson);
 clearResearchBriefButton.addEventListener("click", clearResearchBrief);
 generateEmailButton.addEventListener("click", generatePersonalizedEmail);
 saveEmailDraftButton.addEventListener("click", saveCurrentEmailDraft);
