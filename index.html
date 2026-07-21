@@ -767,16 +767,16 @@ $env:REGENT_CRM_API_KEY="your_api_key"
           <h3 id="crmFieldPreviewHeading" class="sr-only">CRM field mapping preview</h3>
           <p class="empty-state">Select a prospect to preview the CRM sync field mapping.</p>
         </div>
-        <h3>Checklist</h3>
-        <div class="checklist">
-          <label><input type="checkbox"> Decision-maker identified</label>
-          <label><input type="checkbox"> Company pain and buying trigger researched</label>
-          <label><input type="checkbox"> First email personalized and sent</label>
-          <label><input type="checkbox"> Follow-up sequence scheduled</label>
-          <label><input type="checkbox"> LinkedIn connection sent</label>
-          <label><input type="checkbox"> Phone call completed</label>
-          <label><input type="checkbox"> Meeting booked</label>
-          <label><input type="checkbox"> Assessment notes ready</label>
+        <h3 id="crmChecklistHeading">Checklist</h3>
+        <div class="checklist" role="list" aria-labelledby="crmChecklistHeading">
+          <label role="listitem"><input type="checkbox"> Decision-maker identified</label>
+          <label role="listitem"><input type="checkbox"> Company pain and buying trigger researched</label>
+          <label role="listitem"><input type="checkbox"> First email personalized and sent</label>
+          <label role="listitem"><input type="checkbox"> Follow-up sequence scheduled</label>
+          <label role="listitem"><input type="checkbox"> LinkedIn connection sent</label>
+          <label role="listitem"><input type="checkbox"> Phone call completed</label>
+          <label role="listitem"><input type="checkbox"> Meeting booked</label>
+          <label role="listitem"><input type="checkbox"> Assessment notes ready</label>
         </div>
       </section>
     </main>
