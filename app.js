@@ -4119,7 +4119,7 @@ function exportSkippedDailyRunHistoryCsv() {
     return;
   }
 
-  const headers = ["startedAt", "finishedAt", "status", "model", "limit", "generatedCount", "fetchedCount", "addedCount", "existingFilledCount", "researched", "drafted", "skipped", "failed", "error", "companies"];
+  const headers = ["startedAt", "finishedAt", "status", "source", "model", "limit", "generatedCount", "fetchedCount", "addedCount", "existingFilledCount", "researched", "drafted", "skipped", "failed", "error", "companies"];
   const rows = skippedRuns.map((snapshot) => headers.map((header) => (
     csvCell(header === "companies" ? snapshot.companies.join("; ") : snapshot[header])
   )).join(","));
@@ -4151,7 +4151,7 @@ function exportStoppedDailyRunHistoryCsv() {
     return;
   }
 
-  const headers = ["startedAt", "finishedAt", "status", "model", "limit", "generatedCount", "fetchedCount", "addedCount", "existingFilledCount", "researched", "drafted", "skipped", "failed", "error", "companies"];
+  const headers = ["startedAt", "finishedAt", "status", "source", "model", "limit", "generatedCount", "fetchedCount", "addedCount", "existingFilledCount", "researched", "drafted", "skipped", "failed", "error", "companies"];
   const rows = stoppedRuns.map((snapshot) => headers.map((header) => (
     csvCell(header === "companies" ? snapshot.companies.join("; ") : snapshot[header])
   )).join(","));
@@ -4166,7 +4166,7 @@ function exportDailyRunHistoryCsv() {
     return;
   }
 
-  const headers = ["startedAt", "finishedAt", "status", "model", "limit", "generatedCount", "fetchedCount", "addedCount", "existingFilledCount", "researched", "drafted", "skipped", "failed", "error", "companies"];
+  const headers = ["startedAt", "finishedAt", "status", "source", "model", "limit", "generatedCount", "fetchedCount", "addedCount", "existingFilledCount", "researched", "drafted", "skipped", "failed", "error", "companies"];
   const rows = visibleHistory.map((snapshot) => headers.map((header) => (
     csvCell(header === "companies" ? snapshot.companies.join("; ") : snapshot[header])
   )).join(","));
