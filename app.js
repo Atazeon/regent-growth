@@ -2780,8 +2780,11 @@ function renderOwnerDashboard() {
   const blockedProspects = prospects
     .map((prospect, index) => ({ prospect, index }))
     .filter(({ prospect }) => isBlockedHandoff(prospect));
+  const totalHandoffs = workloads.reduce((sum, item) => sum + item.total, 0);
+  const overdueHandoffs = workloads.reduce((sum, item) => sum + item.overdue, 0);
+  const blockedHandoffs = workloads.reduce((sum, item) => sum + item.blocked, 0);
 
-  ownerDashboardCount.textContent = `${workloads.reduce((sum, item) => sum + item.total, 0)} active`;
+  ownerDashboardCount.textContent = `${totalHandoffs} active | ${workloads.length} owner${workloads.length === 1 ? "" : "s"} | ${overdueHandoffs} overdue | ${blockedHandoffs} blocked`;
 
   if (workloads.length === 0) {
     ownerWorkloadList.innerHTML = `<p class="empty-state">No assigned handoffs yet. Mark a warm lead CRM ready, then assign an owner.</p>`;
