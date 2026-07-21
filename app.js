@@ -2824,6 +2824,7 @@ function renderReminders() {
         <p><strong>Next:</strong> ${escapeHtml(formatDate(prospect.nextTouch))}${prospect.responseNotes ? ` | ${escapeHtml(prospect.responseNotes)}` : ""}</p>
       </div>
       <div class="reminder-actions">
+        <button class="secondary-button" type="button" data-action="open-reminder-prospect" data-index="${index}">Open</button>
         <button type="button" data-action="complete-reminder" data-index="${index}">Mark touched</button>
         ${prospect.stage === "Sequence" ? `<button class="secondary-button" type="button" data-action="sequence-email-sent" data-index="${index}" title="Mark sequence email sent" aria-label="Mark sequence email sent">Email</button>` : ""}
         ${prospect.stage === "Sequence" ? `<button class="secondary-button" type="button" data-action="sequence-linkedin-sent" data-index="${index}" title="Mark LinkedIn connection sent" aria-label="Mark LinkedIn connection sent">LinkedIn</button>` : ""}
@@ -6018,6 +6019,17 @@ function snoozeReminder(index, days) {
   setDataStatus(`${prospect.company} snoozed until ${formatDate(prospect.nextTouch)}.`);
 }
 
+function openReminderProspect(index) {
+  const prospect = prospects[index];
+  if (!prospect) return;
+
+  selectedProspectIndex = index;
+  savedViews.dataset.activeView = "all";
+  delete savedViews.dataset.activeOwner;
+  renderProspects();
+  setDataStatus(`Opened reminder for ${prospect.company}.`);
+}
+
 function markSequenceEmailSent(index) {
   const prospect = prospects[index];
   if (!prospect) return;
@@ -6631,6 +6643,10 @@ reminderList.addEventListener("click", (event) => {
   if (!button) return;
 
   const index = Number(button.dataset.index);
+
+  if (button.dataset.action === "open-reminder-prospect") {
+    openReminderProspect(index);
+  }
 
   if (button.dataset.action === "complete-reminder") {
     markReminderTouched(index);
