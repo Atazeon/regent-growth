@@ -754,7 +754,8 @@ $env:REGENT_CRM_API_KEY="your_api_key"
               </label>
               <label class="full-span">
                 Handoff notes
-                <textarea id="handoffNotesInput" name="handoffNotes" placeholder="Who owns next steps, context for teammate, blockers, or acceptance notes"></textarea>
+                <span id="handoffNotesHelp" class="sr-only">Context, blockers, acceptance notes, or next steps for the CRM handoff.</span>
+                <textarea id="handoffNotesInput" name="handoffNotes" aria-describedby="handoffNotesHelp" placeholder="Who owns next steps, context for teammate, blockers, or acceptance notes"></textarea>
               </label>
               <button type="submit" title="Save CRM handoff owner, status, due date, and notes" aria-label="Save CRM handoff owner, status, due date, and notes">Save handoff</button>
             </form>
