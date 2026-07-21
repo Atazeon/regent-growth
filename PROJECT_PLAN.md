@@ -31,7 +31,7 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 
 ### Later
 
-- CRM sync action safety hints
+- CRM retry action safety hints
 
 ## Data Model Draft
 

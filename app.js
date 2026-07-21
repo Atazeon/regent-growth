@@ -187,6 +187,7 @@ let compactDailyRunHistory = false;
 let showAllDailyRunHistory = false;
 let dailyRunInProgress = false;
 let dailyRunStopRequested = false;
+let crmSyncInProgress = false;
 let pendingTeamRestore = null;
 let teamBackupsCache = [];
 
@@ -5450,6 +5451,39 @@ function formatCrmPreviewValue(value) {
   return text.length > 120 ? `${text.slice(0, 117)}...` : text;
 }
 
+function setCrmSyncButtonHint(button, disabled, hint) {
+  button.disabled = disabled;
+  button.title = hint;
+  button.setAttribute("aria-label", hint);
+}
+
+function updateCrmSyncActionHints() {
+  const selectedProspect = getSelectedProspect();
+  const selectedIsWarm = selectedProspect ? isWarmLead(selectedProspect) : false;
+  const warmLeads = getWarmLeads();
+
+  if (crmSyncInProgress) {
+    setCrmSyncButtonHint(syncSelectedCrmButton, true, "CRM sync is already running");
+    setCrmSyncButtonHint(syncWarmCrmButton, true, "CRM sync is already running");
+    return;
+  }
+
+  setCrmSyncButtonHint(
+    syncSelectedCrmButton,
+    !selectedIsWarm,
+    selectedIsWarm
+      ? "Sync the selected warm lead to CRM"
+      : "Select or mark a warm lead before syncing the selected account"
+  );
+  setCrmSyncButtonHint(
+    syncWarmCrmButton,
+    warmLeads.length === 0,
+    warmLeads.length > 0
+      ? "Sync all CRM-ready warm leads"
+      : "Mark at least one warm lead CRM ready before syncing all warm leads"
+  );
+}
+
 function renderHandoff() {
   const warmLeads = getWarmLeads();
   const selectedProspect = getSelectedProspect();
@@ -5465,6 +5499,7 @@ function renderHandoff() {
   handoffDueInput.value = selectedProspect?.handoffDue || "";
   handoffNotesInput.value = selectedProspect?.handoffNotes || "";
   handoffForm.hidden = !selectedProspect;
+  updateCrmSyncActionHints();
 }
 
 function renderCrmRetryQueue(failedCrmLeads = getFailedCrmSyncLeads()) {
@@ -6167,8 +6202,8 @@ async function syncSelectedCrmLead() {
     return;
   }
 
-  syncSelectedCrmButton.disabled = true;
-  syncWarmCrmButton.disabled = true;
+  crmSyncInProgress = true;
+  updateCrmSyncActionHints();
   setCrmSetupStatus(`Syncing ${prospect.company} to CRM...`, "working");
 
   try {
@@ -6182,8 +6217,8 @@ async function syncSelectedCrmLead() {
     renderProspects();
     setCrmSetupStatus(error.message, "error");
   } finally {
-    syncSelectedCrmButton.disabled = false;
-    syncWarmCrmButton.disabled = false;
+    crmSyncInProgress = false;
+    updateCrmSyncActionHints();
   }
 }
 
@@ -6195,8 +6230,8 @@ async function syncWarmCrmLeads() {
     return;
   }
 
-  syncWarmCrmButton.disabled = true;
-  syncSelectedCrmButton.disabled = true;
+  crmSyncInProgress = true;
+  updateCrmSyncActionHints();
   setCrmSetupStatus(`Syncing ${warmLeads.length} warm lead${warmLeads.length === 1 ? "" : "s"} to CRM...`, "working");
 
   try {
@@ -6213,8 +6248,8 @@ async function syncWarmCrmLeads() {
     renderProspects();
     setCrmSetupStatus(error.message, "error");
   } finally {
-    syncWarmCrmButton.disabled = false;
-    syncSelectedCrmButton.disabled = false;
+    crmSyncInProgress = false;
+    updateCrmSyncActionHints();
   }
 }
 
@@ -6232,8 +6267,8 @@ async function retryFailedCrmSyncs() {
   }
 
   retryFailedCrmButton.disabled = true;
-  syncWarmCrmButton.disabled = true;
-  syncSelectedCrmButton.disabled = true;
+  crmSyncInProgress = true;
+  updateCrmSyncActionHints();
   setCrmSetupStatus(`Retrying ${failedCrmLeads.length}${filterLabel} failed CRM sync${failedCrmLeads.length === 1 ? "" : "s"}...`, "working");
 
   try {
@@ -6250,9 +6285,9 @@ async function retryFailedCrmSyncs() {
     renderProspects();
     setCrmSetupStatus(`CRM retry failed: ${error.message}`, "error");
   } finally {
+    crmSyncInProgress = false;
     retryFailedCrmButton.disabled = filterCrmLeadsByReason(getFailedCrmSyncLeads()).length === 0;
-    syncWarmCrmButton.disabled = false;
-    syncSelectedCrmButton.disabled = false;
+    updateCrmSyncActionHints();
   }
 }
 
