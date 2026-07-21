@@ -2722,6 +2722,16 @@ function isBlockedHandoff(prospect) {
   return prospect.handoffStatus === "Blocked";
 }
 
+function renderSelectedCrmReadiness(prospect) {
+  if (!isWarmLead(prospect)) {
+    return "Not CRM ready yet. Move the account to Interested, Meeting, or Assessment first.";
+  }
+
+  const syncStatus = prospect.crmSyncStatus || "Not Synced";
+  const ownerText = prospect.handoffOwner ? ` | Owner: ${prospect.handoffOwner}` : "";
+  return `CRM ready | Sync: ${syncStatus}${ownerText}`;
+}
+
 function getOwnerName(prospect) {
   return prospect.handoffOwner?.trim() || "Unassigned";
 }
@@ -3092,6 +3102,10 @@ function renderSelectedDetail() {
     <article>
       <span>CRM Sync</span>
       <strong>${escapeHtml(prospect.crmSyncStatus || "Not Synced")}</strong>
+    </article>
+    <article class="detail-wide">
+      <span>CRM Readiness</span>
+      <p>${escapeHtml(renderSelectedCrmReadiness(prospect))}</p>
     </article>
     <article>
       <span>CRM Synced At</span>
