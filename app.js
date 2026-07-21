@@ -5997,13 +5997,8 @@ function formatCrmStatusSummary() {
 
 async function copyCrmStatusSummary() {
   const summary = formatCrmStatusSummary();
-
-  try {
-    await navigator.clipboard.writeText(summary);
-    setCrmSetupStatus("CRM sync summary copied.");
-  } catch {
-    setCrmSetupStatus(summary);
-  }
+  const copiedDirectly = await copyTextWithFallback(summary);
+  setCrmSetupStatus(copiedDirectly ? "CRM sync summary copied." : "CRM sync summary selected and copied.");
 }
 
 function downloadCrmStatusSummary() {
