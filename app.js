@@ -5750,7 +5750,7 @@ function renderCrmSyncStatusChips(failedCount, syncingCount, syncedCount, review
     { label: `${notSyncedCount} not synced`, state: "idle" }
   ];
 
-  return `<div class="crm-sync-chips">${chips.map((chip) => `<span data-state="${escapeHtml(chip.state)}" title="CRM sync status: ${escapeHtml(chip.label)}" aria-label="CRM sync status: ${escapeHtml(chip.label)}">${escapeHtml(chip.label)}</span>`).join("")}</div>`;
+  return `<div class="crm-sync-chips" role="list" aria-label="CRM sync status counts">${chips.map((chip) => `<span role="listitem" data-state="${escapeHtml(chip.state)}" title="CRM sync status: ${escapeHtml(chip.label)}" aria-label="CRM sync status: ${escapeHtml(chip.label)}">${escapeHtml(chip.label)}</span>`).join("")}</div>`;
 }
 
 function getCrmFailureReasonGroup(note = "") {
