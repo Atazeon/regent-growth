@@ -6,7 +6,7 @@ const app = fs.readFileSync(path.join(root, "app.js"), "utf8");
 
 const checks = [
   ["sync progress flag exists", app.includes("let crmSyncInProgress = false;")],
-  ["button hint helper exists", app.includes("function setCrmSyncButtonHint(button, disabled, hint)")],
+  ["button hint helper exists", app.includes("function setCrmActionHint(button, disabled, hint)")],
   ["sync hint helper exists", app.includes("function updateCrmSyncActionHints()")],
   ["running hint used", app.includes('"CRM sync is already running"')],
   ["selected missing hint used", app.includes('"Select or mark a warm lead before syncing the selected account"')],

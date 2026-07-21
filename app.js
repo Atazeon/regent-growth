@@ -5451,7 +5451,7 @@ function formatCrmPreviewValue(value) {
   return text.length > 120 ? `${text.slice(0, 117)}...` : text;
 }
 
-function setCrmSyncButtonHint(button, disabled, hint) {
+function setCrmActionHint(button, disabled, hint) {
   button.disabled = disabled;
   button.title = hint;
   button.setAttribute("aria-label", hint);
@@ -5463,24 +5463,80 @@ function updateCrmSyncActionHints() {
   const warmLeads = getWarmLeads();
 
   if (crmSyncInProgress) {
-    setCrmSyncButtonHint(syncSelectedCrmButton, true, "CRM sync is already running");
-    setCrmSyncButtonHint(syncWarmCrmButton, true, "CRM sync is already running");
+    setCrmActionHint(syncSelectedCrmButton, true, "CRM sync is already running");
+    setCrmActionHint(syncWarmCrmButton, true, "CRM sync is already running");
     return;
   }
 
-  setCrmSyncButtonHint(
+  setCrmActionHint(
     syncSelectedCrmButton,
     !selectedIsWarm,
     selectedIsWarm
       ? "Sync the selected warm lead to CRM"
       : "Select or mark a warm lead before syncing the selected account"
   );
-  setCrmSyncButtonHint(
+  setCrmActionHint(
     syncWarmCrmButton,
     warmLeads.length === 0,
     warmLeads.length > 0
       ? "Sync all CRM-ready warm leads"
       : "Mark at least one warm lead CRM ready before syncing all warm leads"
+  );
+}
+
+function updateCrmRetryActionHints(failedCrmLeads, filteredFailedCrmLeads, reviewedCrmLeads) {
+  const failedCount = failedCrmLeads.length;
+  const filteredFailedCount = filteredFailedCrmLeads.length;
+  const reviewedCount = reviewedCrmLeads.length;
+  const filteredLabel = crmFailureReasonFilter === "all" ? "failed CRM syncs" : `${crmFailureReasonFilter} CRM sync failures`;
+  const runningHint = "CRM sync is already running";
+
+  setCrmActionHint(
+    retryFailedCrmButton,
+    crmSyncInProgress || filteredFailedCount === 0,
+    crmSyncInProgress
+      ? runningHint
+      : filteredFailedCount > 0
+        ? `Retry ${filteredFailedCount} ${filteredLabel}`
+        : `No ${filteredLabel} to retry`
+  );
+  setCrmActionHint(
+    markReviewedCrmButton,
+    crmSyncInProgress || filteredFailedCount === 0,
+    crmSyncInProgress
+      ? runningHint
+      : filteredFailedCount > 0
+        ? `Mark ${filteredFailedCount} ${filteredLabel} reviewed`
+        : `No ${filteredLabel} to mark reviewed`
+  );
+  setCrmActionHint(
+    requeueReviewedCrmButton,
+    crmSyncInProgress || reviewedCount === 0,
+    crmSyncInProgress
+      ? runningHint
+      : reviewedCount > 0
+        ? `Requeue ${reviewedCount} reviewed CRM syncs`
+        : "No reviewed CRM syncs to requeue"
+  );
+  setCrmActionHint(
+    exportFailedCrmButton,
+    failedCount === 0,
+    failedCount > 0 ? `Export ${failedCount} failed CRM syncs as JSON` : "No failed CRM syncs to export"
+  );
+  setCrmActionHint(
+    exportFailedCrmCsvButton,
+    failedCount === 0,
+    failedCount > 0 ? `Export ${failedCount} failed CRM syncs as CSV` : "No failed CRM syncs to export as CSV"
+  );
+  setCrmActionHint(
+    exportReviewedCrmButton,
+    reviewedCount === 0,
+    reviewedCount > 0 ? `Export ${reviewedCount} reviewed CRM syncs as JSON` : "No reviewed CRM syncs to export"
+  );
+  setCrmActionHint(
+    exportReviewedCrmCsvButton,
+    reviewedCount === 0,
+    reviewedCount > 0 ? `Export ${reviewedCount} reviewed CRM syncs as CSV` : "No reviewed CRM syncs to export as CSV"
   );
 }
 
@@ -5509,13 +5565,7 @@ function renderCrmRetryQueue(failedCrmLeads = getFailedCrmSyncLeads()) {
   const failedStart = failedPage * crmQueuePageSize;
   const failedPageLeads = filteredFailedCrmLeads.slice(failedStart, failedStart + crmQueuePageSize);
   crmFailedQueuePage = failedPage;
-  retryFailedCrmButton.disabled = filteredFailedCrmLeads.length === 0;
-  markReviewedCrmButton.disabled = filteredFailedCrmLeads.length === 0;
-  requeueReviewedCrmButton.disabled = reviewedCrmLeads.length === 0;
-  exportFailedCrmButton.disabled = failedCrmLeads.length === 0;
-  exportFailedCrmCsvButton.disabled = failedCrmLeads.length === 0;
-  exportReviewedCrmButton.disabled = reviewedCrmLeads.length === 0;
-  exportReviewedCrmCsvButton.disabled = reviewedCrmLeads.length === 0;
+  updateCrmRetryActionHints(failedCrmLeads, filteredFailedCrmLeads, reviewedCrmLeads);
   const syncedCount = prospects.filter((prospect) => prospect.crmSyncStatus === "Synced").length;
   const syncingCount = prospects.filter((prospect) => prospect.crmSyncStatus === "Syncing").length;
   const reviewedCount = reviewedCrmLeads.length;
