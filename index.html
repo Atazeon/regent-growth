@@ -633,14 +633,14 @@ $env:REGENT_SEARCH_API_KEY="your_api_key"
           </div>
           <textarea id="emailDraft"></textarea>
           <div class="email-handoff">
-            <button id="openMailClientButton" class="secondary-button" type="button">Mail app</button>
-            <button id="openGmailButton" class="secondary-button" type="button">Gmail</button>
-            <button id="openOutlookButton" class="secondary-button" type="button">Outlook</button>
-            <button id="copyEmailDraftButton" class="secondary-button" type="button">Copy draft</button>
-            <button id="exportEmailDraftButton" class="secondary-button" type="button">Export draft</button>
-            <button id="exportEmailJsonButton" class="secondary-button" type="button">Export JSON</button>
-            <button id="copyEmailJsonButton" class="secondary-button" type="button">Copy JSON</button>
-            <button id="markEmailSentButton" type="button">Mark sent</button>
+            <button id="openMailClientButton" class="secondary-button" type="button" title="Open this draft in your default mail app" aria-label="Open this draft in your default mail app">Mail app</button>
+            <button id="openGmailButton" class="secondary-button" type="button" title="Open this draft in Gmail compose" aria-label="Open this draft in Gmail compose">Gmail</button>
+            <button id="openOutlookButton" class="secondary-button" type="button" title="Open this draft in Outlook compose" aria-label="Open this draft in Outlook compose">Outlook</button>
+            <button id="copyEmailDraftButton" class="secondary-button" type="button" title="Copy the selected email draft" aria-label="Copy the selected email draft">Copy draft</button>
+            <button id="exportEmailDraftButton" class="secondary-button" type="button" title="Export the selected email draft as text" aria-label="Export the selected email draft as text">Export draft</button>
+            <button id="exportEmailJsonButton" class="secondary-button" type="button" title="Export the selected email draft as JSON" aria-label="Export the selected email draft as JSON">Export JSON</button>
+            <button id="copyEmailJsonButton" class="secondary-button" type="button" title="Copy the selected email draft as JSON" aria-label="Copy the selected email draft as JSON">Copy JSON</button>
+            <button id="markEmailSentButton" type="button" title="Mark this email draft as sent" aria-label="Mark this email draft as sent">Mark sent</button>
           </div>
           <div id="emailSendSummary" class="email-send-summary" aria-live="polite">
             Select a prospect with a contact email and write a draft before sending.
