@@ -4902,7 +4902,13 @@ async function copyEmailDraft() {
   const prospect = saveCurrentEmailDraft();
   if (!prospect) return;
 
-  const copiedDirectly = await copyTextWithFallback(emailDraft.value.trim());
+  const draft = emailDraft.value.trim();
+  if (!draft) {
+    setDataStatus(`No email draft to copy for ${prospect.company}.`, "error");
+    return;
+  }
+
+  const copiedDirectly = await copyTextWithFallback(draft);
   setDataStatus(copiedDirectly
     ? `Email draft copied for ${prospect.company}.`
     : `Email draft selected and copied for ${prospect.company}.`);

@@ -6,7 +6,7 @@ const app = fs.readFileSync(path.join(root, "app.js"), "utf8");
 
 const checks = [
   ["clipboard helper exists", app.includes("async function copyTextWithFallback(text)")],
-  ["email copy uses helper", app.includes("await copyTextWithFallback(emailDraft.value.trim());")],
+  ["email copy uses helper", app.includes("await copyTextWithFallback(draft);")],
   ["brief copy uses helper", app.includes("await copyTextWithFallback(prospect.aiBrief);")],
   ["json copy uses helper", app.includes("await copyTextWithFallback(JSON.stringify(getProspectResearchExportRecord(prospect), null, 2));")],
   ["email fallback status", app.includes("Email draft selected and copied for ${prospect.company}.")],
