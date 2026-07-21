@@ -3655,8 +3655,7 @@ function renderDailyRunHistoryStatusCounts() {
 }
 
 function renderDailyRunHistorySourceChips(visibleHistory) {
-  const entries = Object.entries(getDailyRunHistorySourceSummary(visibleHistory))
-    .sort(([sourceA, countA], [sourceB, countB]) => countB - countA || sourceA.localeCompare(sourceB));
+  const entries = getDailyRunHistorySourceSummaryEntries(visibleHistory);
   if (entries.length === 0) return "";
 
   return `
@@ -4047,6 +4046,11 @@ function getDailyRunHistorySourceSummary(historyItems) {
   }, {});
 }
 
+function getDailyRunHistorySourceSummaryEntries(historyItems) {
+  return Object.entries(getDailyRunHistorySourceSummary(historyItems))
+    .sort(([sourceA, countA], [sourceB, countB]) => countB - countA || sourceA.localeCompare(sourceB));
+}
+
 function formatDailyRunHistorySummary(historyItems = getVisibleDailyRunHistory()) {
   if (historyItems.length === 0) return "No Daily AI run history matches the current filter.";
 
@@ -4094,8 +4098,7 @@ async function copyDailyRunHistorySourceSummary() {
     return;
   }
 
-  const summary = getDailyRunHistorySourceSummary(visibleHistory);
-  const lines = Object.entries(summary).map(([source, count]) => `${source}: ${count}`);
+  const lines = getDailyRunHistorySourceSummaryEntries(visibleHistory).map(([source, count]) => `${source}: ${count}`);
   await navigator.clipboard.writeText(`Daily AI history source summary\n${lines.join("\n")}`);
   setDataStatus("Copied Daily AI history source summary.");
 }
