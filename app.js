@@ -694,12 +694,13 @@ function updateCrmChecklistProgress() {
 function formatCrmChecklistSummary() {
   const inputs = getCrmChecklistInputs();
   const completed = inputs.filter((input) => input.checked).length;
+  const completionPercent = inputs.length ? Math.round((completed / inputs.length) * 100) : 0;
   const completedAt = loadCrmChecklistState().__completedAt || "";
   const lines = inputs.map((input) => `${input.checked ? "[x]" : "[ ]"} ${input.parentElement.textContent.trim()}`);
 
   return [
     "CRM Checklist",
-    `${completed} of ${inputs.length} complete`,
+    `${completed} of ${inputs.length} complete (${completionPercent}%)`,
     completedAt ? `Completed at: ${formatDateTime(completedAt)}` : "Completed at: Not complete",
     "",
     ...lines

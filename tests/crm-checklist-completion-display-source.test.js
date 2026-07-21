@@ -8,7 +8,7 @@ const checks = [
   ["summary loads completed timestamp", app.includes('const completedAt = loadCrmChecklistState().__completedAt || "";')],
   ["summary displays completed date", app.includes('completedAt ? `Completed at: ${formatDateTime(completedAt)}` : "Completed at: Not complete"')],
   ["summary still includes checklist title", app.includes('"CRM Checklist",')],
-  ["summary still includes progress line", app.includes("`${completed} of ${inputs.length} complete`,")]
+  ["summary still includes progress line", app.includes("`${completed} of ${inputs.length} complete (${completionPercent}%)`,")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
