@@ -2753,13 +2753,15 @@ function getOwnerWorkloads() {
       owner,
       total: 0,
       blocked: 0,
+      overdue: 0,
       due: 0,
       accepted: 0
     };
 
     workload.total += 1;
     if (isBlockedHandoff(prospect)) workload.blocked += 1;
-    if (prospect.handoffDue && daysUntil(prospect.handoffDue) <= 0) workload.due += 1;
+    if (prospect.handoffDue && daysUntil(prospect.handoffDue) < 0) workload.overdue += 1;
+    if (prospect.handoffDue && daysUntil(prospect.handoffDue) === 0) workload.due += 1;
     if (prospect.handoffStatus === "Accepted") workload.accepted += 1;
     workloads.set(owner, workload);
   });
@@ -2782,7 +2784,7 @@ function renderOwnerDashboard() {
       <button class="owner-row" type="button" data-owner="${escapeHtml(workload.owner)}">
         <span>${escapeHtml(workload.owner)}</span>
         <strong>${escapeHtml(workload.total)}</strong>
-        <small>${escapeHtml(workload.due)} due | ${escapeHtml(workload.blocked)} blocked | ${escapeHtml(workload.accepted)} accepted</small>
+        <small>${escapeHtml(workload.overdue)} overdue | ${escapeHtml(workload.due)} due today | ${escapeHtml(workload.blocked)} blocked | ${escapeHtml(workload.accepted)} accepted</small>
       </button>
     `).join("");
   }
