@@ -10,6 +10,8 @@ const checks = [
   ["json button selected", app.includes('const downloadCrmChecklistJsonButton = document.querySelector("#downloadCrmChecklistJsonButton");')],
   ["summary record exists", app.includes("function getCrmChecklistSummaryRecord()")],
   ["record includes completed count", app.includes("completedCount,\n    totalCount: items.length,")],
+  ["record includes exported timestamp", app.includes("exportedAt: new Date().toISOString(),")],
+  ["record includes completed timestamp", app.includes('completedAt: loadCrmChecklistState().__completedAt || "",')],
   ["record includes availability", app.includes("available: items.length > 0,")],
   ["record includes items", app.includes("items\n  };")],
   ["json download exists", app.includes("function downloadCrmChecklistJson()")],

@@ -8,7 +8,7 @@ const checks = [
   ["text percent calculated", app.includes("const completionPercent = inputs.length ? Math.round((completed / inputs.length) * 100) : 0;")],
   ["text status displayed", app.includes('inputs.length > 0 ? "Status: Available" : "Status: Checklist unavailable",')],
   ["text percent displayed", app.includes("`${completed} of ${inputs.length} complete (${completionPercent}%)`,")],
-  ["completed timestamp retained", app.includes('completedAt ? `Completed at: ${formatDateTime(completedAt)}` : "Completed at: Not complete"')]
+  ["text completed timestamp displayed", app.includes('completedAt ? `Completed at: ${formatDateTime(completedAt)}` : "Completed at: Not complete"')]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
