@@ -5417,7 +5417,7 @@ function renderCrmFieldMappingPreview(prospect) {
   const groups = getCrmFieldGroups(record);
   const warmLeadWarning = isWarmLead(prospect)
     ? ""
-    : `<p class="crm-preview-warning">This account is not a warm lead yet. Mark it CRM ready before syncing.</p>`;
+    : `<p class="crm-preview-warning" role="alert">This account is not a warm lead yet. Mark it CRM ready before syncing.</p>`;
 
   copyCrmMappingButton.disabled = false;
   crmFieldPreview.innerHTML = `
