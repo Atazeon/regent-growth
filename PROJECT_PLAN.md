@@ -31,7 +31,7 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 
 ### Later
 
-- Research action status labels
+- Prospect evidence section structure
 
 ## Data Model Draft
 
