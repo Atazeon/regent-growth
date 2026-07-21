@@ -31,7 +31,7 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 
 ### Later
 
-- Sequence queue quick action aria labels
+- Sequence queue quick action status count
 
 ## Data Model Draft
 
