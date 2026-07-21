@@ -889,7 +889,14 @@ button:disabled {
 
 .setup-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
+}
+
+.setup-actions button {
+  flex: 1 1 150px;
+  min-height: 40px;
+  white-space: normal;
 }
 
 .source-links {
