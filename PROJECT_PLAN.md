@@ -31,7 +31,7 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 
 ### Later
 
-- CRM checklist reset progress refresh coverage
+- CRM checklist save progress refresh coverage
 
 ## Data Model Draft
 
