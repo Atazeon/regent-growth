@@ -5965,8 +5965,10 @@ function exportReviewedCrmSyncCsv() {
 }
 
 function formatCrmStatusSummary() {
+  const warmLeads = getWarmLeads();
   const failedCrmLeads = getFailedCrmSyncLeads();
   const reviewedCrmLeads = getReviewedCrmSyncLeads();
+  const retryableFailedCount = failedCrmLeads.filter((prospect) => isWarmLead(prospect)).length;
   const syncedCount = prospects.filter((prospect) => prospect.crmSyncStatus === "Synced").length;
   const syncingCount = prospects.filter((prospect) => prospect.crmSyncStatus === "Syncing").length;
   const notSyncedCount = prospects.filter((prospect) => !prospect.crmSyncStatus || prospect.crmSyncStatus === "Not Synced").length;
@@ -5976,7 +5978,9 @@ function formatCrmStatusSummary() {
   return [
     "Regent Growth CRM Sync Summary",
     `Generated: ${new Date().toISOString()}`,
+    `Warm Leads: ${warmLeads.length}`,
     `Failed: ${failedCrmLeads.length}`,
+    `Retryable Failed: ${retryableFailedCount}`,
     `Reviewed: ${reviewedCrmLeads.length}`,
     `Syncing: ${syncingCount}`,
     `Synced: ${syncedCount}`,
