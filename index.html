@@ -681,23 +681,23 @@ $env:REGENT_CRM_API_KEY="your_api_key"
             </select>
           </label>
           <div class="setup-actions">
-            <button id="checkCrmSetupButton" class="secondary-button" type="button">Check CRM setup</button>
-            <button id="syncSelectedCrmButton" class="secondary-button" type="button">Sync selected</button>
-            <button id="syncWarmCrmButton" type="button">Sync warm leads</button>
-            <button id="retryFailedCrmButton" class="secondary-button" type="button" disabled>Retry failed</button>
-            <button id="markReviewedCrmButton" class="secondary-button" type="button" disabled>Mark reviewed</button>
-            <button id="requeueSelectedReviewedCrmButton" class="secondary-button" type="button" disabled>Requeue selected reviewed</button>
-            <button id="requeueReviewedCrmButton" class="secondary-button" type="button" disabled>Requeue reviewed</button>
-            <button id="exportFailedCrmButton" class="secondary-button" type="button" disabled>Export failed</button>
-            <button id="exportFailedCrmCsvButton" class="secondary-button" type="button" disabled>Export failed CSV</button>
-            <button id="exportReviewedCrmButton" class="secondary-button" type="button" disabled>Export reviewed</button>
-            <button id="exportReviewedCrmCsvButton" class="secondary-button" type="button" disabled>Export reviewed CSV</button>
-            <button id="copyCrmStatusSummaryButton" class="secondary-button" type="button">Copy CRM summary</button>
-            <button id="downloadCrmStatusSummaryButton" class="secondary-button" type="button">Download CRM summary</button>
-            <button id="downloadCrmStatusJsonButton" class="secondary-button" type="button">Download CRM JSON</button>
-            <button id="copyCrmStatusJsonButton" class="secondary-button" type="button">Copy CRM JSON</button>
-            <button id="clearResolvedCrmButton" class="secondary-button" type="button">Clear resolved</button>
-            <button id="clearCrmNotesButton" class="secondary-button" type="button">Clean notes</button>
+            <button id="checkCrmSetupButton" class="secondary-button" type="button" title="Check CRM API connection settings" aria-label="Check CRM API connection settings">Check CRM setup</button>
+            <button id="syncSelectedCrmButton" class="secondary-button" type="button" title="Sync the selected warm lead to CRM" aria-label="Sync the selected warm lead to CRM">Sync selected</button>
+            <button id="syncWarmCrmButton" type="button" title="Sync all CRM-ready warm leads" aria-label="Sync all CRM-ready warm leads">Sync warm leads</button>
+            <button id="retryFailedCrmButton" class="secondary-button" type="button" title="Retry failed CRM syncs" aria-label="Retry failed CRM syncs" disabled>Retry failed</button>
+            <button id="markReviewedCrmButton" class="secondary-button" type="button" title="Mark failed CRM syncs reviewed" aria-label="Mark failed CRM syncs reviewed" disabled>Mark reviewed</button>
+            <button id="requeueSelectedReviewedCrmButton" class="secondary-button" type="button" title="Requeue the selected reviewed CRM sync" aria-label="Requeue the selected reviewed CRM sync" disabled>Requeue selected reviewed</button>
+            <button id="requeueReviewedCrmButton" class="secondary-button" type="button" title="Requeue reviewed CRM syncs" aria-label="Requeue reviewed CRM syncs" disabled>Requeue reviewed</button>
+            <button id="exportFailedCrmButton" class="secondary-button" type="button" title="Export failed CRM syncs as JSON" aria-label="Export failed CRM syncs as JSON" disabled>Export failed</button>
+            <button id="exportFailedCrmCsvButton" class="secondary-button" type="button" title="Export failed CRM syncs as CSV" aria-label="Export failed CRM syncs as CSV" disabled>Export failed CSV</button>
+            <button id="exportReviewedCrmButton" class="secondary-button" type="button" title="Export reviewed CRM syncs as JSON" aria-label="Export reviewed CRM syncs as JSON" disabled>Export reviewed</button>
+            <button id="exportReviewedCrmCsvButton" class="secondary-button" type="button" title="Export reviewed CRM syncs as CSV" aria-label="Export reviewed CRM syncs as CSV" disabled>Export reviewed CSV</button>
+            <button id="copyCrmStatusSummaryButton" class="secondary-button" type="button" title="Copy the CRM sync status summary" aria-label="Copy the CRM sync status summary">Copy CRM summary</button>
+            <button id="downloadCrmStatusSummaryButton" class="secondary-button" type="button" title="Download the CRM sync status summary as text" aria-label="Download the CRM sync status summary as text">Download CRM summary</button>
+            <button id="downloadCrmStatusJsonButton" class="secondary-button" type="button" title="Download the CRM sync status summary as JSON" aria-label="Download the CRM sync status summary as JSON">Download CRM JSON</button>
+            <button id="copyCrmStatusJsonButton" class="secondary-button" type="button" title="Copy the CRM sync status summary as JSON" aria-label="Copy the CRM sync status summary as JSON">Copy CRM JSON</button>
+            <button id="clearResolvedCrmButton" class="secondary-button" type="button" title="Clear resolved CRM retry queue items" aria-label="Clear resolved CRM retry queue items">Clear resolved</button>
+            <button id="clearCrmNotesButton" class="secondary-button" type="button" title="Clean CRM sync notes" aria-label="Clean CRM sync notes">Clean notes</button>
           </div>
         </div>
         <div id="crmRetryQueue" class="crm-retry-queue">
