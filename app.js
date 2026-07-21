@@ -6019,6 +6019,10 @@ function snoozeReminder(index, days) {
 function markSequenceEmailSent(index) {
   const prospect = prospects[index];
   if (!prospect) return;
+  if (prospect.stage !== "Sequence") {
+    setDataStatus(`${prospect.company} is not in Sequence. Open the prospect to update its workflow stage.`, "error");
+    return;
+  }
 
   prospect.stage = "Sequence";
   prospect.responseStatus = prospect.responseStatus === "Not Contacted" ? "Contacted" : prospect.responseStatus;
@@ -6034,6 +6038,10 @@ function markSequenceEmailSent(index) {
 function markSequenceLinkedInSent(index) {
   const prospect = prospects[index];
   if (!prospect) return;
+  if (prospect.stage !== "Sequence") {
+    setDataStatus(`${prospect.company} is not in Sequence. Open the prospect to update its LinkedIn task.`, "error");
+    return;
+  }
 
   prospect.stage = "LinkedIn";
   prospect.linkedInStatus = "Connection Sent";
@@ -6049,6 +6057,10 @@ function markSequenceLinkedInSent(index) {
 function planSequenceCall(index) {
   const prospect = prospects[index];
   if (!prospect) return;
+  if (prospect.stage !== "Sequence") {
+    setDataStatus(`${prospect.company} is not in Sequence. Open the prospect to update its call task.`, "error");
+    return;
+  }
 
   prospect.stage = "Call";
   prospect.callStatus = "Planned";
