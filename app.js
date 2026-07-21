@@ -267,6 +267,7 @@ const exportButton = document.querySelector("#exportButton");
 const resetButton = document.querySelector("#resetButton");
 const modelSelect = document.querySelector("#modelSelect");
 const researchAccountButton = document.querySelector("#researchAccountButton");
+const searchProspectSourcesButton = document.querySelector("#searchProspectSourcesButton");
 const fetchProspectSourceButton = document.querySelector("#fetchProspectSourceButton");
 const generateBriefButton = document.querySelector("#generateBriefButton");
 const generateEmailButton = document.querySelector("#generateEmailButton");
@@ -3454,11 +3455,60 @@ async function fetchSelectedProspectSource() {
   }
 }
 
+async function searchSelectedProspectSources() {
+  const prospect = getSelectedProspect();
+  if (!prospect) return;
+
+  searchProspectSourcesButton.disabled = true;
+  setDataStatus(`Searching sources for ${prospect.company}...`, "working");
+
+  try {
+    const response = await fetch(sourceSearchEndpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        query: buildProspectSearchQuery(prospect),
+        count: 5
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || `Source search returned ${response.status}`);
+    }
+
+    const result = await response.json();
+    if (!Array.isArray(result.results) || result.results.length === 0) {
+      throw new Error("Search API returned no source results.");
+    }
+
+    const searchEvidence = `Source search evidence\n${formatSearchEvidence(result)}`;
+    prospect.aiBrief = prospect.aiBrief
+      ? `${prospect.aiBrief}\n\n${searchEvidence}`
+      : searchEvidence;
+    prospect.responseNotes = [prospect.responseNotes, `${new Date().toISOString()}: Source search saved for query "${result.query}".`].filter(Boolean).join("\n");
+    researchPrompt.value = prospect.aiBrief;
+    saveProspects();
+    renderProspects();
+    setDataStatus(`Saved ${result.results.length} source result${result.results.length === 1 ? "" : "s"} for ${prospect.company}.`);
+  } catch (error) {
+    const message = location.protocol === "file:"
+      ? "Source search needs the local research server. Run local-research-server.js and open the local URL."
+      : `Source search error: ${error.message}`;
+    setDataStatus(message, "error");
+  } finally {
+    searchProspectSourcesButton.disabled = false;
+  }
+}
+
 async function researchSelectedAccount() {
   const prospect = getSelectedProspect();
   if (!prospect) return;
 
   researchAccountButton.disabled = true;
+  searchProspectSourcesButton.disabled = true;
   fetchProspectSourceButton.disabled = true;
   generateBriefButton.disabled = true;
   try {
@@ -3476,6 +3526,7 @@ async function researchSelectedAccount() {
     setAiStatus(message, "error");
   } finally {
     researchAccountButton.disabled = false;
+    searchProspectSourcesButton.disabled = false;
     fetchProspectSourceButton.disabled = false;
     generateBriefButton.disabled = false;
   }
@@ -6264,6 +6315,18 @@ function buildCandidateSearchQuery(candidate) {
   return parts.join(" ");
 }
 
+function buildProspectSearchQuery(prospect) {
+  const parts = [
+    prospect.company,
+    prospect.website,
+    prospect.industry,
+    prospect.trigger,
+    "company growth hiring expansion decision maker"
+  ].filter(Boolean);
+
+  return parts.join(" ");
+}
+
 function formatSearchEvidence(result) {
   const lines = [
     `Search query: ${result.query}`,
@@ -7129,6 +7192,7 @@ savePromptsButton.addEventListener("click", savePromptTemplateEdits);
 resetPromptsButton.addEventListener("click", resetPromptTemplates);
 modelSelect.addEventListener("change", () => setAiStatus(`Local AI ready: ${modelSelect.value}`));
 researchAccountButton.addEventListener("click", researchSelectedAccount);
+searchProspectSourcesButton.addEventListener("click", searchSelectedProspectSources);
 fetchProspectSourceButton.addEventListener("click", fetchSelectedProspectSource);
 generateBriefButton.addEventListener("click", generateCompanyBrief);
 generateEmailButton.addEventListener("click", generatePersonalizedEmail);
