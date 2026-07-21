@@ -7,8 +7,8 @@ const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const checks = [
   ["checklist heading id exists", html.includes('<h3 id="crmChecklistHeading">Checklist</h3>')],
   ["checklist list labelled", html.includes('<div class="checklist" role="list" aria-labelledby="crmChecklistHeading">')],
-  ["checklist items labelled", html.includes('<label role="listitem"><input type="checkbox"> Decision-maker identified</label>')],
-  ["assessment item retained", html.includes('<label role="listitem"><input type="checkbox"> Assessment notes ready</label>')]
+  ["checklist items labelled", html.includes('<label role="listitem" for="crmChecklistDecisionMaker"><input id="crmChecklistDecisionMaker"')],
+  ["assessment item retained", html.includes('<label role="listitem" for="crmChecklistAssessment"><input id="crmChecklistAssessment"')]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
