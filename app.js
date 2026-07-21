@@ -2798,22 +2798,8 @@ function getReminderLabel(days) {
   return `Due in ${days} day${days === 1 ? "" : "s"}`;
 }
 
-function renderReminders() {
-  const reminders = prospects
-    .map((prospect, index) => ({ prospect, index, days: prospect.nextTouch ? daysUntil(prospect.nextTouch) : Number.POSITIVE_INFINITY }))
-    .filter(({ prospect, days }) => prospect.nextTouch && !isClosedResponse(prospect) && Number.isFinite(days))
-    .sort((first, second) => first.days - second.days);
-
-  const sequenceCount = reminders.filter(({ prospect }) => prospect.stage === "Sequence").length;
-  const dueCount = reminders.filter(({ days }) => days <= 0).length;
-  reminderCount.textContent = `${reminders.length} scheduled task${reminders.length === 1 ? "" : "s"} | ${dueCount} due task${dueCount === 1 ? "" : "s"} | ${sequenceCount} sequence task${sequenceCount === 1 ? "" : "s"}`;
-
-  if (reminders.length === 0) {
-    reminderList.innerHTML = `<p class="empty-state">No follow-up reminders scheduled yet. Add a next touch date on any prospect to place it here.</p>`;
-    return;
-  }
-
-  reminderList.innerHTML = reminders.map(({ prospect, index, days }) => `
+function renderReminderItem({ prospect, index, days }) {
+  return `
     <article class="reminder-item ${days <= 0 ? "reminder-due" : ""}">
       <div>
         <div class="reminder-title">
@@ -2833,7 +2819,43 @@ function renderReminders() {
         <button class="secondary-button" type="button" data-action="snooze-reminder" data-days="7" data-index="${index}" title="Snooze this reminder for 7 days" aria-label="Snooze this reminder for 7 days">Snooze 7d</button>
       </div>
     </article>
-  `).join("");
+  `;
+}
+
+function renderReminderGroup(title, items) {
+  if (items.length === 0) return "";
+
+  return `
+    <section class="reminder-group">
+      <div class="reminder-group-heading">
+        <h3>${escapeHtml(title)}</h3>
+        <span>${items.length} task${items.length === 1 ? "" : "s"}</span>
+      </div>
+      ${items.map(renderReminderItem).join("")}
+    </section>
+  `;
+}
+
+function renderReminders() {
+  const reminders = prospects
+    .map((prospect, index) => ({ prospect, index, days: prospect.nextTouch ? daysUntil(prospect.nextTouch) : Number.POSITIVE_INFINITY }))
+    .filter(({ prospect, days }) => prospect.nextTouch && !isClosedResponse(prospect) && Number.isFinite(days))
+    .sort((first, second) => first.days - second.days);
+
+  const sequenceCount = reminders.filter(({ prospect }) => prospect.stage === "Sequence").length;
+  const dueCount = reminders.filter(({ days }) => days <= 0).length;
+  reminderCount.textContent = `${reminders.length} scheduled task${reminders.length === 1 ? "" : "s"} | ${dueCount} due task${dueCount === 1 ? "" : "s"} | ${sequenceCount} sequence task${sequenceCount === 1 ? "" : "s"}`;
+
+  if (reminders.length === 0) {
+    reminderList.innerHTML = `<p class="empty-state">No follow-up reminders scheduled yet. Add a next touch date on any prospect to place it here.</p>`;
+    return;
+  }
+
+  reminderList.innerHTML = [
+    renderReminderGroup("Overdue", reminders.filter(({ days }) => days < 0)),
+    renderReminderGroup("Due today", reminders.filter(({ days }) => days === 0)),
+    renderReminderGroup("Upcoming", reminders.filter(({ days }) => days > 0))
+  ].join("");
 }
 
 function getNextAction(stage) {

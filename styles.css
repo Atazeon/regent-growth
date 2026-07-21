@@ -925,6 +925,35 @@ button:disabled {
   font: 0.95rem/1.5 Arial, Helvetica, sans-serif;
 }
 
+.reminder-group {
+  display: grid;
+  gap: 12px;
+}
+
+.reminder-group + .reminder-group {
+  margin-top: 18px;
+}
+
+.reminder-group-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.reminder-group-heading h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1rem;
+}
+
+.reminder-group-heading span {
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .reminder-item {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -1828,6 +1857,7 @@ textarea {
   .daily-review-list article,
   .daily-run-history article,
   .daily-review-actions,
+  .reminder-group-heading,
   .reminder-item,
   .reminder-title,
   .reminder-actions,
