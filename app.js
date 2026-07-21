@@ -3656,7 +3656,7 @@ function renderDailyRunHistoryStatusCounts() {
 
 function renderDailyRunHistorySourceChips(visibleHistory) {
   const entries = Object.entries(getDailyRunHistorySourceSummary(visibleHistory))
-    .sort(([, countA], [, countB]) => countB - countA);
+    .sort(([sourceA, countA], [sourceB, countB]) => countB - countA || sourceA.localeCompare(sourceB));
   if (entries.length === 0) return "";
 
   return `
