@@ -8,7 +8,7 @@ const app = fs.readFileSync(path.join(root, "app.js"), "utf8");
 
 const checks = [
   ["progress element exists", html.includes('<span id="crmChecklistProgress" class="checklist-progress" aria-live="polite">0 of 8 complete</span>')],
-  ["heading actions wrapper exists", html.includes('<div class="checklist-heading-actions">')],
+  ["heading actions wrapper exists", html.includes('<div class="checklist-heading-actions" role="group" aria-label="CRM checklist actions">')],
   ["progress style exists", styles.includes(".checklist-progress {\n  color: var(--muted);")],
   ["progress selected", app.includes('const crmChecklistProgress = document.querySelector("#crmChecklistProgress");')],
   ["progress helper exists", app.includes("function updateCrmChecklistProgress()")],
