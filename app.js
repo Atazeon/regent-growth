@@ -2740,6 +2740,12 @@ function renderSelectedHandoffSummary(prospect) {
   return `${owner} | ${status}${dueText}${blockedText}`;
 }
 
+function renderBlockedHandoffDueText(prospect) {
+  return prospect.handoffDue
+    ? `${getReminderLabel(daysUntil(prospect.handoffDue))} (${formatDate(prospect.handoffDue)})`
+    : "No due date";
+}
+
 function getOwnerName(prospect) {
   return prospect.handoffOwner?.trim() || "Unassigned";
 }
@@ -2796,7 +2802,7 @@ function renderOwnerDashboard() {
       <article class="blocked-item">
         <div>
           <h4>${escapeHtml(prospect.company)}</h4>
-          <p>${escapeHtml(getOwnerName(prospect))} | Due ${escapeHtml(formatDate(prospect.handoffDue))}</p>
+          <p>${escapeHtml(getOwnerName(prospect))} | ${escapeHtml(renderBlockedHandoffDueText(prospect))}</p>
           <p>${previewText(prospect.handoffNotes, "No blocker note recorded.")}</p>
         </div>
         <button class="secondary-button" type="button" data-action="select-blocked" data-index="${index}">Open</button>
