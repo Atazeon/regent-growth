@@ -8,7 +8,8 @@ const checks = [
   ["group id calculated", app.includes('const groupId = `crmFieldGroup${group.label.replace(/[^a-z0-9]/gi, "")}`;')],
   ["group section labelled region", app.includes('<section role="region" aria-labelledby="${escapeHtml(groupId)}">')],
   ["group heading id exists", app.includes('<h4 id="${escapeHtml(groupId)}">${escapeHtml(group.label)}</h4>')],
-  ["group fields retained", app.includes('group.fields.map(({ field, value }) => `')]
+  ["group fields retained", app.includes("group.fields.map(({ field, value }) => {")],
+  ["group field values formatted", app.includes("const formattedValue = formatCrmPreviewValue(value);")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);

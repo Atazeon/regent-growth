@@ -5435,12 +5435,15 @@ function renderCrmFieldMappingPreview(prospect) {
         return `
         <section role="region" aria-labelledby="${escapeHtml(groupId)}">
           <h4 id="${escapeHtml(groupId)}">${escapeHtml(group.label)}</h4>
-          ${group.fields.map(({ field, value }) => `
-            <div class="crm-field-row">
+          ${group.fields.map(({ field, value }) => {
+            const formattedValue = formatCrmPreviewValue(value);
+            return `
+            <div class="crm-field-row" role="listitem" aria-label="${escapeHtml(field)}: ${escapeHtml(formattedValue)}">
               <code>${escapeHtml(field)}</code>
-              <span>${escapeHtml(formatCrmPreviewValue(value))}</span>
+              <span>${escapeHtml(formattedValue)}</span>
             </div>
-          `).join("")}
+          `;
+          }).join("")}
         </section>
       `;
       }).join("")}
