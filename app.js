@@ -5793,7 +5793,7 @@ function renderCrmFailureReasonChips(failedCrmLeads) {
   const groupButtons = groups.map(([group, count]) => (
     `<button type="button" data-action="set-crm-reason-filter" data-reason="${escapeHtml(group)}" data-active="${crmFailureReasonFilter === group}" title="Show ${escapeHtml(count)} ${escapeHtml(group)} CRM sync failures" aria-label="Show ${escapeHtml(count)} ${escapeHtml(group)} CRM sync failures">${escapeHtml(group)}: ${escapeHtml(count)}</button>`
   )).join("");
-  return `<div class="crm-reason-chips">${allButton}${groupButtons}</div>`;
+  return `<div class="crm-reason-chips" role="group" aria-label="CRM failure reason filters">${allButton}${groupButtons}</div>`;
 }
 
 function filterCrmLeadsByReason(failedCrmLeads) {
