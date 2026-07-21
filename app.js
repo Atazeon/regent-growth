@@ -595,6 +595,13 @@ function renderEmailDraftSummary(prospect) {
   return `Subject: ${subject} | ${wordCount} body word${wordCount === 1 ? "" : "s"}`;
 }
 
+function renderSelectedOutreachReadiness(prospect) {
+  const readiness = getEmailSendReadiness(prospect);
+  return readiness.ready
+    ? `Ready to send to ${readiness.recipient}.`
+    : `Blocked: ${readiness.issues.join(" ")}`;
+}
+
 function saveProspects() {
   localStorage.setItem(storageKey, JSON.stringify(prospects));
 }
@@ -3149,6 +3156,10 @@ function renderSelectedDetail() {
     <article class="detail-wide">
       <span>Email Draft Summary</span>
       <p>${escapeHtml(renderEmailDraftSummary(prospect))}</p>
+    </article>
+    <article class="detail-wide">
+      <span>Outreach Readiness</span>
+      <p>${escapeHtml(renderSelectedOutreachReadiness(prospect))}</p>
     </article>
     <article class="detail-wide">
       <span>Saved AI Email</span>
