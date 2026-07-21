@@ -4146,7 +4146,7 @@ function exportSkippedDailyRunHistoryJson() {
 
   const exportedAt = new Date().toISOString();
   const stamp = exportedAt.slice(0, 19).replace(/[:T]/g, "-");
-  downloadFile(`regent-growth-daily-ai-skipped-history-${stamp}.json`, JSON.stringify({ exportedAt, runs: skippedRuns }, null, 2), "application/json;charset=utf-8");
+  downloadFile(`regent-growth-daily-ai-skipped-history-${stamp}.json`, JSON.stringify({ exportedAt, sources: getDailyRunHistorySourceSummary(skippedRuns), sourceEntries: getDailyRunHistorySourceSummaryEntries(skippedRuns), runs: skippedRuns }, null, 2), "application/json;charset=utf-8");
   setDataStatus(`Exported ${skippedRuns.length} skipped Daily AI run${skippedRuns.length === 1 ? "" : "s"} as JSON.`);
 }
 
@@ -4178,7 +4178,7 @@ function exportStoppedDailyRunHistoryJson() {
 
   const exportedAt = new Date().toISOString();
   const stamp = exportedAt.slice(0, 19).replace(/[:T]/g, "-");
-  downloadFile(`regent-growth-daily-ai-stopped-history-${stamp}.json`, JSON.stringify({ exportedAt, runs: stoppedRuns }, null, 2), "application/json;charset=utf-8");
+  downloadFile(`regent-growth-daily-ai-stopped-history-${stamp}.json`, JSON.stringify({ exportedAt, sources: getDailyRunHistorySourceSummary(stoppedRuns), sourceEntries: getDailyRunHistorySourceSummaryEntries(stoppedRuns), runs: stoppedRuns }, null, 2), "application/json;charset=utf-8");
   setDataStatus(`Exported ${stoppedRuns.length} stopped Daily AI run${stoppedRuns.length === 1 ? "" : "s"} as JSON.`);
 }
 
