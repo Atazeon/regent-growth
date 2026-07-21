@@ -5626,8 +5626,8 @@ function renderCrmRetryQueue(failedCrmLeads = getFailedCrmSyncLeads()) {
             <p>${previewText(getLatestCrmSyncNote(prospect), "No failure note recorded.")}</p>
           </div>
           <div class="crm-retry-item-actions">
-            <button class="secondary-button" type="button" data-action="open-crm-failed" data-index="${escapeHtml(index)}">Open</button>
-            <button class="secondary-button" type="button" data-action="retry-crm-one" data-index="${escapeHtml(index)}">Retry</button>
+            <button class="secondary-button" type="button" data-action="open-crm-failed" data-index="${escapeHtml(index)}" title="Open failed CRM sync for ${escapeHtml(prospect.company)}" aria-label="Open failed CRM sync for ${escapeHtml(prospect.company)}">Open</button>
+            <button class="secondary-button" type="button" data-action="retry-crm-one" data-index="${escapeHtml(index)}" title="Retry failed CRM sync for ${escapeHtml(prospect.company)}" aria-label="Retry failed CRM sync for ${escapeHtml(prospect.company)}">Retry</button>
           </div>
         </article>
         `;
