@@ -31,7 +31,7 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 
 ### Later
 
-- CRM checklist progress label branch coverage
+- CRM checklist progress percent rounding coverage
 
 ## Data Model Draft
 
