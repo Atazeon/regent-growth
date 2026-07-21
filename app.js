@@ -302,6 +302,7 @@ const exportReviewedCrmButton = document.querySelector("#exportReviewedCrmButton
 const exportReviewedCrmCsvButton = document.querySelector("#exportReviewedCrmCsvButton");
 const copyCrmStatusSummaryButton = document.querySelector("#copyCrmStatusSummaryButton");
 const downloadCrmStatusSummaryButton = document.querySelector("#downloadCrmStatusSummaryButton");
+const downloadCrmStatusJsonButton = document.querySelector("#downloadCrmStatusJsonButton");
 const clearResolvedCrmButton = document.querySelector("#clearResolvedCrmButton");
 const clearCrmNotesButton = document.querySelector("#clearCrmNotesButton");
 const crmSetupStatus = document.querySelector("#crmSetupStatus");
@@ -5995,6 +5996,26 @@ function formatCrmStatusSummary() {
   ].join("\n");
 }
 
+function getCrmStatusSummaryRecord() {
+  const warmLeads = getWarmLeads();
+  const failedCrmLeads = getFailedCrmSyncLeads();
+  const reviewedCrmLeads = getReviewedCrmSyncLeads();
+
+  return {
+    exportedAt: new Date().toISOString(),
+    warmLeadCount: warmLeads.length,
+    failedCount: failedCrmLeads.length,
+    retryableFailedCount: failedCrmLeads.filter((prospect) => isWarmLead(prospect)).length,
+    reviewedCount: reviewedCrmLeads.length,
+    syncingCount: prospects.filter((prospect) => prospect.crmSyncStatus === "Syncing").length,
+    syncedCount: prospects.filter((prospect) => prospect.crmSyncStatus === "Synced").length,
+    notSyncedCount: prospects.filter((prospect) => !prospect.crmSyncStatus || prospect.crmSyncStatus === "Not Synced").length,
+    failureReasons: getCrmFailureReasonCounts(failedCrmLeads),
+    failedQueue: failedCrmLeads.slice(0, 10).map(getCrmRecord),
+    reviewedQueue: reviewedCrmLeads.slice(0, 10).map(getCrmRecord)
+  };
+}
+
 async function copyCrmStatusSummary() {
   const summary = formatCrmStatusSummary();
   const copiedDirectly = await copyTextWithFallback(summary);
@@ -6006,6 +6027,13 @@ function downloadCrmStatusSummary() {
   const stamp = exportedAt.slice(0, 19).replace(/[:T]/g, "-");
   downloadFile(`regent-growth-crm-summary-${stamp}.txt`, formatCrmStatusSummary(), "text/plain;charset=utf-8");
   setCrmSetupStatus("Downloaded CRM sync summary.");
+}
+
+function downloadCrmStatusJson() {
+  const exportedAt = new Date().toISOString();
+  const stamp = exportedAt.slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-crm-summary-${stamp}.json`, JSON.stringify(getCrmStatusSummaryRecord(), null, 2), "application/json;charset=utf-8");
+  setCrmSetupStatus("Downloaded CRM sync summary JSON.");
 }
 
 function setCrmSetupStatus(message, state = "") {
@@ -7625,6 +7653,7 @@ exportReviewedCrmButton.addEventListener("click", exportReviewedCrmSyncs);
 exportReviewedCrmCsvButton.addEventListener("click", exportReviewedCrmSyncCsv);
 copyCrmStatusSummaryButton.addEventListener("click", copyCrmStatusSummary);
 downloadCrmStatusSummaryButton.addEventListener("click", downloadCrmStatusSummary);
+downloadCrmStatusJsonButton.addEventListener("click", downloadCrmStatusJson);
 clearResolvedCrmButton.addEventListener("click", clearResolvedCrmQueueState);
 clearCrmNotesButton.addEventListener("click", cleanCrmSyncNotes);
 copyHandoffPacketButton.addEventListener("click", copySelectedHandoffPacket);
