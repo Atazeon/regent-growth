@@ -5788,9 +5788,10 @@ function renderCrmFailureReasonChips(failedCrmLeads) {
   const groups = Object.entries(counts).sort((first, second) => second[1] - first[1] || first[0].localeCompare(second[0]));
   if (groups.length === 0) return "";
 
-  const allButton = `<button type="button" data-action="set-crm-reason-filter" data-reason="all" data-active="${crmFailureReasonFilter === "all"}">All: ${escapeHtml(failedCrmLeads.length)}</button>`;
+  const allLabel = `Show all ${failedCrmLeads.length} failed CRM syncs`;
+  const allButton = `<button type="button" data-action="set-crm-reason-filter" data-reason="all" data-active="${crmFailureReasonFilter === "all"}" title="${escapeHtml(allLabel)}" aria-label="${escapeHtml(allLabel)}">All: ${escapeHtml(failedCrmLeads.length)}</button>`;
   const groupButtons = groups.map(([group, count]) => (
-    `<button type="button" data-action="set-crm-reason-filter" data-reason="${escapeHtml(group)}" data-active="${crmFailureReasonFilter === group}">${escapeHtml(group)}: ${escapeHtml(count)}</button>`
+    `<button type="button" data-action="set-crm-reason-filter" data-reason="${escapeHtml(group)}" data-active="${crmFailureReasonFilter === group}" title="Show ${escapeHtml(count)} ${escapeHtml(group)} CRM sync failures" aria-label="Show ${escapeHtml(count)} ${escapeHtml(group)} CRM sync failures">${escapeHtml(group)}: ${escapeHtml(count)}</button>`
   )).join("");
   return `<div class="crm-reason-chips">${allButton}${groupButtons}</div>`;
 }
