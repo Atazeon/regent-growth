@@ -2,6 +2,7 @@ const storageKey = "regent-growth-prospects";
 const promptStorageKey = "regent-growth-prompt-templates";
 const discoveryStorageKey = "regent-growth-discovery-queue";
 const dailyRunHistoryStorageKey = "regent-growth-daily-run-history";
+const crmChecklistStorageKey = "regent-growth-crm-checklist";
 const ollamaEndpoint = "http://127.0.0.1:11434/api/generate";
 const sourceFetchEndpoint = "/api/fetch-source";
 const sourceSearchEndpoint = "/api/search-sources";
@@ -611,6 +612,35 @@ function saveProspects() {
 
 function saveDailyRunHistory() {
   localStorage.setItem(dailyRunHistoryStorageKey, JSON.stringify(dailyRunHistory));
+}
+
+function getCrmChecklistInputs() {
+  return Array.from(document.querySelectorAll(".checklist input[type='checkbox']"));
+}
+
+function loadCrmChecklistState() {
+  try {
+    return JSON.parse(localStorage.getItem(crmChecklistStorageKey)) || {};
+  } catch {
+    return {};
+  }
+}
+
+function saveCrmChecklistState() {
+  const state = Object.fromEntries(getCrmChecklistInputs().map((input) => [input.id, input.checked]));
+  localStorage.setItem(crmChecklistStorageKey, JSON.stringify(state));
+}
+
+function restoreCrmChecklistState() {
+  const state = loadCrmChecklistState();
+  getCrmChecklistInputs().forEach((input) => {
+    input.checked = Boolean(state[input.id]);
+  });
+}
+
+function bindCrmChecklistState() {
+  restoreCrmChecklistState();
+  getCrmChecklistInputs().forEach((input) => input.addEventListener("change", saveCrmChecklistState));
 }
 
 function getProspectFieldNames() {
@@ -7796,6 +7826,7 @@ copyHandoffPacketButton.addEventListener("click", copySelectedHandoffPacket);
 copyCrmMappingButton.addEventListener("click", copySelectedCrmMapping);
 markCrmReadyButton.addEventListener("click", markSelectedCrmReady);
 
+bindCrmChecklistState();
 renderPromptTemplates();
 renderCrmProviderPreset();
 renderDiscoveryQueue();
