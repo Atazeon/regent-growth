@@ -665,12 +665,20 @@ function updateCrmChecklistProgress() {
   const inputs = getCrmChecklistInputs();
   const completed = inputs.filter((input) => input.checked).length;
   const hasItems = inputs.length > 0;
+  const progressLabel = `${completed} of ${inputs.length} CRM checklist items complete`;
   crmChecklistProgress.textContent = completed === inputs.length
     ? "Checklist complete"
     : `${completed} of ${inputs.length} complete`;
   crmChecklistProgress.dataset.state = completed === inputs.length ? "complete" : "active";
   [copyCrmChecklistButton, copyCrmChecklistJsonButton, downloadCrmChecklistButton, downloadCrmChecklistJsonButton].forEach((button) => {
     button.disabled = !hasItems;
+  });
+  copyCrmChecklistButton.title = `Copy CRM checklist summary (${progressLabel})`;
+  copyCrmChecklistJsonButton.title = `Copy CRM checklist JSON (${progressLabel})`;
+  downloadCrmChecklistButton.title = `Download CRM checklist summary (${progressLabel})`;
+  downloadCrmChecklistJsonButton.title = `Download CRM checklist JSON (${progressLabel})`;
+  [copyCrmChecklistButton, copyCrmChecklistJsonButton, downloadCrmChecklistButton, downloadCrmChecklistJsonButton].forEach((button) => {
+    button.setAttribute("aria-label", button.title);
   });
   resetCrmChecklistButton.disabled = completed === 0;
   resetCrmChecklistButton.title = completed === 0
