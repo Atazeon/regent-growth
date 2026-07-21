@@ -2823,6 +2823,9 @@ function renderReminders() {
       </div>
       <div class="reminder-actions">
         <button type="button" data-action="complete-reminder" data-index="${index}">Mark touched</button>
+        ${prospect.stage === "Sequence" ? `<button class="secondary-button" type="button" data-action="sequence-email-sent" data-index="${index}">Email sent</button>` : ""}
+        ${prospect.stage === "Sequence" ? `<button class="secondary-button" type="button" data-action="sequence-linkedin-sent" data-index="${index}">LinkedIn sent</button>` : ""}
+        ${prospect.stage === "Sequence" ? `<button class="secondary-button" type="button" data-action="sequence-plan-call" data-index="${index}">Plan call</button>` : ""}
         <button class="secondary-button" type="button" data-action="snooze-reminder" data-days="2" data-index="${index}">Snooze 2d</button>
         <button class="secondary-button" type="button" data-action="snooze-reminder" data-days="7" data-index="${index}">Snooze 7d</button>
       </div>
@@ -6013,6 +6016,50 @@ function snoozeReminder(index, days) {
   setDataStatus(`${prospect.company} snoozed until ${formatDate(prospect.nextTouch)}.`);
 }
 
+function markSequenceEmailSent(index) {
+  const prospect = prospects[index];
+  if (!prospect) return;
+
+  prospect.stage = "Sequence";
+  prospect.responseStatus = prospect.responseStatus === "Not Contacted" ? "Contacted" : prospect.responseStatus;
+  prospect.lastTouch = getTodayString();
+  prospect.nextTouch = addDays(prospect.lastTouch, 2);
+  prospect.responseNotes = [prospect.responseNotes, `${new Date().toISOString()}: Sequence email sent.`].filter(Boolean).join("\n");
+  selectedProspectIndex = index;
+  saveProspects();
+  renderProspects();
+  setDataStatus(`${prospect.company} sequence email sent. Next touch scheduled for ${formatDate(prospect.nextTouch)}.`);
+}
+
+function markSequenceLinkedInSent(index) {
+  const prospect = prospects[index];
+  if (!prospect) return;
+
+  prospect.stage = "LinkedIn";
+  prospect.linkedInStatus = "Connection Sent";
+  prospect.lastTouch = getTodayString();
+  prospect.nextTouch = addDays(prospect.lastTouch, 2);
+  prospect.linkedInNotes = [prospect.linkedInNotes, `${new Date().toISOString()}: LinkedIn connection sent from sequence queue.`].filter(Boolean).join("\n");
+  selectedProspectIndex = index;
+  saveProspects();
+  renderProspects();
+  setDataStatus(`${prospect.company} moved to LinkedIn. Next touch scheduled for ${formatDate(prospect.nextTouch)}.`);
+}
+
+function planSequenceCall(index) {
+  const prospect = prospects[index];
+  if (!prospect) return;
+
+  prospect.stage = "Call";
+  prospect.callStatus = "Planned";
+  prospect.nextTouch = addDays(getTodayString(), 1);
+  prospect.callNotes = [prospect.callNotes, `${new Date().toISOString()}: Call planned from sequence queue.`].filter(Boolean).join("\n");
+  selectedProspectIndex = index;
+  saveProspects();
+  renderProspects();
+  setDataStatus(`${prospect.company} moved to Call. Call reminder scheduled for ${formatDate(prospect.nextTouch)}.`);
+}
+
 function normalizeCompanyName(value) {
   return value
     .toLowerCase()
@@ -6577,6 +6624,18 @@ reminderList.addEventListener("click", (event) => {
 
   if (button.dataset.action === "snooze-reminder") {
     snoozeReminder(index, Number(button.dataset.days));
+  }
+
+  if (button.dataset.action === "sequence-email-sent") {
+    markSequenceEmailSent(index);
+  }
+
+  if (button.dataset.action === "sequence-linkedin-sent") {
+    markSequenceLinkedInSent(index);
+  }
+
+  if (button.dataset.action === "sequence-plan-call") {
+    planSequenceCall(index);
   }
 });
 
