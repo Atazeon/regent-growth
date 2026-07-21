@@ -718,6 +718,8 @@ function getCrmChecklistSummaryRecord() {
     completedAt: loadCrmChecklistState().__completedAt || "",
     completedCount: items.filter((item) => item.completed).length,
     totalCount: items.length,
+    completionPercent: items.length ? Math.round((items.filter((item) => item.completed).length / items.length) * 100) : 0,
+    complete: items.length > 0 && items.every((item) => item.completed),
     items
   };
 }
