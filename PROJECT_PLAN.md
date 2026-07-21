@@ -31,7 +31,7 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 
 ### Later
 
-- CRM checklist JSON copy status coverage
+- CRM checklist summary copy status coverage
 
 ## Data Model Draft
 
