@@ -5,7 +5,7 @@ const root = path.resolve(__dirname, "..");
 const app = fs.readFileSync(path.join(root, "app.js"), "utf8");
 
 const checks = [
-  ["progress label exists", app.includes("const progressLabel = `${completed} of ${inputs.length} CRM checklist items complete`;")],
+  ["progress label exists", app.includes("const progressLabel = `${completed} of ${inputs.length} CRM checklist items complete (${completionPercent}%)`;")],
   ["copy summary title updated", app.includes("copyCrmChecklistButton.title = `Copy CRM checklist summary (${progressLabel})`;")],
   ["copy json title updated", app.includes("copyCrmChecklistJsonButton.title = `Copy CRM checklist JSON (${progressLabel})`;")],
   ["download summary title updated", app.includes("downloadCrmChecklistButton.title = `Download CRM checklist summary (${progressLabel})`;")],

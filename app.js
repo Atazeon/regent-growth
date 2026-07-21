@@ -670,7 +670,7 @@ function updateCrmChecklistProgress() {
   const completed = inputs.filter((input) => input.checked).length;
   const hasItems = inputs.length > 0;
   const completionPercent = inputs.length ? Math.round((completed / inputs.length) * 100) : 0;
-  const progressLabel = `${completed} of ${inputs.length} CRM checklist items complete`;
+  const progressLabel = `${completed} of ${inputs.length} CRM checklist items complete (${completionPercent}%)`;
   crmChecklistProgress.textContent = completed === inputs.length
     ? "Checklist complete"
     : `${completed} of ${inputs.length} complete (${completionPercent}%)`;
