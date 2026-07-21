@@ -5665,8 +5665,8 @@ function renderReviewedCrmQueue(reviewedCrmLeads) {
               <p>${previewText(formatReviewedCrmSyncNote(prospect), "No review note recorded.")}</p>
             </div>
             <div class="crm-retry-item-actions">
-              <button class="secondary-button" type="button" data-action="open-crm-reviewed" data-index="${escapeHtml(index)}">Open</button>
-              <button class="secondary-button" type="button" data-action="requeue-crm-reviewed-one" data-index="${escapeHtml(index)}">Requeue</button>
+              <button class="secondary-button" type="button" data-action="open-crm-reviewed" data-index="${escapeHtml(index)}" title="Open reviewed CRM sync for ${escapeHtml(prospect.company)}" aria-label="Open reviewed CRM sync for ${escapeHtml(prospect.company)}">Open</button>
+              <button class="secondary-button" type="button" data-action="requeue-crm-reviewed-one" data-index="${escapeHtml(index)}" title="Requeue reviewed CRM sync for ${escapeHtml(prospect.company)}" aria-label="Requeue reviewed CRM sync for ${escapeHtml(prospect.company)}">Requeue</button>
             </div>
           </article>
           `;
