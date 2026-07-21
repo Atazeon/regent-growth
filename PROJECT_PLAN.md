@@ -31,7 +31,7 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 
 ### Later
 
-- CRM checklist progress summary
+- CRM checklist completion action state
 
 ## Data Model Draft
 

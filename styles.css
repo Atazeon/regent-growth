@@ -1851,6 +1851,20 @@ textarea {
   margin: 0;
 }
 
+.checklist-heading-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.checklist-progress {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
 .checklist {
   display: grid;
   grid-template-columns: repeat(2, minmax(220px, 1fr));

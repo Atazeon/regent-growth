@@ -324,6 +324,7 @@ const handoffStatusInput = document.querySelector("#handoffStatusInput");
 const handoffDueInput = document.querySelector("#handoffDueInput");
 const handoffNotesInput = document.querySelector("#handoffNotesInput");
 const resetCrmChecklistButton = document.querySelector("#resetCrmChecklistButton");
+const crmChecklistProgress = document.querySelector("#crmChecklistProgress");
 const aiStatus = document.querySelector("#aiStatus");
 const dataStatus = document.querySelector("#dataStatus");
 
@@ -630,6 +631,7 @@ function loadCrmChecklistState() {
 function saveCrmChecklistState() {
   const state = Object.fromEntries(getCrmChecklistInputs().map((input) => [input.id, input.checked]));
   localStorage.setItem(crmChecklistStorageKey, JSON.stringify(state));
+  updateCrmChecklistProgress();
 }
 
 function restoreCrmChecklistState() {
@@ -637,6 +639,7 @@ function restoreCrmChecklistState() {
   getCrmChecklistInputs().forEach((input) => {
     input.checked = Boolean(state[input.id]);
   });
+  updateCrmChecklistProgress();
 }
 
 function bindCrmChecklistState() {
@@ -650,6 +653,13 @@ function resetCrmChecklistState() {
     input.checked = false;
   });
   setDataStatus("CRM checklist progress reset.");
+  updateCrmChecklistProgress();
+}
+
+function updateCrmChecklistProgress() {
+  const inputs = getCrmChecklistInputs();
+  const completed = inputs.filter((input) => input.checked).length;
+  crmChecklistProgress.textContent = `${completed} of ${inputs.length} complete`;
 }
 
 function getProspectFieldNames() {

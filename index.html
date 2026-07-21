@@ -769,7 +769,10 @@ $env:REGENT_CRM_API_KEY="your_api_key"
         </div>
         <div class="checklist-heading">
           <h3 id="crmChecklistHeading">Checklist</h3>
-          <button id="resetCrmChecklistButton" class="secondary-button" type="button" title="Clear saved CRM checklist progress" aria-label="Clear saved CRM checklist progress">Reset checklist</button>
+          <div class="checklist-heading-actions">
+            <span id="crmChecklistProgress" class="checklist-progress" aria-live="polite">0 of 8 complete</span>
+            <button id="resetCrmChecklistButton" class="secondary-button" type="button" title="Clear saved CRM checklist progress" aria-label="Clear saved CRM checklist progress">Reset checklist</button>
+          </div>
         </div>
         <div class="checklist" role="list" aria-labelledby="crmChecklistHeading">
           <label role="listitem" for="crmChecklistDecisionMaker"><input id="crmChecklistDecisionMaker" name="crmChecklistDecisionMaker" type="checkbox"> Decision-maker identified</label>
