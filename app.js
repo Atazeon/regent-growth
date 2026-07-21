@@ -3595,6 +3595,7 @@ function renderDailyRunHistory() {
             <button class="secondary-button" type="button" data-action="export-visible-daily-history-failures" title="Export visible Daily AI history failures as JSON" aria-label="Export visible Daily AI history failures as JSON">JSON</button>
             <button class="secondary-button" type="button" data-action="export-visible-daily-history-failures-csv" title="Export visible Daily AI history failures as CSV" aria-label="Export visible Daily AI history failures as CSV">CSV</button>
             <button class="danger-button" type="button" data-action="clear-visible-daily-history-failures" title="Clear visible Daily AI history failure notes" aria-label="Clear visible Daily AI history failure notes" ${dailyRunInProgress ? "disabled" : ""}>Clear</button>
+            ${dailyRunInProgress ? `<span class="daily-history-action-label">Run active</span>` : ""}
           </div>
         ` : ""}
         <div>
