@@ -680,7 +680,7 @@ function updateCrmChecklistProgress() {
     : completed === inputs.length
     ? "Checklist complete"
     : `${completed} of ${inputs.length} complete (${completionPercent}%)`;
-  crmChecklistProgress.dataset.state = completed === inputs.length ? "complete" : "active";
+  crmChecklistProgress.dataset.state = hasItems && completed === inputs.length ? "complete" : "active";
   [copyCrmChecklistButton, copyCrmChecklistJsonButton, downloadCrmChecklistButton, downloadCrmChecklistJsonButton].forEach((button) => {
     button.disabled = !hasItems;
   });

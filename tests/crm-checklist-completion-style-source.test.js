@@ -6,7 +6,7 @@ const app = fs.readFileSync(path.join(root, "app.js"), "utf8");
 const styles = fs.readFileSync(path.join(root, "styles.css"), "utf8");
 
 const checks = [
-  ["progress state set", app.includes('crmChecklistProgress.dataset.state = completed === inputs.length ? "complete" : "active";')],
+  ["progress state set", app.includes('crmChecklistProgress.dataset.state = hasItems && completed === inputs.length ? "complete" : "active";')],
   ["complete style exists", styles.includes('.checklist-progress[data-state="complete"] {\n  color: #247247;')],
   ["base progress style retained", styles.includes(".checklist-progress {\n  color: var(--muted);")]
 ];
