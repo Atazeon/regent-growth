@@ -5540,13 +5540,29 @@ function updateCrmRetryActionHints(failedCrmLeads, filteredFailedCrmLeads, revie
   );
 }
 
+function updateSelectedReviewedCrmActionHint(selectedProspect, selectedIsWarm) {
+  const selectedIsReviewed = selectedProspect?.crmSyncStatus === "Retry Reviewed";
+
+  setCrmActionHint(
+    requeueSelectedReviewedCrmButton,
+    !(selectedIsReviewed && selectedIsWarm),
+    !selectedProspect
+      ? "Select a reviewed CRM sync before requeueing one record"
+      : !selectedIsWarm
+        ? `${selectedProspect.company} is not warm or CRM-ready`
+        : selectedIsReviewed
+          ? `Requeue reviewed CRM sync for ${selectedProspect.company}`
+          : `${selectedProspect.company} is not marked CRM reviewed`
+  );
+}
+
 function renderHandoff() {
   const warmLeads = getWarmLeads();
   const selectedProspect = getSelectedProspect();
   const selectedIsWarm = selectedProspect ? isWarmLead(selectedProspect) : false;
   const failedCrmLeads = getFailedCrmSyncLeads();
   handoffSummary.textContent = `${warmLeads.length} warm lead${warmLeads.length === 1 ? "" : "s"} ready for CRM export.${selectedIsWarm ? ` Selected: ${selectedProspect.company}.` : " Select or mark a warm lead to build its packet."}`;
-  requeueSelectedReviewedCrmButton.disabled = !(selectedProspect?.crmSyncStatus === "Retry Reviewed" && selectedIsWarm);
+  updateSelectedReviewedCrmActionHint(selectedProspect, selectedIsWarm);
   handoffPacket.value = formatHandoffPacket(selectedProspect);
   renderCrmFieldMappingPreview(selectedProspect);
   renderCrmRetryQueue(failedCrmLeads);
