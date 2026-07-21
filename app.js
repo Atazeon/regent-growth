@@ -5667,7 +5667,7 @@ function renderReviewedCrmQueue(reviewedCrmLeads, showEmpty = false) {
           <p class="eyebrow">Reviewed CRM Syncs</p>
           <h3>${escapeHtml(reviewedCrmLeads.length)} reviewed sync${reviewedCrmLeads.length === 1 ? "" : "s"}</h3>
         </div>
-        <button class="secondary-button" type="button" data-action="show-crm-reviewed">Show reviewed</button>
+        <button class="secondary-button" type="button" data-action="show-crm-reviewed" title="Show all reviewed CRM syncs" aria-label="Show all reviewed CRM syncs">Show reviewed</button>
       </div>
       <div class="crm-retry-list">
         ${reviewedPageLeads.map((prospect) => {
