@@ -2824,13 +2824,13 @@ function renderReminders() {
         <p><strong>Next:</strong> ${escapeHtml(formatDate(prospect.nextTouch))}${prospect.responseNotes ? ` | ${escapeHtml(prospect.responseNotes)}` : ""}</p>
       </div>
       <div class="reminder-actions">
-        <button class="secondary-button" type="button" data-action="open-reminder-prospect" data-index="${index}">Open</button>
-        <button type="button" data-action="complete-reminder" data-index="${index}">Mark touched</button>
+        <button class="secondary-button" type="button" data-action="open-reminder-prospect" data-index="${index}" title="Open full prospect record" aria-label="Open full prospect record">Open</button>
+        <button type="button" data-action="complete-reminder" data-index="${index}" title="Mark follow-up touched and schedule the next reminder" aria-label="Mark follow-up touched and schedule the next reminder">Mark touched</button>
         ${prospect.stage === "Sequence" ? `<button class="secondary-button" type="button" data-action="sequence-email-sent" data-index="${index}" title="Mark sequence email sent" aria-label="Mark sequence email sent">Email</button>` : ""}
         ${prospect.stage === "Sequence" ? `<button class="secondary-button" type="button" data-action="sequence-linkedin-sent" data-index="${index}" title="Mark LinkedIn connection sent" aria-label="Mark LinkedIn connection sent">LinkedIn</button>` : ""}
         ${prospect.stage === "Sequence" ? `<button class="secondary-button" type="button" data-action="sequence-plan-call" data-index="${index}" title="Move to call stage and schedule tomorrow" aria-label="Move to call stage and schedule tomorrow">Call</button>` : ""}
-        <button class="secondary-button" type="button" data-action="snooze-reminder" data-days="2" data-index="${index}">Snooze 2d</button>
-        <button class="secondary-button" type="button" data-action="snooze-reminder" data-days="7" data-index="${index}">Snooze 7d</button>
+        <button class="secondary-button" type="button" data-action="snooze-reminder" data-days="2" data-index="${index}" title="Snooze this reminder for 2 days" aria-label="Snooze this reminder for 2 days">Snooze 2d</button>
+        <button class="secondary-button" type="button" data-action="snooze-reminder" data-days="7" data-index="${index}" title="Snooze this reminder for 7 days" aria-label="Snooze this reminder for 7 days">Snooze 7d</button>
       </div>
     </article>
   `).join("");
