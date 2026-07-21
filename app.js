@@ -2732,6 +2732,14 @@ function renderSelectedCrmReadiness(prospect) {
   return `CRM ready | Sync: ${syncStatus}${ownerText}`;
 }
 
+function renderSelectedHandoffSummary(prospect) {
+  const owner = getOwnerName(prospect);
+  const status = prospect.handoffStatus || "Unassigned";
+  const dueText = prospect.handoffDue ? ` | Due ${formatDate(prospect.handoffDue)}` : " | No due date";
+  const blockedText = isBlockedHandoff(prospect) ? " | Blocked" : "";
+  return `${owner} | ${status}${dueText}${blockedText}`;
+}
+
 function getOwnerName(prospect) {
   return prospect.handoffOwner?.trim() || "Unassigned";
 }
@@ -3098,6 +3106,10 @@ function renderSelectedDetail() {
     <article>
       <span>Handoff Due</span>
       <strong>${escapeHtml(formatDate(prospect.handoffDue))}</strong>
+    </article>
+    <article class="detail-wide">
+      <span>Handoff Summary</span>
+      <p>${escapeHtml(renderSelectedHandoffSummary(prospect))}</p>
     </article>
     <article>
       <span>CRM Sync</span>
