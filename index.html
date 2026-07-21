@@ -681,32 +681,38 @@ $env:REGENT_CRM_API_KEY="your_api_key"
             </select>
           </label>
           <div class="setup-actions">
-            <div class="setup-action-group" role="group" aria-label="CRM connection actions">
+            <div class="setup-action-group" role="group" aria-labelledby="crmConnectionActionsLabel">
+              <span id="crmConnectionActionsLabel" class="sr-only">CRM connection actions</span>
               <button id="checkCrmSetupButton" class="secondary-button" type="button" title="Check CRM API connection settings" aria-label="Check CRM API connection settings">Check CRM setup</button>
             </div>
-            <div class="setup-action-group setup-action-group-primary" role="group" aria-label="CRM sync actions">
+            <div class="setup-action-group setup-action-group-primary" role="group" aria-labelledby="crmSyncActionsLabel">
+              <span id="crmSyncActionsLabel" class="sr-only">CRM sync actions</span>
               <button id="syncSelectedCrmButton" class="secondary-button" type="button" title="Sync the selected warm lead to CRM" aria-label="Sync the selected warm lead to CRM">Sync selected</button>
               <button id="syncWarmCrmButton" type="button" title="Sync all CRM-ready warm leads" aria-label="Sync all CRM-ready warm leads">Sync warm leads</button>
             </div>
-            <div class="setup-action-group" role="group" aria-label="CRM retry actions">
+            <div class="setup-action-group" role="group" aria-labelledby="crmRetryActionsLabel">
+              <span id="crmRetryActionsLabel" class="sr-only">CRM retry actions</span>
               <button id="retryFailedCrmButton" class="secondary-button" type="button" title="Retry failed CRM syncs" aria-label="Retry failed CRM syncs" disabled>Retry failed</button>
               <button id="markReviewedCrmButton" class="secondary-button" type="button" title="Mark failed CRM syncs reviewed" aria-label="Mark failed CRM syncs reviewed" disabled>Mark reviewed</button>
               <button id="requeueSelectedReviewedCrmButton" class="secondary-button" type="button" title="Requeue the selected reviewed CRM sync" aria-label="Requeue the selected reviewed CRM sync" disabled>Requeue selected reviewed</button>
               <button id="requeueReviewedCrmButton" class="secondary-button" type="button" title="Requeue reviewed CRM syncs" aria-label="Requeue reviewed CRM syncs" disabled>Requeue reviewed</button>
             </div>
-            <div class="setup-action-group" role="group" aria-label="CRM export actions">
+            <div class="setup-action-group" role="group" aria-labelledby="crmExportActionsLabel">
+              <span id="crmExportActionsLabel" class="sr-only">CRM export actions</span>
               <button id="exportFailedCrmButton" class="secondary-button" type="button" title="Export failed CRM syncs as JSON" aria-label="Export failed CRM syncs as JSON" disabled>Export failed</button>
               <button id="exportFailedCrmCsvButton" class="secondary-button" type="button" title="Export failed CRM syncs as CSV" aria-label="Export failed CRM syncs as CSV" disabled>Export failed CSV</button>
               <button id="exportReviewedCrmButton" class="secondary-button" type="button" title="Export reviewed CRM syncs as JSON" aria-label="Export reviewed CRM syncs as JSON" disabled>Export reviewed</button>
               <button id="exportReviewedCrmCsvButton" class="secondary-button" type="button" title="Export reviewed CRM syncs as CSV" aria-label="Export reviewed CRM syncs as CSV" disabled>Export reviewed CSV</button>
             </div>
-            <div class="setup-action-group" role="group" aria-label="CRM summary actions">
+            <div class="setup-action-group" role="group" aria-labelledby="crmSummaryActionsLabel">
+              <span id="crmSummaryActionsLabel" class="sr-only">CRM summary actions</span>
               <button id="copyCrmStatusSummaryButton" class="secondary-button" type="button" title="Copy the CRM sync status summary" aria-label="Copy the CRM sync status summary">Copy CRM summary</button>
               <button id="downloadCrmStatusSummaryButton" class="secondary-button" type="button" title="Download the CRM sync status summary as text" aria-label="Download the CRM sync status summary as text">Download CRM summary</button>
               <button id="downloadCrmStatusJsonButton" class="secondary-button" type="button" title="Download the CRM sync status summary as JSON" aria-label="Download the CRM sync status summary as JSON">Download CRM JSON</button>
               <button id="copyCrmStatusJsonButton" class="secondary-button" type="button" title="Copy the CRM sync status summary as JSON" aria-label="Copy the CRM sync status summary as JSON">Copy CRM JSON</button>
             </div>
-            <div class="setup-action-group setup-action-group-maintenance" role="group" aria-label="CRM cleanup actions">
+            <div class="setup-action-group setup-action-group-maintenance" role="group" aria-labelledby="crmCleanupActionsLabel">
+              <span id="crmCleanupActionsLabel" class="sr-only">CRM cleanup actions</span>
               <button id="clearResolvedCrmButton" class="secondary-button" type="button" title="Clear resolved CRM retry queue items" aria-label="Clear resolved CRM retry queue items">Clear resolved</button>
               <button id="clearCrmNotesButton" class="secondary-button" type="button" title="Clean CRM sync notes" aria-label="Clean CRM sync notes">Clean notes</button>
             </div>
