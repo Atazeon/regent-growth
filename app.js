@@ -4076,6 +4076,11 @@ async function copyDailyRunHistoryStatusCounts() {
 
 async function copyDailyRunHistorySourceSummary() {
   const visibleHistory = getVisibleDailyRunHistory();
+  if (visibleHistory.length === 0) {
+    setDataStatus("No Daily AI history sources to copy.", "error");
+    return;
+  }
+
   const summary = getDailyRunHistorySourceSummary(visibleHistory);
   const lines = Object.entries(summary).map(([source, count]) => `${source}: ${count}`);
   await navigator.clipboard.writeText(`Daily AI history source summary\n${lines.join("\n")}`);
