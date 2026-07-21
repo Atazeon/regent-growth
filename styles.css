@@ -1407,6 +1407,7 @@ button:disabled {
 
 .email-handoff {
   display: flex;
+  align-items: center;
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 12px;
@@ -1415,6 +1416,7 @@ button:disabled {
 .email-handoff button {
   min-height: 38px;
   padding: 0 12px;
+  white-space: nowrap;
 }
 
 .email-send-summary {
