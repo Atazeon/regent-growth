@@ -3660,7 +3660,7 @@ function renderDailyRunHistorySourceChips(visibleHistory) {
 
   return `
     <div class="daily-history-source-chips" aria-label="Daily AI history source summary">
-      ${entries.map(([source, count]) => `<span>${escapeHtml(source)} <strong>${escapeHtml(count)}</strong></span>`).join("")}
+      ${entries.map(([source, count]) => `<span title="${escapeHtml(source)}">${escapeHtml(source)} <strong>${escapeHtml(count)}</strong></span>`).join("")}
     </div>
   `;
 }
