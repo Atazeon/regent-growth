@@ -758,7 +758,8 @@ $env:REGENT_CRM_API_KEY="your_api_key"
           </div>
           <textarea id="handoffPacket" readonly></textarea>
         </div>
-        <div id="crmFieldPreview" class="crm-field-preview">
+        <div id="crmFieldPreview" class="crm-field-preview" role="region" aria-labelledby="crmFieldPreviewHeading">
+          <h3 id="crmFieldPreviewHeading" class="sr-only">CRM field mapping preview</h3>
           <p class="empty-state">Select a prospect to preview the CRM sync field mapping.</p>
         </div>
         <h3>Checklist</h3>

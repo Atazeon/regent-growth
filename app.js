@@ -5424,7 +5424,7 @@ function renderCrmFieldMappingPreview(prospect) {
     <div class="crm-preview-heading">
       <div>
         <p class="eyebrow">CRM Sync Preview</p>
-        <h3>${escapeHtml(record.company || "Selected account")}</h3>
+        <h3 id="crmFieldPreviewHeading">${escapeHtml(record.company || "Selected account")}</h3>
       </div>
       <span>${escapeHtml(Object.keys(record).length)} fields</span>
     </div>
