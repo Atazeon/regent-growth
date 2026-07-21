@@ -562,6 +562,29 @@ function renderLeadScoreReasonText(prospect) {
   return summary.reasons.length > 0 ? summary.reasons.join(", ") : "Needs more qualification signals.";
 }
 
+function getProspectEvidenceSummary(prospect) {
+  const matches = Array.from((prospect.aiBrief || "").matchAll(/^(Website evidence|Source search evidence) \(([^)]+)\)/gm));
+  const websiteCount = matches.filter((match) => match[1] === "Website evidence").length;
+  const searchCount = matches.filter((match) => match[1] === "Source search evidence").length;
+  const latestAt = matches.length > 0 ? matches[matches.length - 1][2] : "";
+
+  return {
+    total: matches.length,
+    websiteCount,
+    searchCount,
+    latestAt
+  };
+}
+
+function renderProspectEvidenceSummary(prospect) {
+  const summary = getProspectEvidenceSummary(prospect);
+  if (summary.total === 0) {
+    return "No source evidence saved yet.";
+  }
+
+  return `${summary.total} evidence block${summary.total === 1 ? "" : "s"} | ${summary.websiteCount} website | ${summary.searchCount} search${summary.latestAt ? ` | Latest ${formatDateTime(summary.latestAt)}` : ""}`;
+}
+
 function saveProspects() {
   localStorage.setItem(storageKey, JSON.stringify(prospects));
 }
@@ -3104,6 +3127,10 @@ function renderSelectedDetail() {
     <article class="detail-wide">
       <span>Team Sync Notes</span>
       <p>${previewText(prospect.teamSyncNotes, "No team sync conflicts recorded yet.")}</p>
+    </article>
+    <article class="detail-wide">
+      <span>Research Evidence</span>
+      <p>${escapeHtml(renderProspectEvidenceSummary(prospect))}</p>
     </article>
     <article class="detail-wide">
       <span>Saved AI Brief</span>
