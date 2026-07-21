@@ -326,6 +326,7 @@ const handoffNotesInput = document.querySelector("#handoffNotesInput");
 const resetCrmChecklistButton = document.querySelector("#resetCrmChecklistButton");
 const copyCrmChecklistButton = document.querySelector("#copyCrmChecklistButton");
 const downloadCrmChecklistButton = document.querySelector("#downloadCrmChecklistButton");
+const copyCrmChecklistJsonButton = document.querySelector("#copyCrmChecklistJsonButton");
 const downloadCrmChecklistJsonButton = document.querySelector("#downloadCrmChecklistJsonButton");
 const crmChecklistProgress = document.querySelector("#crmChecklistProgress");
 const aiStatus = document.querySelector("#aiStatus");
@@ -717,6 +718,11 @@ function downloadCrmChecklistJson() {
   const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
   downloadFile(`regent-growth-crm-checklist-${stamp}.json`, JSON.stringify(getCrmChecklistSummaryRecord(), null, 2), "application/json;charset=utf-8");
   setDataStatus("CRM checklist JSON downloaded.");
+}
+
+async function copyCrmChecklistJson() {
+  const copiedDirectly = await copyTextWithFallback(JSON.stringify(getCrmChecklistSummaryRecord(), null, 2));
+  setDataStatus(copiedDirectly ? "CRM checklist JSON copied." : "CRM checklist JSON selected and copied.");
 }
 
 function getProspectFieldNames() {
@@ -7903,6 +7909,7 @@ copyCrmMappingButton.addEventListener("click", copySelectedCrmMapping);
 markCrmReadyButton.addEventListener("click", markSelectedCrmReady);
 copyCrmChecklistButton.addEventListener("click", copyCrmChecklistSummary);
 downloadCrmChecklistButton.addEventListener("click", downloadCrmChecklistSummary);
+copyCrmChecklistJsonButton.addEventListener("click", copyCrmChecklistJson);
 downloadCrmChecklistJsonButton.addEventListener("click", downloadCrmChecklistJson);
 resetCrmChecklistButton.addEventListener("click", resetCrmChecklistState);
 
