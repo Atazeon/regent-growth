@@ -267,6 +267,7 @@ const exportButton = document.querySelector("#exportButton");
 const resetButton = document.querySelector("#resetButton");
 const modelSelect = document.querySelector("#modelSelect");
 const researchAccountButton = document.querySelector("#researchAccountButton");
+const fetchProspectSourceButton = document.querySelector("#fetchProspectSourceButton");
 const generateBriefButton = document.querySelector("#generateBriefButton");
 const generateEmailButton = document.querySelector("#generateEmailButton");
 const saveEmailDraftButton = document.querySelector("#saveEmailDraftButton");
@@ -3414,11 +3415,51 @@ async function generateCompanyBrief() {
   }
 }
 
+async function fetchSelectedProspectSource() {
+  const prospect = getSelectedProspect();
+  if (!prospect) return;
+
+  const url = toExternalUrl(prospect.website || "");
+  if (!url) {
+    setDataStatus(`Add a valid website before fetching source evidence for ${prospect.company}.`, "error");
+    return;
+  }
+
+  fetchProspectSourceButton.disabled = true;
+  setDataStatus(`Fetching website evidence for ${prospect.company}...`, "working");
+
+  try {
+    const evidenceTarget = {
+      company: prospect.company,
+      website: prospect.website,
+      sourceNotes: ""
+    };
+    await fetchEvidenceForCandidate(evidenceTarget);
+    const evidenceBlock = `Website evidence\n${evidenceTarget.sourceNotes}`;
+    prospect.aiBrief = prospect.aiBrief
+      ? `${prospect.aiBrief}\n\n${evidenceBlock}`
+      : evidenceBlock;
+    prospect.responseNotes = [prospect.responseNotes, `${new Date().toISOString()}: Website evidence fetched from ${url}.`].filter(Boolean).join("\n");
+    researchPrompt.value = prospect.aiBrief;
+    saveProspects();
+    renderProspects();
+    setDataStatus(`Fetched website evidence for ${prospect.company}.`);
+  } catch (error) {
+    const message = location.protocol === "file:"
+      ? "Source fetch needs the local research server. Run local-research-server.js and open the local URL."
+      : `Source fetch error: ${error.message}`;
+    setDataStatus(message, "error");
+  } finally {
+    fetchProspectSourceButton.disabled = false;
+  }
+}
+
 async function researchSelectedAccount() {
   const prospect = getSelectedProspect();
   if (!prospect) return;
 
   researchAccountButton.disabled = true;
+  fetchProspectSourceButton.disabled = true;
   generateBriefButton.disabled = true;
   try {
     const rawResearch = await generateWithOllama(buildResearchAgentPrompt(prospect), 420);
@@ -3435,6 +3476,7 @@ async function researchSelectedAccount() {
     setAiStatus(message, "error");
   } finally {
     researchAccountButton.disabled = false;
+    fetchProspectSourceButton.disabled = false;
     generateBriefButton.disabled = false;
   }
 }
@@ -7087,6 +7129,7 @@ savePromptsButton.addEventListener("click", savePromptTemplateEdits);
 resetPromptsButton.addEventListener("click", resetPromptTemplates);
 modelSelect.addEventListener("change", () => setAiStatus(`Local AI ready: ${modelSelect.value}`));
 researchAccountButton.addEventListener("click", researchSelectedAccount);
+fetchProspectSourceButton.addEventListener("click", fetchSelectedProspectSource);
 generateBriefButton.addEventListener("click", generateCompanyBrief);
 generateEmailButton.addEventListener("click", generatePersonalizedEmail);
 saveEmailDraftButton.addEventListener("click", saveCurrentEmailDraft);
