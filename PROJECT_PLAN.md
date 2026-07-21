@@ -31,7 +31,7 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 
 ### Later
 
-- Daily AI run history source summary JSON sorted entries
+- Daily AI run history source summary JSON export test coverage
 
 ## Data Model Draft
 
