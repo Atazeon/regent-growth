@@ -1857,12 +1857,19 @@ textarea {
   flex-wrap: wrap;
   gap: 10px;
   justify-content: flex-end;
+  max-width: 620px;
 }
 
 .checklist-progress {
   color: var(--muted);
+  flex: 1 1 120px;
   font-size: 0.9rem;
   font-weight: 700;
+}
+
+.checklist-heading-actions button {
+  flex: 1 1 135px;
+  min-height: 38px;
 }
 
 .checklist-progress[data-state="complete"] {
