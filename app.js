@@ -284,6 +284,7 @@ const openOutlookButton = document.querySelector("#openOutlookButton");
 const copyEmailDraftButton = document.querySelector("#copyEmailDraftButton");
 const exportEmailDraftButton = document.querySelector("#exportEmailDraftButton");
 const exportEmailJsonButton = document.querySelector("#exportEmailJsonButton");
+const copyEmailJsonButton = document.querySelector("#copyEmailJsonButton");
 const markEmailSentButton = document.querySelector("#markEmailSentButton");
 const emailSendSummary = document.querySelector("#emailSendSummary");
 const exportWarmCsvButton = document.querySelector("#exportWarmCsvButton");
@@ -4980,6 +4981,22 @@ function exportEmailJson() {
   setDataStatus(`Email draft JSON exported for ${prospect.company}.`);
 }
 
+async function copyEmailJson() {
+  const prospect = saveCurrentEmailDraft();
+  if (!prospect) return;
+
+  const draft = emailDraft.value.trim();
+  if (!draft) {
+    setDataStatus(`No email draft to copy as JSON for ${prospect.company}.`, "error");
+    return;
+  }
+
+  const copiedDirectly = await copyTextWithFallback(JSON.stringify(getEmailDraftExportRecord(prospect, draft), null, 2));
+  setDataStatus(copiedDirectly
+    ? `Email draft JSON copied for ${prospect.company}.`
+    : `Email draft JSON selected and copied for ${prospect.company}.`);
+}
+
 function saveCurrentResearchBrief() {
   const prospect = getSelectedProspect();
   if (!prospect) return null;
@@ -7500,6 +7517,7 @@ openOutlookButton.addEventListener("click", () => openEmailHandoff("outlook"));
 copyEmailDraftButton.addEventListener("click", copyEmailDraft);
 exportEmailDraftButton.addEventListener("click", exportEmailDraft);
 exportEmailJsonButton.addEventListener("click", exportEmailJson);
+copyEmailJsonButton.addEventListener("click", copyEmailJson);
 markEmailSentButton.addEventListener("click", markEmailSent);
 exportWarmCsvButton.addEventListener("click", exportWarmLeadCsv);
 exportWarmJsonButton.addEventListener("click", exportWarmLeadJson);
