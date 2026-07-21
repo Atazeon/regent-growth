@@ -271,6 +271,7 @@ const searchProspectSourcesButton = document.querySelector("#searchProspectSourc
 const fetchProspectSourceButton = document.querySelector("#fetchProspectSourceButton");
 const generateBriefButton = document.querySelector("#generateBriefButton");
 const copyResearchBriefButton = document.querySelector("#copyResearchBriefButton");
+const clearResearchBriefButton = document.querySelector("#clearResearchBriefButton");
 const generateEmailButton = document.querySelector("#generateEmailButton");
 const saveEmailDraftButton = document.querySelector("#saveEmailDraftButton");
 const openMailClientButton = document.querySelector("#openMailClientButton");
@@ -4870,6 +4871,28 @@ async function copyResearchBrief() {
   }
 }
 
+function clearResearchBrief() {
+  const prospect = getSelectedProspect();
+  if (!prospect) return;
+
+  if (!prospect.aiBrief && !researchPrompt.value.trim()) {
+    setDataStatus(`No research brief to clear for ${prospect.company}.`, "error");
+    return;
+  }
+
+  const confirmed = window.confirm(`Clear saved research brief for ${prospect.company}? This removes the brief and source evidence from this browser.`);
+  if (!confirmed) {
+    setDataStatus("Research brief clear canceled.");
+    return;
+  }
+
+  prospect.aiBrief = "";
+  researchPrompt.value = "";
+  saveProspects();
+  renderSelectedDetail();
+  setDataStatus(`Research brief cleared for ${prospect.company}.`);
+}
+
 function markEmailSent() {
   const prospect = saveCurrentEmailDraft();
   if (!prospect) return;
@@ -7226,6 +7249,7 @@ searchProspectSourcesButton.addEventListener("click", searchSelectedProspectSour
 fetchProspectSourceButton.addEventListener("click", fetchSelectedProspectSource);
 generateBriefButton.addEventListener("click", generateCompanyBrief);
 copyResearchBriefButton.addEventListener("click", copyResearchBrief);
+clearResearchBriefButton.addEventListener("click", clearResearchBrief);
 generateEmailButton.addEventListener("click", generatePersonalizedEmail);
 saveEmailDraftButton.addEventListener("click", saveCurrentEmailDraft);
 emailDraft.addEventListener("input", () => renderEmailSendStatus());
