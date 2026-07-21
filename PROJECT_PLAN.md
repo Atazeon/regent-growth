@@ -31,7 +31,7 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 
 ### Later
 
-- Selected handoff due-state wording
+- Owner workload due-state wording
 
 ## Data Model Draft
 

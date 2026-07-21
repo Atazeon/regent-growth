@@ -8,7 +8,7 @@ const checks = [
   ["handoff summary helper", app.includes("function renderSelectedHandoffSummary(prospect)")],
   ["owner name reused", app.includes("const owner = getOwnerName(prospect);")],
   ["status fallback", app.includes('const status = prospect.handoffStatus || "Unassigned";')],
-  ["due date text", app.includes('const dueText = prospect.handoffDue ? ` | Due ${formatDate(prospect.handoffDue)}` : " | No due date";')],
+  ["due date text", app.includes('const dueText = prospect.handoffDue ? ` | ${getReminderLabel(daysUntil(prospect.handoffDue))} (${formatDate(prospect.handoffDue)})` : " | No due date";')],
   ["blocked text", app.includes('const blockedText = isBlockedHandoff(prospect) ? " | Blocked" : "";')],
   ["summary output", app.includes("return `${owner} | ${status}${dueText}${blockedText}`;")],
   ["detail card", app.includes("<span>Handoff Summary</span>")],

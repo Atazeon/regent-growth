@@ -2735,7 +2735,7 @@ function renderSelectedCrmReadiness(prospect) {
 function renderSelectedHandoffSummary(prospect) {
   const owner = getOwnerName(prospect);
   const status = prospect.handoffStatus || "Unassigned";
-  const dueText = prospect.handoffDue ? ` | Due ${formatDate(prospect.handoffDue)}` : " | No due date";
+  const dueText = prospect.handoffDue ? ` | ${getReminderLabel(daysUntil(prospect.handoffDue))} (${formatDate(prospect.handoffDue)})` : " | No due date";
   const blockedText = isBlockedHandoff(prospect) ? " | Blocked" : "";
   return `${owner} | ${status}${dueText}${blockedText}`;
 }
