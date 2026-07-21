@@ -648,11 +648,12 @@ function bindCrmChecklistState() {
 }
 
 function resetCrmChecklistState() {
+  const clearedCount = getCrmChecklistInputs().filter((input) => input.checked).length;
   localStorage.removeItem(crmChecklistStorageKey);
   getCrmChecklistInputs().forEach((input) => {
     input.checked = false;
   });
-  setDataStatus("CRM checklist progress reset.");
+  setDataStatus(`CRM checklist reset. Cleared ${clearedCount} completed item${clearedCount === 1 ? "" : "s"}.`);
   updateCrmChecklistProgress();
 }
 

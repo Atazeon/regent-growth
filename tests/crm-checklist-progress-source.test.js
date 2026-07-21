@@ -15,7 +15,7 @@ const checks = [
   ["progress counts checked inputs", app.includes("const completed = inputs.filter((input) => input.checked).length;")],
   ["save updates progress", app.includes("localStorage.setItem(crmChecklistStorageKey, JSON.stringify(state));\n  updateCrmChecklistProgress();")],
   ["restore updates progress", app.includes("input.checked = Boolean(state[input.id]);\n  });\n  updateCrmChecklistProgress();")],
-  ["reset updates progress", app.includes('setDataStatus("CRM checklist progress reset.");\n  updateCrmChecklistProgress();')]
+  ["reset updates progress", app.includes("setDataStatus(`CRM checklist reset. Cleared ${clearedCount} completed item")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
