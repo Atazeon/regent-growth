@@ -31,7 +31,7 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 
 ### Later
 
-- Daily AI run history failure action retry snapshot source label
+- Daily AI run history failure action retry item source display
 
 ## Data Model Draft
 

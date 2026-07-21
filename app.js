@@ -3980,6 +3980,7 @@ async function retryDailyRunHistoryProspects(failedProspects, sourceLabel) {
     skipped: 0,
     failed: 0,
     error: "",
+    source: sourceLabel,
     companies: failedProspects.map((prospect) => prospect.company).filter(Boolean)
   };
 
@@ -4044,6 +4045,7 @@ function formatDailyRunHistorySummary(historyItems = getVisibleDailyRunHistory()
         `Model: ${snapshot.model || "Not set"} | Limit: ${snapshot.limit}`,
         `Counts: ${counts}`,
         `Companies: ${snapshot.companies.length > 0 ? snapshot.companies.join(", ") : "None"}`,
+        snapshot.source ? `Source: ${snapshot.source}` : "",
         snapshot.error ? `Error: ${snapshot.error}` : ""
       ].filter(Boolean).join("\n");
     })
