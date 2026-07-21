@@ -2787,7 +2787,7 @@ function renderOwnerDashboard() {
     ownerWorkloadList.innerHTML = `<p class="empty-state">No assigned handoffs yet. Mark a warm lead CRM ready, then assign an owner.</p>`;
   } else {
     ownerWorkloadList.innerHTML = workloads.map((workload) => `
-      <button class="owner-row" type="button" data-owner="${escapeHtml(workload.owner)}">
+      <button class="owner-row" type="button" data-owner="${escapeHtml(workload.owner)}" title="Show handoffs assigned to ${escapeHtml(workload.owner)}" aria-label="Show handoffs assigned to ${escapeHtml(workload.owner)}">
         <span>${escapeHtml(workload.owner)}</span>
         <strong>${escapeHtml(workload.total)}</strong>
         <small>${escapeHtml(workload.overdue)} overdue | ${escapeHtml(workload.due)} due today | ${escapeHtml(workload.blocked)} blocked | ${escapeHtml(workload.accepted)} accepted</small>
