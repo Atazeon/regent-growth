@@ -585,6 +585,16 @@ function renderProspectEvidenceSummary(prospect) {
   return `${summary.total} evidence block${summary.total === 1 ? "" : "s"} | ${summary.websiteCount} website | ${summary.searchCount} search${summary.latestAt ? ` | Latest ${formatDateTime(summary.latestAt)}` : ""}`;
 }
 
+function renderEmailDraftSummary(prospect) {
+  if (!prospect.aiEmail) {
+    return "No saved email draft yet.";
+  }
+
+  const { subject, body } = getDraftParts(prospect.aiEmail);
+  const wordCount = body.split(/\s+/).filter(Boolean).length;
+  return `Subject: ${subject} | ${wordCount} body word${wordCount === 1 ? "" : "s"}`;
+}
+
 function saveProspects() {
   localStorage.setItem(storageKey, JSON.stringify(prospects));
 }
@@ -3135,6 +3145,10 @@ function renderSelectedDetail() {
     <article class="detail-wide">
       <span>Saved AI Brief</span>
       <p>${previewText(prospect.aiBrief, "Generate a company brief to attach research to this account.")}</p>
+    </article>
+    <article class="detail-wide">
+      <span>Email Draft Summary</span>
+      <p>${escapeHtml(renderEmailDraftSummary(prospect))}</p>
     </article>
     <article class="detail-wide">
       <span>Saved AI Email</span>
