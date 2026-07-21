@@ -324,6 +324,7 @@ const handoffStatusInput = document.querySelector("#handoffStatusInput");
 const handoffDueInput = document.querySelector("#handoffDueInput");
 const handoffNotesInput = document.querySelector("#handoffNotesInput");
 const resetCrmChecklistButton = document.querySelector("#resetCrmChecklistButton");
+const copyCrmChecklistButton = document.querySelector("#copyCrmChecklistButton");
 const crmChecklistProgress = document.querySelector("#crmChecklistProgress");
 const aiStatus = document.querySelector("#aiStatus");
 const dataStatus = document.querySelector("#dataStatus");
@@ -669,6 +670,24 @@ function updateCrmChecklistProgress() {
     ? "No CRM checklist progress to clear"
     : "Clear saved CRM checklist progress";
   resetCrmChecklistButton.setAttribute("aria-label", resetCrmChecklistButton.title);
+}
+
+function formatCrmChecklistSummary() {
+  const inputs = getCrmChecklistInputs();
+  const completed = inputs.filter((input) => input.checked).length;
+  const lines = inputs.map((input) => `${input.checked ? "[x]" : "[ ]"} ${input.parentElement.textContent.trim()}`);
+
+  return [
+    "CRM Checklist",
+    `${completed} of ${inputs.length} complete`,
+    "",
+    ...lines
+  ].join("\n");
+}
+
+async function copyCrmChecklistSummary() {
+  const copiedDirectly = await copyTextWithFallback(formatCrmChecklistSummary());
+  setDataStatus(copiedDirectly ? "CRM checklist summary copied." : "CRM checklist summary selected and copied.");
 }
 
 function getProspectFieldNames() {
@@ -7853,6 +7872,7 @@ clearCrmNotesButton.addEventListener("click", cleanCrmSyncNotes);
 copyHandoffPacketButton.addEventListener("click", copySelectedHandoffPacket);
 copyCrmMappingButton.addEventListener("click", copySelectedCrmMapping);
 markCrmReadyButton.addEventListener("click", markSelectedCrmReady);
+copyCrmChecklistButton.addEventListener("click", copyCrmChecklistSummary);
 resetCrmChecklistButton.addEventListener("click", resetCrmChecklistState);
 
 bindCrmChecklistState();
