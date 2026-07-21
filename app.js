@@ -3762,6 +3762,7 @@ function renderDailyRunHistoryItem(snapshot) {
       <div>
         <strong>${escapeHtml(snapshot.status)}</strong>
         <p>${escapeHtml(formatDateTime(snapshot.finishedAt || snapshot.startedAt))} | ${escapeHtml(snapshot.model || "No model")} | limit ${escapeHtml(snapshot.limit)}</p>
+        ${snapshot.source ? `<p>Source: ${escapeHtml(snapshot.source)}</p>` : ""}
         ${compactDailyRunHistory
           ? `<p>${escapeHtml(snapshot.drafted)} drafted | ${escapeHtml(snapshot.failed)} failed | ${escapeHtml(snapshot.skipped)} skipped | ${escapeHtml(snapshot.companies.length)} companies</p>`
           : `
