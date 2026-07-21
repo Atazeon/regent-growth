@@ -3565,6 +3565,7 @@ function renderDailyRunHistory() {
         <h3>${escapeHtml(visibleHistory.length)} of ${escapeHtml(dailyRunHistory.length)} saved run${dailyRunHistory.length === 1 ? "" : "s"}</h3>
         ${renderDailyRunHistoryCountBadge(visibleHistory)}
         ${renderDailyRunHistoryStatusCounts()}
+        ${renderDailyRunHistorySourceChips(visibleHistory)}
         ${renderDailyRunHistoryFailureRetryBadge(visibleHistory)}
       </div>
       <div class="daily-history-actions">
@@ -3649,6 +3650,17 @@ function renderDailyRunHistoryStatusCounts() {
           ${escapeHtml(label)} <strong>${escapeHtml(count)}</strong>
         </button>
       `).join("")}
+    </div>
+  `;
+}
+
+function renderDailyRunHistorySourceChips(visibleHistory) {
+  const entries = Object.entries(getDailyRunHistorySourceSummary(visibleHistory));
+  if (entries.length === 0) return "";
+
+  return `
+    <div class="daily-history-source-chips" aria-label="Daily AI history source summary">
+      ${entries.map(([source, count]) => `<span>${escapeHtml(source)} <strong>${escapeHtml(count)}</strong></span>`).join("")}
     </div>
   `;
 }

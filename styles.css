@@ -606,6 +606,26 @@ button:disabled {
   margin-left: 4px;
 }
 
+.daily-history-source-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.daily-history-source-chips span {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 6px 8px;
+}
+
+.daily-history-source-chips strong {
+  margin-left: 4px;
+}
+
 .daily-history-failure-count {
   border: 1px solid var(--line);
   border-radius: 999px;
