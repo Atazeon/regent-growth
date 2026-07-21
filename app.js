@@ -1136,7 +1136,7 @@ async function refreshTeamBackups() {
     teamBackupsCache = [];
     renderTeamBackupList([]);
     setTeamSyncStatus(isLocalFile()
-      ? "Backup browser needs the local research server. Run local-research-server.js and open the local URL."
+      ? getLocalResearchServerGuidance("Backup browser")
       : error.message,
     "error");
   } finally {
@@ -1376,7 +1376,7 @@ async function checkTeamSync() {
       : `Shared team store has ${payload.records.length} prospect${payload.records.length === 1 ? "" : "s"}${payload.updatedAt ? `, updated ${formatDateTime(payload.updatedAt)}` : ""}. Pushes will be logged as ${getTeamSyncActor()}.`);
   } catch (error) {
     setTeamSyncStatus(isLocalFile()
-      ? "Team sync needs the local research server. Run local-research-server.js and open the local URL."
+      ? getLocalResearchServerGuidance("Team sync")
       : error.message,
     "error");
   }
@@ -3160,6 +3160,10 @@ function setSearchSetupStatus(message, state = "idle") {
   searchSetupStatus.dataset.state = state;
 }
 
+function getLocalResearchServerGuidance(feature) {
+  return `${feature} needs the local research server. Run: node local-research-server.js, then open http://127.0.0.1:5193/index.html.`;
+}
+
 function renderPromptTemplates() {
   briefTemplateInput.value = promptTemplates.brief;
   emailTemplateInput.value = promptTemplates.email;
@@ -3489,7 +3493,7 @@ async function fetchSelectedProspectSource() {
     setDataStatus(`Fetched website evidence for ${prospect.company}.`);
   } catch (error) {
     const message = location.protocol === "file:"
-      ? "Source fetch needs the local research server. Run local-research-server.js and open the local URL."
+      ? getLocalResearchServerGuidance("Source fetch")
       : `Source fetch error: ${error.message}`;
     setDataStatus(message, "error");
   } finally {
@@ -3542,7 +3546,7 @@ async function searchSelectedProspectSources() {
     setDataStatus(`Saved ${result.results.length} source result${result.results.length === 1 ? "" : "s"} for ${prospect.company}.`);
   } catch (error) {
     const message = location.protocol === "file:"
-      ? "Source search needs the local research server. Run local-research-server.js and open the local URL."
+      ? getLocalResearchServerGuidance("Source search")
       : `Source search error: ${error.message}`;
     setDataStatus(message, "error");
   } finally {
@@ -5780,7 +5784,7 @@ async function checkCrmSetup() {
     );
   } catch (error) {
     setCrmSetupStatus(isLocalFile()
-      ? "CRM setup check needs the local research server. Run local-research-server.js and open the local URL."
+      ? getLocalResearchServerGuidance("CRM setup check")
       : error.message,
     "error");
   }
@@ -6484,7 +6488,7 @@ async function searchDiscoverySources(id) {
     setDataStatus(`Search sources saved for ${candidate.company}.`);
   } catch (error) {
     const message = location.protocol === "file:"
-      ? "Source search needs the local research server. Run local-research-server.js and open the local URL."
+      ? getLocalResearchServerGuidance("Source search")
       : `Source search error: ${error.message}`;
     setDataStatus(message, "error");
   }
@@ -6507,7 +6511,7 @@ async function checkSearchSetup() {
     }
   } catch (error) {
     const message = location.protocol === "file:"
-      ? "Search setup check needs the local research server. Run local-research-server.js and open the local URL."
+      ? getLocalResearchServerGuidance("Search setup check")
       : `Search setup check failed: ${error.message}`;
     setSearchSetupStatus(message, "error");
   } finally {
@@ -6542,7 +6546,7 @@ async function testSearchSetup() {
     setSearchSetupStatus(`Search test returned ${count} result${count === 1 ? "" : "s"} for "${query}".`);
   } catch (error) {
     const message = location.protocol === "file:"
-      ? "Search test needs the local research server. Run local-research-server.js and open the local URL."
+      ? getLocalResearchServerGuidance("Search test")
       : `Search test failed: ${error.message}`;
     setSearchSetupStatus(message, "error");
   } finally {
@@ -6569,7 +6573,7 @@ async function fetchDiscoverySource(id) {
     setDataStatus(`Fetched website evidence for ${candidate.company}.`);
   } catch (error) {
     const message = location.protocol === "file:"
-      ? "Source fetch needs the local research server. Run local-research-server.js and open the local URL."
+      ? getLocalResearchServerGuidance("Source fetch")
       : `Source fetch error: ${error.message}`;
     setDataStatus(message, "error");
   }
