@@ -619,7 +619,11 @@ button:disabled {
   color: var(--muted);
   font-size: 0.76rem;
   font-weight: 700;
+  max-width: 220px;
+  overflow: hidden;
   padding: 6px 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .daily-history-source-chips strong {
