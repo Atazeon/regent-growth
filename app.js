@@ -455,6 +455,7 @@ function normalizeDailyRunSnapshot(snapshot) {
     skipped: Number(snapshot.skipped) || 0,
     failed: Number(snapshot.failed) || 0,
     error: snapshot.error || "",
+    source: snapshot.source || "",
     companies: Array.isArray(snapshot.companies) ? snapshot.companies.filter(Boolean).slice(0, 12) : []
   };
 }
