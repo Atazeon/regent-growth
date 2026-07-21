@@ -5608,7 +5608,7 @@ function renderCrmRetryQueue(failedCrmLeads = getFailedCrmSyncLeads()) {
         ${renderCrmFailureReasonChips(failedCrmLeads)}
       </div>
       <p class="empty-state">${escapeHtml(formatCrmRetryEmptyState(reviewedCount, syncingCount))}</p>
-      ${renderReviewedCrmQueue(reviewedCrmLeads)}
+      ${renderReviewedCrmQueue(reviewedCrmLeads, true)}
     `;
     return;
   }
@@ -5649,8 +5649,12 @@ function renderCrmRetryQueue(failedCrmLeads = getFailedCrmSyncLeads()) {
   `;
 }
 
-function renderReviewedCrmQueue(reviewedCrmLeads) {
-  if (reviewedCrmLeads.length === 0) return "";
+function renderReviewedCrmQueue(reviewedCrmLeads, showEmpty = false) {
+  if (reviewedCrmLeads.length === 0) {
+    return showEmpty
+      ? `<div class="crm-reviewed-queue"><p class="empty-state">No reviewed CRM syncs parked. Mark failed syncs reviewed when they should not be retried yet.</p></div>`
+      : "";
+  }
   const reviewedPage = getBoundedPage(crmReviewedQueuePage, reviewedCrmLeads.length);
   const reviewedStart = reviewedPage * crmQueuePageSize;
   const reviewedPageLeads = reviewedCrmLeads.slice(reviewedStart, reviewedStart + crmQueuePageSize);
