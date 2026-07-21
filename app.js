@@ -633,7 +633,11 @@ function loadCrmChecklistState() {
 }
 
 function saveCrmChecklistState() {
-  const state = Object.fromEntries(getCrmChecklistInputs().map((input) => [input.id, input.checked]));
+  const inputs = getCrmChecklistInputs();
+  const previousState = loadCrmChecklistState();
+  const state = Object.fromEntries(inputs.map((input) => [input.id, input.checked]));
+  const completed = inputs.length > 0 && inputs.every((input) => input.checked);
+  state.__completedAt = completed ? previousState.__completedAt || new Date().toISOString() : "";
   localStorage.setItem(crmChecklistStorageKey, JSON.stringify(state));
   updateCrmChecklistProgress();
 }
@@ -709,6 +713,7 @@ function getCrmChecklistSummaryRecord() {
 
   return {
     exportedAt: new Date().toISOString(),
+    completedAt: loadCrmChecklistState().__completedAt || "",
     completedCount: items.filter((item) => item.completed).length,
     totalCount: items.length,
     items
