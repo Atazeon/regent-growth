@@ -891,9 +891,23 @@ button:disabled {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  align-items: stretch;
 }
 
-.setup-actions button {
+.setup-action-group {
+  display: flex;
+  flex: 1 1 260px;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-content: flex-start;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #f9fafc;
+}
+
+.setup-actions > button,
+.setup-action-group button {
   flex: 1 1 150px;
   min-height: 40px;
   white-space: normal;

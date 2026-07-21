@@ -7,10 +7,11 @@ const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
 
 const checks = [
   ["setup actions wrap", styles.includes(".setup-actions {\n  display: flex;\n  flex-wrap: wrap;")],
-  ["setup action buttons flex", styles.includes(".setup-actions button {\n  flex: 1 1 150px;")],
+  ["setup actions stretch", styles.includes("align-items: stretch;")],
+  ["setup action buttons flex", styles.includes(".setup-actions > button,\n.setup-action-group button {\n  flex: 1 1 150px;")],
   ["setup action stable height", styles.includes("min-height: 40px;")],
   ["setup action text wraps", styles.includes("white-space: normal;")],
-  ["crm setup uses setup actions", html.includes('<div class="setup-actions">\n            <button id="checkCrmSetupButton"')]
+  ["crm setup uses setup actions", html.includes('<div class="setup-actions">\n            <div class="setup-action-group"')]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
