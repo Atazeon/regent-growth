@@ -4021,8 +4021,16 @@ function exportDailyRunHistoryJson() {
 
   const exportedAt = new Date().toISOString();
   const stamp = exportedAt.slice(0, 19).replace(/[:T]/g, "-");
-  downloadFile(`regent-growth-daily-ai-history-${stamp}.json`, JSON.stringify({ exportedAt, statusFilter: dailyRunHistoryStatusFilter, runs: visibleHistory }, null, 2), "application/json;charset=utf-8");
+  downloadFile(`regent-growth-daily-ai-history-${stamp}.json`, JSON.stringify({ exportedAt, statusFilter: dailyRunHistoryStatusFilter, sources: getDailyRunHistorySourceSummary(visibleHistory), runs: visibleHistory }, null, 2), "application/json;charset=utf-8");
   setDataStatus(`Exported ${visibleHistory.length} Daily AI run history snapshot${visibleHistory.length === 1 ? "" : "s"} as JSON.`);
+}
+
+function getDailyRunHistorySourceSummary(historyItems) {
+  return historyItems.reduce((summary, snapshot) => {
+    const source = snapshot.source || "Daily AI run";
+    summary[source] = (summary[source] || 0) + 1;
+    return summary;
+  }, {});
 }
 
 function formatDailyRunHistorySummary(historyItems = getVisibleDailyRunHistory()) {
