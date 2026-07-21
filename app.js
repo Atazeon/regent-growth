@@ -2805,7 +2805,7 @@ function renderOwnerDashboard() {
           <p>${escapeHtml(getOwnerName(prospect))} | ${escapeHtml(renderBlockedHandoffDueText(prospect))}</p>
           <p>${previewText(prospect.handoffNotes, "No blocker note recorded.")}</p>
         </div>
-        <button class="secondary-button" type="button" data-action="select-blocked" data-index="${index}">Open</button>
+        <button class="secondary-button" type="button" data-action="select-blocked" data-index="${index}" title="Open blocked handoff" aria-label="Open blocked handoff">Open</button>
       </article>
     `).join("");
   }
