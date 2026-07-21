@@ -8,10 +8,12 @@ const checks = [
   ["total handoffs", app.includes("const totalHandoffs = workloads.reduce((sum, item) => sum + item.total, 0);")],
   ["overdue handoffs", app.includes("const overdueHandoffs = workloads.reduce((sum, item) => sum + item.overdue, 0);")],
   ["blocked handoffs", app.includes("const blockedHandoffs = workloads.reduce((sum, item) => sum + item.blocked, 0);")],
+  ["accepted handoffs", app.includes("const acceptedHandoffs = workloads.reduce((sum, item) => sum + item.accepted, 0);")],
   ["owner count pluralized", app.includes('owner${workloads.length === 1 ? "" : "s"}')],
   ["summary includes active", app.includes("${totalHandoffs} active")],
   ["summary includes overdue", app.includes("${overdueHandoffs} overdue")],
-  ["summary includes blocked", app.includes("${blockedHandoffs} blocked")]
+  ["summary includes blocked", app.includes("${blockedHandoffs} blocked")],
+  ["summary includes accepted", app.includes("${acceptedHandoffs} accepted")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
