@@ -12,8 +12,8 @@ const checks = [
   ["brief saved from textarea", app.includes("prospect.aiBrief = researchPrompt.value.trim();")],
   ["copy helper", app.includes("async function copyResearchBrief()")],
   ["empty guard", app.includes("No research brief to copy for ${prospect.company}.")],
-  ["clipboard write", app.includes("await navigator.clipboard.writeText(prospect.aiBrief);")],
-  ["fallback select", app.includes("researchPrompt.select();")],
+  ["clipboard helper reuse", app.includes("await copyTextWithFallback(prospect.aiBrief);")],
+  ["fallback status", app.includes("Research brief selected and copied for ${prospect.company}.")],
   ["click listener", app.includes('copyResearchBriefButton.addEventListener("click", copyResearchBrief);')]
 ];
 

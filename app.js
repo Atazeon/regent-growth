@@ -4902,14 +4902,10 @@ async function copyEmailDraft() {
   const prospect = saveCurrentEmailDraft();
   if (!prospect) return;
 
-  try {
-    await navigator.clipboard.writeText(emailDraft.value.trim());
-    setDataStatus(`Email draft copied for ${prospect.company}.`);
-  } catch {
-    emailDraft.select();
-    document.execCommand("copy");
-    setDataStatus(`Email draft selected for ${prospect.company}.`);
-  }
+  const copiedDirectly = await copyTextWithFallback(emailDraft.value.trim());
+  setDataStatus(copiedDirectly
+    ? `Email draft copied for ${prospect.company}.`
+    : `Email draft selected and copied for ${prospect.company}.`);
 }
 
 function saveCurrentResearchBrief() {
@@ -4931,14 +4927,10 @@ async function copyResearchBrief() {
     return;
   }
 
-  try {
-    await navigator.clipboard.writeText(prospect.aiBrief);
-    setDataStatus(`Research brief copied for ${prospect.company}.`);
-  } catch {
-    researchPrompt.select();
-    document.execCommand("copy");
-    setDataStatus(`Research brief selected for ${prospect.company}.`);
-  }
+  const copiedDirectly = await copyTextWithFallback(prospect.aiBrief);
+  setDataStatus(copiedDirectly
+    ? `Research brief copied for ${prospect.company}.`
+    : `Research brief selected and copied for ${prospect.company}.`);
 }
 
 function getProspectResearchExportText(prospect) {
