@@ -31,7 +31,7 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 
 ### Later
 
-- CRM checklist copy action label coverage
+- CRM checklist copy fallback branch coverage
 
 ## Data Model Draft
 
