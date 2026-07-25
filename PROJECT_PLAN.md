@@ -31,7 +31,7 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 
 ### Later
 
-- Email and CRM end-to-end browser pass
+- End-to-end product smoke and README finalization
 
 ## Data Model Draft
 
