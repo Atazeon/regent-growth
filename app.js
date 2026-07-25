@@ -3,6 +3,7 @@ const promptStorageKey = "regent-growth-prompt-templates";
 const discoveryStorageKey = "regent-growth-discovery-queue";
 const dailyRunHistoryStorageKey = "regent-growth-daily-run-history";
 const crmChecklistStorageKey = "regent-growth-crm-checklist";
+const crmPresetStorageKey = "regent-growth-crm-preset";
 const ollamaEndpoint = "http://127.0.0.1:11434/api/generate";
 const sourceFetchEndpoint = "/api/fetch-source";
 const sourceSearchEndpoint = "/api/search-sources";
@@ -6380,6 +6381,17 @@ function renderCrmProviderPreset() {
   setCrmSetupStatus(`${preset.label}: ${preset.description}`);
 }
 
+function restoreCrmPresetPreference() {
+  const savedPreset = localStorage.getItem(crmPresetStorageKey);
+  if (savedPreset && crmProviderPresets[savedPreset]) {
+    crmPresetSelect.value = savedPreset;
+  }
+}
+
+function saveCrmPresetPreference() {
+  localStorage.setItem(crmPresetStorageKey, crmPresetSelect.value);
+}
+
 async function checkCrmSetup() {
   setCrmSetupStatus("Checking CRM connector...", "working");
 
@@ -7902,7 +7914,10 @@ generateDiscoveryButton.addEventListener("click", generateDiscoveryCandidates);
 clearDiscoveryButton.addEventListener("click", clearDiscoveryQueue);
 checkSearchSetupButton.addEventListener("click", checkSearchSetup);
 testSearchSetupButton.addEventListener("click", testSearchSetup);
-crmPresetSelect.addEventListener("change", renderCrmProviderPreset);
+crmPresetSelect.addEventListener("change", () => {
+  saveCrmPresetPreference();
+  renderCrmProviderPreset();
+});
 detailAdvanceButton.addEventListener("click", () => advanceStage(selectedProspectIndex));
 detailEditButton.addEventListener("click", () => editProspect(selectedProspectIndex));
 savePromptsButton.addEventListener("click", savePromptTemplateEdits);
@@ -7959,6 +7974,7 @@ resetCrmChecklistButton.addEventListener("click", resetCrmChecklistState);
 
 bindCrmChecklistState();
 renderPromptTemplates();
+restoreCrmPresetPreference();
 renderCrmProviderPreset();
 renderDiscoveryQueue();
 renderTeamSyncActor();
