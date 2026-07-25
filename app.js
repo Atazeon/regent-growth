@@ -23,6 +23,7 @@ const callStatuses = ["Not Started", "Planned", "Called", "Left Voicemail", "Con
 const sourceStatuses = ["Needs Review", "Sources Opened", "Evidence Found", "Rejected"];
 const meetingOutcomes = ["Not Scheduled", "Scheduled", "Completed", "No Show", "Rescheduled", "Closed Won", "Closed Lost"];
 const handoffStatuses = ["Unassigned", "Assigned", "In Review", "Handed Off", "Accepted", "Blocked"];
+const outboundOutcomeTypes = ["Prospect Added", "Email Sent", "Reply Received", "Meeting Booked", "Blocked", "Fix Needed"];
 const outboundSessionItems = [
   { id: "confirm-ollama-running", label: "Confirm Ollama is running locally", area: "Setup" },
   { id: "confirm-qwen3-selected", label: "Confirm qwen3:8b is selected", area: "Setup" },
@@ -369,11 +370,20 @@ const outboundSessionNextAction = document.querySelector("#outboundSessionNextAc
 const outboundSessionList = document.querySelector("#outboundSessionList");
 const outboundSessionNotesForm = document.querySelector("#outboundSessionNotesForm");
 const outboundSessionNotes = document.querySelector("#outboundSessionNotes");
+const outboundOutcomeForm = document.querySelector("#outboundOutcomeForm");
+const outboundOutcomeType = document.querySelector("#outboundOutcomeType");
+const outboundOutcomeCompany = document.querySelector("#outboundOutcomeCompany");
+const outboundOutcomeNote = document.querySelector("#outboundOutcomeNote");
+const outboundOutcomeSummary = document.querySelector("#outboundOutcomeSummary");
+const outboundOutcomeList = document.querySelector("#outboundOutcomeList");
 const focusNextOutboundStepButton = document.querySelector("#focusNextOutboundStepButton");
 const completeVisibleOutboundStepsButton = document.querySelector("#completeVisibleOutboundStepsButton");
 const copyOutboundSessionButton = document.querySelector("#copyOutboundSessionButton");
 const downloadOutboundSessionButton = document.querySelector("#downloadOutboundSessionButton");
 const resetOutboundSessionButton = document.querySelector("#resetOutboundSessionButton");
+const copyOutboundOutcomesButton = document.querySelector("#copyOutboundOutcomesButton");
+const downloadOutboundOutcomesButton = document.querySelector("#downloadOutboundOutcomesButton");
+const clearOutboundOutcomesButton = document.querySelector("#clearOutboundOutcomesButton");
 
 function loadProspects() {
   const savedProspects = localStorage.getItem(storageKey);
@@ -446,6 +456,7 @@ function loadOutboundSessionState() {
     updatedAt: "",
     completedAt: "",
     notes: "",
+    outcomes: [],
     completed: {}
   };
   const savedState = localStorage.getItem(outboundSessionStorageKey);
@@ -461,6 +472,7 @@ function loadOutboundSessionState() {
       updatedAt: parsedState.updatedAt || "",
       completedAt: parsedState.completedAt || "",
       notes: parsedState.notes || "",
+      outcomes: Array.isArray(parsedState.outcomes) ? parsedState.outcomes.map(normalizeOutboundOutcome).filter((outcome) => outcome.type && outcome.note) : [],
       completed: typeof parsedState.completed === "object" && parsedState.completed ? parsedState.completed : {}
     };
   } catch {
@@ -549,6 +561,16 @@ function normalizeDailyRunSnapshot(snapshot) {
     error: snapshot.error || "",
     source: snapshot.source || "",
     companies: Array.isArray(snapshot.companies) ? snapshot.companies.filter(Boolean).slice(0, 12) : []
+  };
+}
+
+function normalizeOutboundOutcome(outcome) {
+  return {
+    id: outcome.id || createId(),
+    type: outboundOutcomeTypes.includes(outcome.type) ? outcome.type : "Fix Needed",
+    company: outcome.company || "",
+    note: outcome.note || "",
+    createdAt: outcome.createdAt || new Date().toISOString()
   };
 }
 
@@ -730,6 +752,42 @@ function getOutboundSessionStats() {
   ];
 }
 
+function getOutboundOutcomeCounts() {
+  return outboundSessionState.outcomes.reduce((counts, outcome) => {
+    counts[outcome.type] = (counts[outcome.type] || 0) + 1;
+    return counts;
+  }, {});
+}
+
+function renderOutboundOutcomes() {
+  const outcomes = outboundSessionState.outcomes;
+  const counts = getOutboundOutcomeCounts();
+  const countText = outboundOutcomeTypes
+    .filter((type) => counts[type])
+    .map((type) => `${type}: ${counts[type]}`)
+    .join(" | ");
+
+  outboundOutcomeSummary.textContent = outcomes.length
+    ? `${outcomes.length} outcome${outcomes.length === 1 ? "" : "s"} logged${countText ? ` | ${countText}` : ""}`
+    : "No outcomes logged yet.";
+  [copyOutboundOutcomesButton, downloadOutboundOutcomesButton, clearOutboundOutcomesButton].forEach((button) => {
+    button.disabled = outcomes.length === 0;
+  });
+  outboundOutcomeList.innerHTML = outcomes.length
+    ? outcomes.map((outcome) => `
+      <article>
+        <div>
+          <p class="eyebrow">${escapeHtml(outcome.type)}</p>
+          <h4>${escapeHtml(outcome.company || "Unassigned company")}</h4>
+          <p>${escapeHtml(outcome.note)}</p>
+          <small>${escapeHtml(formatDateTime(outcome.createdAt))}</small>
+        </div>
+        <button class="secondary-button" type="button" data-action="delete-outbound-outcome" data-id="${escapeHtml(outcome.id)}">Remove</button>
+      </article>
+    `).join("")
+    : `<p class="empty-state">Log outcomes while you run outbound so the next build pass is based on real usage.</p>`;
+}
+
 function renderOutboundSession() {
   const completedCount = getOutboundSessionCompletedCount();
   const completionPercent = Math.round((completedCount / outboundSessionItems.length) * 100);
@@ -781,6 +839,7 @@ function renderOutboundSession() {
       </span>
     </label>`;
   }).join("") || `<p class="empty-state">No outbound session steps match this filter.</p>`;
+  renderOutboundOutcomes();
 }
 
 function getOutboundSessionSummaryRecord() {
@@ -796,6 +855,8 @@ function getOutboundSessionSummaryRecord() {
     totalCount: outboundSessionItems.length,
     completionPercent,
     notes: outboundSessionState.notes,
+    outcomes: outboundSessionState.outcomes,
+    outcomeCounts: getOutboundOutcomeCounts(),
     stats: getOutboundSessionStats(),
     items: outboundSessionItems.map((item) => ({
       id: item.id,
@@ -810,6 +871,7 @@ function formatOutboundSessionSummary() {
   const record = getOutboundSessionSummaryRecord();
   const lines = record.items.map((item) => `${item.completed ? "[x]" : "[ ]"} ${item.area}: ${item.label}`);
   const stats = record.stats.map((stat) => `${stat.label}: ${stat.value} (${stat.detail})`);
+  const outcomeLines = record.outcomes.map((outcome) => `${formatDateTime(outcome.createdAt)} | ${outcome.type} | ${outcome.company || "Unassigned company"} | ${outcome.note}`);
 
   return [
     "Outbound Session Tracker",
@@ -820,6 +882,9 @@ function formatOutboundSessionSummary() {
     "",
     "Live Stats",
     ...stats,
+    "",
+    "Outcomes",
+    ...(outcomeLines.length ? outcomeLines : ["No outcomes logged yet."]),
     "",
     "Checklist",
     ...lines,
@@ -847,6 +912,7 @@ function resetOutboundSessionState() {
     updatedAt: "",
     completedAt: "",
     notes: "",
+    outcomes: [],
     completed: {}
   };
   localStorage.removeItem(outboundSessionStorageKey);
@@ -880,6 +946,88 @@ function completeVisibleOutboundSteps() {
   saveOutboundSessionState();
   renderOutboundSession();
   setDataStatus(`Completed ${visibleIncompleteItems.length} visible outbound session step${visibleIncompleteItems.length === 1 ? "" : "s"}.`);
+}
+
+function addOutboundOutcome(event) {
+  event.preventDefault();
+  const type = outboundOutcomeTypes.includes(outboundOutcomeType.value) ? outboundOutcomeType.value : "Fix Needed";
+  const company = outboundOutcomeCompany.value.trim();
+  const note = outboundOutcomeNote.value.trim();
+
+  if (!note) {
+    setDataStatus("Add an outcome note before logging.", "error");
+    return;
+  }
+
+  outboundSessionState.outcomes = [
+    normalizeOutboundOutcome({ type, company, note, createdAt: new Date().toISOString() }),
+    ...outboundSessionState.outcomes
+  ].slice(0, 100);
+  outboundOutcomeCompany.value = "";
+  outboundOutcomeNote.value = "";
+  saveOutboundSessionState();
+  renderOutboundSession();
+  setDataStatus(`Logged outbound outcome: ${type}.`);
+}
+
+function removeOutboundOutcome(id) {
+  const beforeCount = outboundSessionState.outcomes.length;
+  outboundSessionState.outcomes = outboundSessionState.outcomes.filter((outcome) => outcome.id !== id);
+  if (outboundSessionState.outcomes.length === beforeCount) return;
+
+  saveOutboundSessionState();
+  renderOutboundSession();
+  setDataStatus("Removed outbound outcome.");
+}
+
+function formatOutboundOutcomeSummary() {
+  const outcomes = outboundSessionState.outcomes;
+  if (outcomes.length === 0) return "No outbound outcomes logged yet.";
+
+  return [
+    "Outbound Run Outcomes",
+    `Logged: ${outcomes.length}`,
+    "",
+    ...outcomes.map((outcome) => [
+      `${formatDateTime(outcome.createdAt)} - ${outcome.type}`,
+      `Company: ${outcome.company || "Unassigned company"}`,
+      `Note: ${outcome.note}`
+    ].join("\n"))
+  ].join("\n\n");
+}
+
+async function copyOutboundOutcomeSummary() {
+  if (outboundSessionState.outcomes.length === 0) {
+    setDataStatus("No outbound outcomes to copy.", "error");
+    return;
+  }
+
+  const copiedDirectly = await copyTextWithFallback(formatOutboundOutcomeSummary());
+  setDataStatus(copiedDirectly ? "Copied outbound outcomes." : "Selected and copied outbound outcomes.");
+}
+
+function downloadOutboundOutcomeSummary() {
+  if (outboundSessionState.outcomes.length === 0) {
+    setDataStatus("No outbound outcomes to download.", "error");
+    return;
+  }
+
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-outbound-outcomes-${stamp}.txt`, formatOutboundOutcomeSummary(), "text/plain;charset=utf-8");
+  setDataStatus("Downloaded outbound outcomes.");
+}
+
+function clearOutboundOutcomes() {
+  const clearedCount = outboundSessionState.outcomes.length;
+  if (clearedCount === 0) {
+    setDataStatus("No outbound outcomes to clear.", "error");
+    return;
+  }
+
+  outboundSessionState.outcomes = [];
+  saveOutboundSessionState();
+  renderOutboundSession();
+  setDataStatus(`Cleared ${clearedCount} outbound outcome${clearedCount === 1 ? "" : "s"}.`);
 }
 
 function saveOutboundSessionNotes(event) {
@@ -8255,6 +8403,13 @@ outboundSessionList.addEventListener("change", (event) => {
 
   updateOutboundSessionStep(checkbox.dataset.outboundSessionId, checkbox.checked);
 });
+outboundOutcomeForm.addEventListener("submit", addOutboundOutcome);
+outboundOutcomeList.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-action='delete-outbound-outcome']");
+  if (!button) return;
+
+  removeOutboundOutcome(button.dataset.id);
+});
 outboundSessionNotesForm.addEventListener("submit", saveOutboundSessionNotes);
 outboundSessionAreaFilter.addEventListener("change", () => {
   outboundSessionAreaFilterValue = outboundSessionAreaFilter.value;
@@ -8265,6 +8420,9 @@ completeVisibleOutboundStepsButton.addEventListener("click", completeVisibleOutb
 copyOutboundSessionButton.addEventListener("click", copyOutboundSessionSummary);
 downloadOutboundSessionButton.addEventListener("click", downloadOutboundSessionSummary);
 resetOutboundSessionButton.addEventListener("click", resetOutboundSessionState);
+copyOutboundOutcomesButton.addEventListener("click", copyOutboundOutcomeSummary);
+downloadOutboundOutcomesButton.addEventListener("click", downloadOutboundOutcomeSummary);
+clearOutboundOutcomesButton.addEventListener("click", clearOutboundOutcomes);
 
 bindCrmChecklistState();
 renderPromptTemplates();

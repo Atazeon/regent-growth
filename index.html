@@ -72,6 +72,40 @@
         </div>
         <div id="outboundSessionStats" class="outbound-session-stats" aria-label="Outbound session live stats"></div>
         <div id="outboundSessionNextAction" class="outbound-session-next-action" aria-live="polite"></div>
+        <form id="outboundOutcomeForm" class="outbound-outcome-form">
+          <label>
+            Outcome
+            <select id="outboundOutcomeType" name="outcomeType">
+              <option value="Prospect Added">Prospect Added</option>
+              <option value="Email Sent">Email Sent</option>
+              <option value="Reply Received">Reply Received</option>
+              <option value="Meeting Booked">Meeting Booked</option>
+              <option value="Blocked">Blocked</option>
+              <option value="Fix Needed">Fix Needed</option>
+            </select>
+          </label>
+          <label>
+            Company
+            <input id="outboundOutcomeCompany" name="outcomeCompany" placeholder="Company name">
+          </label>
+          <label class="full-span">
+            Note
+            <textarea id="outboundOutcomeNote" name="outcomeNote" placeholder="What happened and what should happen next."></textarea>
+          </label>
+          <button type="submit">Log outcome</button>
+        </form>
+        <div class="outbound-outcome-heading">
+          <div>
+            <h3>Run Outcomes</h3>
+            <p id="outboundOutcomeSummary" class="empty-state">No outcomes logged yet.</p>
+          </div>
+          <div class="action-row" role="group" aria-label="Outbound outcome actions">
+            <button id="copyOutboundOutcomesButton" class="secondary-button" type="button">Copy outcomes</button>
+            <button id="downloadOutboundOutcomesButton" class="secondary-button" type="button">Download outcomes</button>
+            <button id="clearOutboundOutcomesButton" class="danger-button" type="button">Clear outcomes</button>
+          </div>
+        </div>
+        <div id="outboundOutcomeList" class="outbound-outcome-list" aria-label="Outbound run outcomes"></div>
         <div id="outboundSessionList" class="outbound-session-list" role="list" aria-label="First outbound session checklist"></div>
         <form id="outboundSessionNotesForm" class="outbound-session-notes-form">
           <label>
