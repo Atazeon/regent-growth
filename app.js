@@ -3,6 +3,7 @@ const promptStorageKey = "regent-growth-prompt-templates";
 const discoveryStorageKey = "regent-growth-discovery-queue";
 const dailyRunHistoryStorageKey = "regent-growth-daily-run-history";
 const crmChecklistStorageKey = "regent-growth-crm-checklist";
+const outboundSessionStorageKey = "regent-growth-outbound-session";
 const crmPresetStorageKey = "regent-growth-crm-preset";
 const ollamaEndpoint = "http://127.0.0.1:11434/api/generate";
 const sourceFetchEndpoint = "/api/fetch-source";
@@ -22,6 +23,33 @@ const callStatuses = ["Not Started", "Planned", "Called", "Left Voicemail", "Con
 const sourceStatuses = ["Needs Review", "Sources Opened", "Evidence Found", "Rejected"];
 const meetingOutcomes = ["Not Scheduled", "Scheduled", "Completed", "No Show", "Rescheduled", "Closed Won", "Closed Lost"];
 const handoffStatuses = ["Unassigned", "Assigned", "In Review", "Handed Off", "Accepted", "Blocked"];
+const outboundSessionItems = [
+  { id: "confirm-ollama-running", label: "Confirm Ollama is running locally", area: "Setup" },
+  { id: "confirm-qwen3-selected", label: "Confirm qwen3:8b is selected", area: "Setup" },
+  { id: "check-search-setup", label: "Check search source setup", area: "Setup" },
+  { id: "generate-discovery-candidates", label: "Generate discovery candidates", area: "Discovery" },
+  { id: "reject-weak-candidates", label: "Reject weak candidates", area: "Discovery" },
+  { id: "add-best-candidate", label: "Add the best qualified company", area: "Discovery" },
+  { id: "run-daily-ai", label: "Run Daily AI for a small batch", area: "AI Research" },
+  { id: "review-daily-history", label: "Review Daily AI run history", area: "AI Research" },
+  { id: "open-drafted-prospect", label: "Open a drafted prospect", area: "AI Research" },
+  { id: "confirm-source-evidence", label: "Confirm source evidence is saved", area: "AI Research" },
+  { id: "confirm-decision-maker", label: "Confirm the decision-maker angle", area: "Research" },
+  { id: "add-contact-path", label: "Add email, LinkedIn, or phone path", area: "Research" },
+  { id: "generate-company-brief", label: "Generate company brief", area: "Research" },
+  { id: "generate-email-draft", label: "Generate personalized email draft", area: "Outreach" },
+  { id: "save-email-draft", label: "Save email draft to the prospect", area: "Outreach" },
+  { id: "check-send-readiness", label: "Check send readiness", area: "Outreach" },
+  { id: "open-email-handoff", label: "Open Gmail, Outlook, or mail handoff", area: "Outreach" },
+  { id: "mark-email-sent", label: "Mark email sent", area: "Outreach" },
+  { id: "set-next-touch", label: "Set the next touch date", area: "Sequence" },
+  { id: "send-linkedin-connection", label: "Send LinkedIn connection task", area: "Sequence" },
+  { id: "plan-phone-call", label: "Plan phone call task", area: "Sequence" },
+  { id: "log-response-status", label: "Log response status", area: "Response" },
+  { id: "book-meeting-or-no-response", label: "Book meeting or mark no response", area: "Response" },
+  { id: "mark-crm-ready", label: "Mark warm lead CRM-ready", area: "Handoff" },
+  { id: "export-handoff-packet", label: "Export or copy handoff packet", area: "Handoff" }
+];
 const defaultPromptTemplates = {
   brief: `You are Regent Growth's local AI sales researcher.
 
@@ -177,6 +205,7 @@ let prospects = loadProspects();
 let promptTemplates = loadPromptTemplates();
 let discoveryQueue = loadDiscoveryQueue();
 let dailyRunHistory = loadDailyRunHistory();
+let outboundSessionState = loadOutboundSessionState();
 let editingIndex = null;
 let selectedProspectIndex = 0;
 let crmFailedQueuePage = 0;
@@ -332,6 +361,14 @@ const downloadCrmChecklistJsonButton = document.querySelector("#downloadCrmCheck
 const crmChecklistProgress = document.querySelector("#crmChecklistProgress");
 const aiStatus = document.querySelector("#aiStatus");
 const dataStatus = document.querySelector("#dataStatus");
+const outboundSessionProgress = document.querySelector("#outboundSessionProgress");
+const outboundSessionStats = document.querySelector("#outboundSessionStats");
+const outboundSessionList = document.querySelector("#outboundSessionList");
+const outboundSessionNotesForm = document.querySelector("#outboundSessionNotesForm");
+const outboundSessionNotes = document.querySelector("#outboundSessionNotes");
+const copyOutboundSessionButton = document.querySelector("#copyOutboundSessionButton");
+const downloadOutboundSessionButton = document.querySelector("#downloadOutboundSessionButton");
+const resetOutboundSessionButton = document.querySelector("#resetOutboundSessionButton");
 
 function loadProspects() {
   const savedProspects = localStorage.getItem(storageKey);
@@ -395,6 +432,34 @@ function loadDailyRunHistory() {
     return Array.isArray(parsedHistory) ? parsedHistory.map(normalizeDailyRunSnapshot).filter((snapshot) => snapshot.startedAt) : [];
   } catch {
     return [];
+  }
+}
+
+function loadOutboundSessionState() {
+  const fallbackState = {
+    startedAt: new Date().toISOString(),
+    updatedAt: "",
+    completedAt: "",
+    notes: "",
+    completed: {}
+  };
+  const savedState = localStorage.getItem(outboundSessionStorageKey);
+
+  if (!savedState) {
+    return fallbackState;
+  }
+
+  try {
+    const parsedState = JSON.parse(savedState);
+    return {
+      startedAt: parsedState.startedAt || fallbackState.startedAt,
+      updatedAt: parsedState.updatedAt || "",
+      completedAt: parsedState.completedAt || "",
+      notes: parsedState.notes || "",
+      completed: typeof parsedState.completed === "object" && parsedState.completed ? parsedState.completed : {}
+    };
+  } catch {
+    return fallbackState;
   }
 }
 
@@ -619,6 +684,154 @@ function saveProspects() {
 
 function saveDailyRunHistory() {
   localStorage.setItem(dailyRunHistoryStorageKey, JSON.stringify(dailyRunHistory));
+}
+
+function saveOutboundSessionState() {
+  outboundSessionState.updatedAt = new Date().toISOString();
+  const completedCount = getOutboundSessionCompletedCount();
+  outboundSessionState.completedAt = completedCount === outboundSessionItems.length
+    ? outboundSessionState.completedAt || outboundSessionState.updatedAt
+    : "";
+  localStorage.setItem(outboundSessionStorageKey, JSON.stringify(outboundSessionState));
+}
+
+function getOutboundSessionCompletedCount() {
+  return outboundSessionItems.filter((item) => outboundSessionState.completed[item.id]).length;
+}
+
+function getOutboundSessionStats() {
+  const draftedCount = prospects.filter((prospect) => prospect.aiEmail).length;
+  const contactedCount = prospects.filter((prospect) => prospect.responseStatus !== "Not Contacted" || prospect.lastTouch).length;
+  const warmLeadCount = prospects.filter(isWarmLead).length;
+
+  return [
+    { label: "Candidates", value: discoveryQueue.length, detail: "in discovery queue" },
+    { label: "Drafts", value: draftedCount, detail: "saved AI emails" },
+    { label: "Contacted", value: contactedCount, detail: "sent or touched" },
+    { label: "Warm Leads", value: warmLeadCount, detail: "ready for handoff" }
+  ];
+}
+
+function renderOutboundSession() {
+  const completedCount = getOutboundSessionCompletedCount();
+  const completionPercent = Math.round((completedCount / outboundSessionItems.length) * 100);
+  const complete = completedCount === outboundSessionItems.length;
+
+  outboundSessionProgress.textContent = complete
+    ? "Session complete"
+    : `${completedCount} of ${outboundSessionItems.length} complete (${completionPercent}%)`;
+  outboundSessionProgress.dataset.state = complete ? "complete" : "active";
+  resetOutboundSessionButton.disabled = completedCount === 0 && !outboundSessionState.notes;
+  resetOutboundSessionButton.title = resetOutboundSessionButton.disabled
+    ? "No outbound session progress to clear"
+    : "Clear outbound session progress";
+  resetOutboundSessionButton.setAttribute("aria-label", resetOutboundSessionButton.title);
+  outboundSessionNotes.value = outboundSessionState.notes || "";
+
+  outboundSessionStats.innerHTML = getOutboundSessionStats().map((stat) => `
+    <article>
+      <span>${escapeHtml(stat.label)}</span>
+      <strong>${escapeHtml(stat.value)}</strong>
+      <small>${escapeHtml(stat.detail)}</small>
+    </article>
+  `).join("");
+
+  outboundSessionList.innerHTML = outboundSessionItems.map((item, index) => `
+    <label class="outbound-session-item" data-area="${escapeHtml(item.area)}" role="listitem">
+      <input type="checkbox" data-outbound-session-id="${escapeHtml(item.id)}" ${outboundSessionState.completed[item.id] ? "checked" : ""}>
+      <span>
+        <strong>${escapeHtml(index + 1)}. ${escapeHtml(item.label)}</strong>
+        <small>${escapeHtml(item.area)}</small>
+      </span>
+    </label>
+  `).join("");
+}
+
+function getOutboundSessionSummaryRecord() {
+  const completedCount = getOutboundSessionCompletedCount();
+  const completionPercent = Math.round((completedCount / outboundSessionItems.length) * 100);
+
+  return {
+    exportedAt: new Date().toISOString(),
+    startedAt: outboundSessionState.startedAt,
+    updatedAt: outboundSessionState.updatedAt,
+    completedAt: outboundSessionState.completedAt,
+    completedCount,
+    totalCount: outboundSessionItems.length,
+    completionPercent,
+    notes: outboundSessionState.notes,
+    stats: getOutboundSessionStats(),
+    items: outboundSessionItems.map((item) => ({
+      id: item.id,
+      label: item.label,
+      area: item.area,
+      completed: Boolean(outboundSessionState.completed[item.id])
+    }))
+  };
+}
+
+function formatOutboundSessionSummary() {
+  const record = getOutboundSessionSummaryRecord();
+  const lines = record.items.map((item) => `${item.completed ? "[x]" : "[ ]"} ${item.area}: ${item.label}`);
+  const stats = record.stats.map((stat) => `${stat.label}: ${stat.value} (${stat.detail})`);
+
+  return [
+    "Outbound Session Tracker",
+    `Started: ${record.startedAt ? formatDateTime(record.startedAt) : "Not started"}`,
+    `Updated: ${record.updatedAt ? formatDateTime(record.updatedAt) : "Not updated"}`,
+    `Completed: ${record.completedAt ? formatDateTime(record.completedAt) : "Not complete"}`,
+    `${record.completedCount} of ${record.totalCount} complete (${record.completionPercent}%)`,
+    "",
+    "Live Stats",
+    ...stats,
+    "",
+    "Checklist",
+    ...lines,
+    "",
+    "Session Feedback",
+    record.notes || "No feedback saved yet."
+  ].join("\n");
+}
+
+async function copyOutboundSessionSummary() {
+  const copiedDirectly = await copyTextWithFallback(formatOutboundSessionSummary());
+  setDataStatus(copiedDirectly ? "Copied outbound session summary." : "Selected and copied outbound session summary.");
+}
+
+function downloadOutboundSessionSummary() {
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-outbound-session-${stamp}.txt`, formatOutboundSessionSummary(), "text/plain;charset=utf-8");
+  setDataStatus("Downloaded outbound session summary.");
+}
+
+function resetOutboundSessionState() {
+  const clearedCount = getOutboundSessionCompletedCount();
+  outboundSessionState = {
+    startedAt: new Date().toISOString(),
+    updatedAt: "",
+    completedAt: "",
+    notes: "",
+    completed: {}
+  };
+  localStorage.removeItem(outboundSessionStorageKey);
+  renderOutboundSession();
+  setDataStatus(`Outbound session reset. Cleared ${clearedCount} completed step${clearedCount === 1 ? "" : "s"}.`);
+}
+
+function saveOutboundSessionNotes(event) {
+  event.preventDefault();
+  outboundSessionState.notes = outboundSessionNotes.value.trim();
+  saveOutboundSessionState();
+  renderOutboundSession();
+  setDataStatus("Saved outbound session feedback.");
+}
+
+function updateOutboundSessionStep(stepId, completed) {
+  if (!outboundSessionItems.some((item) => item.id === stepId)) return;
+  outboundSessionState.completed[stepId] = completed;
+  saveOutboundSessionState();
+  renderOutboundSession();
+  setDataStatus(`${completed ? "Completed" : "Reopened"} outbound session step.`);
 }
 
 function getCrmChecklistInputs() {
@@ -1899,6 +2112,7 @@ function renderProspects() {
   renderOwnerDashboard();
   renderDailyRunReviewQueue();
   renderDailyRunCapacitySummary();
+  renderOutboundSession();
 }
 
 function getDailyRunReviewProspects() {
@@ -7971,9 +8185,20 @@ downloadCrmChecklistButton.addEventListener("click", downloadCrmChecklistSummary
 copyCrmChecklistJsonButton.addEventListener("click", copyCrmChecklistJson);
 downloadCrmChecklistJsonButton.addEventListener("click", downloadCrmChecklistJson);
 resetCrmChecklistButton.addEventListener("click", resetCrmChecklistState);
+outboundSessionList.addEventListener("change", (event) => {
+  const checkbox = event.target.closest("input[data-outbound-session-id]");
+  if (!checkbox) return;
+
+  updateOutboundSessionStep(checkbox.dataset.outboundSessionId, checkbox.checked);
+});
+outboundSessionNotesForm.addEventListener("submit", saveOutboundSessionNotes);
+copyOutboundSessionButton.addEventListener("click", copyOutboundSessionSummary);
+downloadOutboundSessionButton.addEventListener("click", downloadOutboundSessionSummary);
+resetOutboundSessionButton.addEventListener("click", resetOutboundSessionState);
 
 bindCrmChecklistState();
 renderPromptTemplates();
+renderOutboundSession();
 restoreCrmPresetPreference();
 renderCrmProviderPreset();
 renderDiscoveryQueue();

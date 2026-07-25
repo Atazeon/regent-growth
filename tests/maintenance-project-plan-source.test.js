@@ -9,7 +9,7 @@ const checks = [
   ["plan keeps MVP scope", plan.includes("## MVP Scope")],
   ["plan keeps current status", plan.includes("Current status:")],
   ["plan keeps Ollama direction", plan.includes("AI direction: use local Ollama")],
-  ["plan tracks maintenance next", plan.includes("- Product maintenance and real-user feedback pass") || plan.includes("- Post-launch usability improvements") || plan.includes("- First real outbound session feedback")]
+  ["plan tracks maintenance next", plan.includes("- Product maintenance and real-user feedback pass") || plan.includes("- Post-launch usability improvements") || plan.includes("- First real outbound session feedback") || plan.includes("- Second outbound session refinements")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);

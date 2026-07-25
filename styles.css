@@ -136,6 +136,71 @@ main {
   padding: 0 12px;
 }
 
+.outbound-session-stats {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(140px, 1fr));
+  margin-top: 18px;
+}
+
+.outbound-session-stats article {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  background: #fbfcfe;
+  display: grid;
+  gap: 4px;
+}
+
+.outbound-session-stats span,
+.outbound-session-stats small,
+.outbound-session-item small {
+  color: var(--muted);
+}
+
+.outbound-session-stats strong {
+  font-size: 1.45rem;
+}
+
+.outbound-session-list {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(240px, 1fr));
+  margin-top: 18px;
+}
+
+.outbound-session-item {
+  align-items: flex-start;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+}
+
+.outbound-session-item input {
+  margin-top: 3px;
+}
+
+.outbound-session-item span {
+  display: grid;
+  gap: 4px;
+  line-height: 1.35;
+}
+
+.outbound-session-notes-form {
+  align-items: end;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin-top: 18px;
+}
+
+.outbound-session-notes-form textarea {
+  min-height: 110px;
+}
+
 .toolbar h2 {
   max-width: 720px;
   font-size: 2rem;
@@ -1923,7 +1988,10 @@ textarea {
   .daily-review-filters,
   .team-dashboard-grid,
   .crm-field-groups,
-  .crm-field-row {
+  .crm-field-row,
+  .outbound-session-stats,
+  .outbound-session-list,
+  .outbound-session-notes-form {
     grid-template-columns: 1fr;
   }
 

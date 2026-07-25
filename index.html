@@ -14,6 +14,7 @@
       </div>
       <nav aria-label="Pipeline stages">
         <a href="#dashboard">Dashboard</a>
+        <a href="#session">Session</a>
         <a href="#reminders">Reminders</a>
         <a href="#discovery">Discovery</a>
         <a href="#prospects">Prospects</a>
@@ -49,6 +50,30 @@
           <button id="exportButton" class="secondary-button" type="button">Export CSV</button>
           <button id="resetButton" class="secondary-button" type="button">Reset samples</button>
         </div>
+      </section>
+
+      <section id="session" class="panel">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">First Real Run</p>
+            <h2>Outbound Session Tracker</h2>
+          </div>
+          <div class="checklist-heading-actions" role="group" aria-label="Outbound session actions">
+            <span id="outboundSessionProgress" class="checklist-progress" aria-live="polite">0 of 25 complete</span>
+            <button id="copyOutboundSessionButton" class="secondary-button" type="button" title="Copy outbound session summary" aria-label="Copy outbound session summary">Copy</button>
+            <button id="downloadOutboundSessionButton" class="secondary-button" type="button" title="Download outbound session summary" aria-label="Download outbound session summary">Download</button>
+            <button id="resetOutboundSessionButton" class="secondary-button" type="button" title="Clear outbound session progress" aria-label="Clear outbound session progress">Reset</button>
+          </div>
+        </div>
+        <div id="outboundSessionStats" class="outbound-session-stats" aria-label="Outbound session live stats"></div>
+        <div id="outboundSessionList" class="outbound-session-list" role="list" aria-label="First outbound session checklist"></div>
+        <form id="outboundSessionNotesForm" class="outbound-session-notes-form">
+          <label>
+            Session feedback
+            <textarea id="outboundSessionNotes" name="outboundSessionNotes" placeholder="What broke, what was slow, which messages felt strong, and what should change before the next outbound run."></textarea>
+          </label>
+          <button class="secondary-button" type="submit">Save feedback</button>
+        </form>
       </section>
 
       <section class="metrics" aria-label="Sales engine metrics">
