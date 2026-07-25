@@ -93,6 +93,12 @@ Useful syntax checks:
 git diff --check
 ```
 
+## Maintenance
+
+- Use [docs/RUNBOOK.md](docs/RUNBOOK.md) for startup, smoke checks, validation, and troubleshooting.
+- Use [docs/USER_FEEDBACK.md](docs/USER_FEEDBACK.md) after real outbound sessions to capture product feedback.
+- Keep runtime data, shared backups, and secrets out of Git.
+
 ## Data And Secrets
 
 Prospects, prompt settings, discovery queue, and run history are stored in browser local storage. Shared team data and backups are written under `data/` by the local server. Runtime data and `.env` files are ignored by Git.
