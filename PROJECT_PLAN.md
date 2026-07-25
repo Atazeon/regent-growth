@@ -31,7 +31,7 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 
 ### Later
 
-- Daily AI workflow browser regression pass
+- Email and CRM end-to-end browser pass
 
 ## Data Model Draft
 
