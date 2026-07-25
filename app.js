@@ -218,6 +218,7 @@ let compactDailyRunHistory = false;
 let showAllDailyRunHistory = false;
 let dailyRunInProgress = false;
 let dailyRunStopRequested = false;
+let outboundSessionAreaFilterValue = "all";
 let crmSyncInProgress = false;
 let pendingTeamRestore = null;
 let teamBackupsCache = [];
@@ -363,9 +364,13 @@ const aiStatus = document.querySelector("#aiStatus");
 const dataStatus = document.querySelector("#dataStatus");
 const outboundSessionProgress = document.querySelector("#outboundSessionProgress");
 const outboundSessionStats = document.querySelector("#outboundSessionStats");
+const outboundSessionAreaFilter = document.querySelector("#outboundSessionAreaFilter");
+const outboundSessionNextAction = document.querySelector("#outboundSessionNextAction");
 const outboundSessionList = document.querySelector("#outboundSessionList");
 const outboundSessionNotesForm = document.querySelector("#outboundSessionNotesForm");
 const outboundSessionNotes = document.querySelector("#outboundSessionNotes");
+const focusNextOutboundStepButton = document.querySelector("#focusNextOutboundStepButton");
+const completeVisibleOutboundStepsButton = document.querySelector("#completeVisibleOutboundStepsButton");
 const copyOutboundSessionButton = document.querySelector("#copyOutboundSessionButton");
 const downloadOutboundSessionButton = document.querySelector("#downloadOutboundSessionButton");
 const resetOutboundSessionButton = document.querySelector("#resetOutboundSessionButton");
@@ -699,6 +704,19 @@ function getOutboundSessionCompletedCount() {
   return outboundSessionItems.filter((item) => outboundSessionState.completed[item.id]).length;
 }
 
+function getOutboundSessionAreas() {
+  return Array.from(new Set(outboundSessionItems.map((item) => item.area)));
+}
+
+function getVisibleOutboundSessionItems() {
+  if (outboundSessionAreaFilterValue === "all") return outboundSessionItems;
+  return outboundSessionItems.filter((item) => item.area === outboundSessionAreaFilterValue);
+}
+
+function getNextOutboundSessionItem() {
+  return outboundSessionItems.find((item) => !outboundSessionState.completed[item.id]) || null;
+}
+
 function getOutboundSessionStats() {
   const draftedCount = prospects.filter((prospect) => prospect.aiEmail).length;
   const contactedCount = prospects.filter((prospect) => prospect.responseStatus !== "Not Contacted" || prospect.lastTouch).length;
@@ -716,11 +734,27 @@ function renderOutboundSession() {
   const completedCount = getOutboundSessionCompletedCount();
   const completionPercent = Math.round((completedCount / outboundSessionItems.length) * 100);
   const complete = completedCount === outboundSessionItems.length;
+  const visibleItems = getVisibleOutboundSessionItems();
+  const visibleIncompleteCount = visibleItems.filter((item) => !outboundSessionState.completed[item.id]).length;
+  const nextItem = getNextOutboundSessionItem();
 
   outboundSessionProgress.textContent = complete
     ? "Session complete"
     : `${completedCount} of ${outboundSessionItems.length} complete (${completionPercent}%)`;
   outboundSessionProgress.dataset.state = complete ? "complete" : "active";
+  outboundSessionAreaFilter.innerHTML = [
+    `<option value="all">All areas</option>`,
+    ...getOutboundSessionAreas().map((area) => `<option value="${escapeHtml(area)}" ${outboundSessionAreaFilterValue === area ? "selected" : ""}>${escapeHtml(area)}</option>`)
+  ].join("");
+  outboundSessionNextAction.innerHTML = nextItem
+    ? `<strong>Next:</strong> ${escapeHtml(nextItem.area)} - ${escapeHtml(nextItem.label)}`
+    : `<strong>Next:</strong> Session complete.`;
+  focusNextOutboundStepButton.disabled = !nextItem;
+  completeVisibleOutboundStepsButton.disabled = visibleItems.length === 0 || visibleIncompleteCount === 0;
+  completeVisibleOutboundStepsButton.title = completeVisibleOutboundStepsButton.disabled
+    ? "No visible incomplete outbound session steps"
+    : `Complete ${visibleIncompleteCount} visible outbound session step${visibleIncompleteCount === 1 ? "" : "s"}`;
+  completeVisibleOutboundStepsButton.setAttribute("aria-label", completeVisibleOutboundStepsButton.title);
   resetOutboundSessionButton.disabled = completedCount === 0 && !outboundSessionState.notes;
   resetOutboundSessionButton.title = resetOutboundSessionButton.disabled
     ? "No outbound session progress to clear"
@@ -736,15 +770,17 @@ function renderOutboundSession() {
     </article>
   `).join("");
 
-  outboundSessionList.innerHTML = outboundSessionItems.map((item, index) => `
-    <label class="outbound-session-item" data-area="${escapeHtml(item.area)}" role="listitem">
+  outboundSessionList.innerHTML = visibleItems.map((item) => {
+    const index = outboundSessionItems.findIndex((sessionItem) => sessionItem.id === item.id);
+    return `
+    <label class="outbound-session-item" data-area="${escapeHtml(item.area)}" data-step-id="${escapeHtml(item.id)}" role="listitem">
       <input type="checkbox" data-outbound-session-id="${escapeHtml(item.id)}" ${outboundSessionState.completed[item.id] ? "checked" : ""}>
       <span>
         <strong>${escapeHtml(index + 1)}. ${escapeHtml(item.label)}</strong>
         <small>${escapeHtml(item.area)}</small>
       </span>
-    </label>
-  `).join("");
+    </label>`;
+  }).join("") || `<p class="empty-state">No outbound session steps match this filter.</p>`;
 }
 
 function getOutboundSessionSummaryRecord() {
@@ -816,6 +852,34 @@ function resetOutboundSessionState() {
   localStorage.removeItem(outboundSessionStorageKey);
   renderOutboundSession();
   setDataStatus(`Outbound session reset. Cleared ${clearedCount} completed step${clearedCount === 1 ? "" : "s"}.`);
+}
+
+function focusNextOutboundStep() {
+  const nextItem = getNextOutboundSessionItem();
+  if (!nextItem) {
+    setDataStatus("Outbound session is complete.");
+    return;
+  }
+
+  outboundSessionAreaFilterValue = nextItem.area;
+  renderOutboundSession();
+  document.querySelector(`[data-step-id="${CSS.escape(nextItem.id)}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  setDataStatus(`Showing next outbound session step: ${nextItem.label}.`);
+}
+
+function completeVisibleOutboundSteps() {
+  const visibleIncompleteItems = getVisibleOutboundSessionItems().filter((item) => !outboundSessionState.completed[item.id]);
+  if (visibleIncompleteItems.length === 0) {
+    setDataStatus("No visible outbound session steps to complete.", "error");
+    return;
+  }
+
+  visibleIncompleteItems.forEach((item) => {
+    outboundSessionState.completed[item.id] = true;
+  });
+  saveOutboundSessionState();
+  renderOutboundSession();
+  setDataStatus(`Completed ${visibleIncompleteItems.length} visible outbound session step${visibleIncompleteItems.length === 1 ? "" : "s"}.`);
 }
 
 function saveOutboundSessionNotes(event) {
@@ -8192,6 +8256,12 @@ outboundSessionList.addEventListener("change", (event) => {
   updateOutboundSessionStep(checkbox.dataset.outboundSessionId, checkbox.checked);
 });
 outboundSessionNotesForm.addEventListener("submit", saveOutboundSessionNotes);
+outboundSessionAreaFilter.addEventListener("change", () => {
+  outboundSessionAreaFilterValue = outboundSessionAreaFilter.value;
+  renderOutboundSession();
+});
+focusNextOutboundStepButton.addEventListener("click", focusNextOutboundStep);
+completeVisibleOutboundStepsButton.addEventListener("click", completeVisibleOutboundSteps);
 copyOutboundSessionButton.addEventListener("click", copyOutboundSessionSummary);
 downloadOutboundSessionButton.addEventListener("click", downloadOutboundSessionSummary);
 resetOutboundSessionButton.addEventListener("click", resetOutboundSessionState);

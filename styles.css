@@ -162,6 +162,20 @@ main {
   font-size: 1.45rem;
 }
 
+.outbound-session-next-action {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #eef8f6;
+  color: var(--ink);
+  line-height: 1.45;
+  margin-top: 12px;
+  padding: 12px 14px;
+}
+
+.outbound-session-next-action strong {
+  color: var(--accent-dark);
+}
+
 .outbound-session-list {
   display: grid;
   gap: 10px;
