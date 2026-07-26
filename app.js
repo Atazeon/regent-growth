@@ -851,8 +851,11 @@ function renderOutboundImprovementQueue() {
   const resolvedItems = allItems.filter((item) => item.status === "Resolved");
   const archivedItems = allItems.filter((item) => item.status === "Archived");
   const visibleCloseoutItems = visibleItems.filter((item) => ["Resolved", "Archived"].includes(item.status));
+  const archiveCleanupStatus = archivedItems.length
+    ? outboundSessionState.archiveCloseoutExportedAt ? "Archive cleanup ready" : "Export archived closeout before cleanup"
+    : "No archived fixes";
   outboundImprovementSummary.textContent = allItems.length
-    ? `${visibleItems.length} visible / ${allItems.length} fix${allItems.length === 1 ? "" : "es"} queued | Open: ${counts.Open || 0} | In Progress: ${counts["In Progress"] || 0} | Resolved: ${counts.Resolved || 0} | Archived: ${counts.Archived || 0}`
+    ? `${visibleItems.length} visible / ${allItems.length} fix${allItems.length === 1 ? "" : "es"} queued | Open: ${counts.Open || 0} | In Progress: ${counts["In Progress"] || 0} | Resolved: ${counts.Resolved || 0} | Archived: ${counts.Archived || 0} | ${archiveCleanupStatus}`
     : "No product fixes queued yet.";
   outboundImprovementStatusFilter.value = outboundImprovementStatusFilterValue;
   outboundImprovementOwnerFilter.innerHTML = [

@@ -29,6 +29,8 @@ const checks = [
   ["archive export state exists", app.includes("archiveCloseoutExportedAt")],
   ["archive export marker exists", app.includes("function markArchiveCloseoutExported(items)")],
   ["archive cleanup requires export", app.includes("Copy or download an archived closeout before clearing archived fixes.")],
+  ["archive cleanup readiness warning exists", app.includes("Export archived closeout before cleanup")],
+  ["archive cleanup ready label exists", app.includes("Archive cleanup ready")],
   ["archive reset clears export guard", app.includes("outboundSessionState.archiveCloseoutExportedAt = \"\"")],
   ["clear archived confirms", app.includes("window.confirm(`Clear ${archivedItems.length} archived outcome-driven fix")],
   ["clear archived removes outcomes", app.includes("outboundSessionState.outcomes = outboundSessionState.outcomes.filter((outcome) => !archivedIds.has(outcome.id))")],
@@ -36,7 +38,7 @@ const checks = [
   ["restore button bound", app.includes('restoreArchivedOutboundImprovementsButton.addEventListener("click", restoreArchivedOutboundImprovements)')],
   ["clear archived bound", app.includes('clearArchivedOutboundImprovementsButton.addEventListener("click", clearArchivedOutboundImprovements)')],
   ["README mentions guarded archive cleanup", readme.includes("guarded resolved archive/restore/cleanup")],
-  ["plan next final polish", plan.includes("- Fix queue final polish pass")]
+  ["plan next real run", plan.includes("- First real outbound run with archive workflow")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
