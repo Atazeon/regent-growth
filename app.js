@@ -478,6 +478,7 @@ function loadOutboundSessionState() {
     notes: "",
     outcomes: [],
     improvements: {},
+    archiveCloseoutExportedAt: "",
     completed: {}
   };
   const savedState = localStorage.getItem(outboundSessionStorageKey);
@@ -495,6 +496,7 @@ function loadOutboundSessionState() {
       notes: parsedState.notes || "",
       outcomes: Array.isArray(parsedState.outcomes) ? parsedState.outcomes.map(normalizeOutboundOutcome).filter((outcome) => outcome.type && outcome.note) : [],
       improvements: typeof parsedState.improvements === "object" && parsedState.improvements ? parsedState.improvements : {},
+      archiveCloseoutExportedAt: parsedState.archiveCloseoutExportedAt || "",
       completed: typeof parsedState.completed === "object" && parsedState.completed ? parsedState.completed : {}
     };
   } catch {
@@ -1083,6 +1085,7 @@ function resetOutboundSessionState() {
     notes: "",
     outcomes: [],
     improvements: {},
+    archiveCloseoutExportedAt: "",
     completed: {}
   };
   localStorage.removeItem(outboundSessionStorageKey);
@@ -1342,6 +1345,12 @@ function formatFilteredOutboundImprovementCloseout() {
   ].join("\n\n");
 }
 
+function markArchiveCloseoutExported(items) {
+  if (!items.some((item) => item.status === "Archived")) return;
+  outboundSessionState.archiveCloseoutExportedAt = new Date().toISOString();
+  saveOutboundSessionState();
+}
+
 async function copyOutboundImprovementSummary() {
   const items = getOutboundImprovementItems();
   if (items.length === 0) {
@@ -1372,6 +1381,7 @@ async function copyResolvedOutboundImprovementCloseout() {
   }
 
   const copiedDirectly = await copyTextWithFallback(formatResolvedOutboundImprovementCloseout());
+  markArchiveCloseoutExported(resolvedItems);
   setDataStatus(copiedDirectly ? "Copied resolved fix closeout." : "Selected and copied resolved fix closeout.");
 }
 
@@ -1384,6 +1394,7 @@ function downloadResolvedOutboundImprovementCloseout() {
 
   const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
   downloadFile(`regent-growth-resolved-fix-closeout-${stamp}.txt`, formatResolvedOutboundImprovementCloseout(), "text/plain;charset=utf-8");
+  markArchiveCloseoutExported(resolvedItems);
   setDataStatus(`Downloaded ${resolvedItems.length} resolved fix closeout${resolvedItems.length === 1 ? "" : "s"}.`);
 }
 
@@ -1403,6 +1414,7 @@ function archiveResolvedOutboundImprovements() {
       updatedAt: archivedAt
     };
   });
+  outboundSessionState.archiveCloseoutExportedAt = "";
   saveOutboundSessionState();
   renderOutboundSession();
   setDataStatus(`Archived ${resolvedItems.length} resolved outcome-driven fix${resolvedItems.length === 1 ? "" : "es"}.`);
@@ -1436,6 +1448,11 @@ function clearArchivedOutboundImprovements() {
     return;
   }
 
+  if (!outboundSessionState.archiveCloseoutExportedAt) {
+    setDataStatus("Copy or download an archived closeout before clearing archived fixes.", "error");
+    return;
+  }
+
   const confirmed = window.confirm(`Clear ${archivedItems.length} archived outcome-driven fix${archivedItems.length === 1 ? "" : "es"}? Export closeouts first if you need a record.`);
   if (!confirmed) return;
 
@@ -1444,6 +1461,7 @@ function clearArchivedOutboundImprovements() {
   archivedIds.forEach((id) => {
     delete outboundSessionState.improvements[id];
   });
+  outboundSessionState.archiveCloseoutExportedAt = "";
   saveOutboundSessionState();
   renderOutboundSession();
   setDataStatus(`Cleared ${archivedItems.length} archived outcome-driven fix${archivedItems.length === 1 ? "" : "es"}.`);
@@ -1468,6 +1486,7 @@ async function copyFilteredOutboundImprovementCloseout() {
   }
 
   const copiedDirectly = await copyTextWithFallback(formatFilteredOutboundImprovementCloseout());
+  markArchiveCloseoutExported(items);
   setDataStatus(copiedDirectly ? "Copied visible fix closeout." : "Selected and copied visible fix closeout.");
 }
 
@@ -1480,6 +1499,7 @@ function downloadFilteredOutboundImprovementCloseout() {
 
   const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
   downloadFile(`regent-growth-visible-fix-closeout-${stamp}.txt`, formatFilteredOutboundImprovementCloseout(), "text/plain;charset=utf-8");
+  markArchiveCloseoutExported(items);
   setDataStatus(`Downloaded ${items.length} visible fix closeout${items.length === 1 ? "" : "s"}.`);
 }
 

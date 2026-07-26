@@ -5,9 +5,9 @@ const root = path.resolve(__dirname, "..");
 const app = fs.readFileSync(path.join(root, "app.js"), "utf8");
 
 const checks = [
-  ["fallback includes improvements", app.includes("improvements: {},\n    completed: {}")],
+  ["fallback includes improvements", app.includes("improvements: {},\n    archiveCloseoutExportedAt: \"\",\n    completed: {}")],
   ["loads improvements", app.includes("parsedState.improvements")],
-  ["resets improvements", app.includes("improvements: {},\n    completed: {}")],
+  ["resets improvements", app.includes("improvements: {},\n    archiveCloseoutExportedAt: \"\",\n    completed: {}")],
   ["persists status", app.includes("status: status === \"Archived\" ? \"Resolved\" : status")],
   ["persists archive date", app.includes("archivedAt: status === \"Archived\"")],
   ["uses blocker outcomes", app.includes('["Blocked", "Fix Needed"].includes(outcome.type)')]
