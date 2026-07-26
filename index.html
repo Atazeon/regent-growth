@@ -112,6 +112,13 @@
             <p id="outboundImprovementSummary" class="empty-state">No product fixes queued yet.</p>
           </div>
           <div class="action-row" role="group" aria-label="Outbound improvement actions">
+            <select id="outboundImprovementStatusFilter" aria-label="Filter outcome-driven fixes">
+              <option value="all">All fixes</option>
+              <option value="Open">Open</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Resolved">Resolved</option>
+            </select>
+            <button id="copyOpenOutboundImprovementsButton" class="secondary-button" type="button">Copy open</button>
             <button id="copyOutboundImprovementsButton" class="secondary-button" type="button">Copy fixes</button>
             <button id="downloadOutboundImprovementsButton" class="secondary-button" type="button">Download fixes</button>
           </div>
