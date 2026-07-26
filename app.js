@@ -394,6 +394,7 @@ const outboundImprovementStatusFilter = document.querySelector("#outboundImprove
 const outboundImprovementOwnerFilter = document.querySelector("#outboundImprovementOwnerFilter");
 const copyOpenOutboundImprovementsButton = document.querySelector("#copyOpenOutboundImprovementsButton");
 const copyResolvedOutboundImprovementsButton = document.querySelector("#copyResolvedOutboundImprovementsButton");
+const downloadResolvedOutboundImprovementsButton = document.querySelector("#downloadResolvedOutboundImprovementsButton");
 const copyFilteredOutboundImprovementsButton = document.querySelector("#copyFilteredOutboundImprovementsButton");
 const copyOutboundImprovementsButton = document.querySelector("#copyOutboundImprovementsButton");
 const downloadFilteredOutboundImprovementsCsvButton = document.querySelector("#downloadFilteredOutboundImprovementsCsvButton");
@@ -873,6 +874,7 @@ function renderOutboundImprovementQueue() {
   });
   copyOpenOutboundImprovementsButton.disabled = openItems.length === 0;
   copyResolvedOutboundImprovementsButton.disabled = resolvedItems.length === 0;
+  downloadResolvedOutboundImprovementsButton.disabled = resolvedItems.length === 0;
   copyFilteredOutboundImprovementsButton.disabled = visibleItems.length === 0;
   downloadFilteredOutboundImprovementsCsvButton.disabled = visibleItems.length === 0;
   outboundImprovementQueue.innerHTML = visibleItems.length
@@ -1325,6 +1327,18 @@ async function copyResolvedOutboundImprovementCloseout() {
 
   const copiedDirectly = await copyTextWithFallback(formatResolvedOutboundImprovementCloseout());
   setDataStatus(copiedDirectly ? "Copied resolved fix closeout." : "Selected and copied resolved fix closeout.");
+}
+
+function downloadResolvedOutboundImprovementCloseout() {
+  const resolvedItems = getOutboundImprovementItems().filter((item) => item.status === "Resolved");
+  if (resolvedItems.length === 0) {
+    setDataStatus("No resolved outcome-driven fixes to download.", "error");
+    return;
+  }
+
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-resolved-fix-closeout-${stamp}.txt`, formatResolvedOutboundImprovementCloseout(), "text/plain;charset=utf-8");
+  setDataStatus(`Downloaded ${resolvedItems.length} resolved fix closeout${resolvedItems.length === 1 ? "" : "s"}.`);
 }
 
 async function copyFilteredOutboundImprovementSummary() {
@@ -8801,6 +8815,7 @@ downloadOutboundOutcomesButton.addEventListener("click", downloadOutboundOutcome
 clearOutboundOutcomesButton.addEventListener("click", clearOutboundOutcomes);
 copyOpenOutboundImprovementsButton.addEventListener("click", copyOpenOutboundImprovementSummary);
 copyResolvedOutboundImprovementsButton.addEventListener("click", copyResolvedOutboundImprovementCloseout);
+downloadResolvedOutboundImprovementsButton.addEventListener("click", downloadResolvedOutboundImprovementCloseout);
 copyFilteredOutboundImprovementsButton.addEventListener("click", copyFilteredOutboundImprovementSummary);
 copyOutboundImprovementsButton.addEventListener("click", copyOutboundImprovementSummary);
 downloadFilteredOutboundImprovementsCsvButton.addEventListener("click", downloadFilteredOutboundImprovementCsv);
