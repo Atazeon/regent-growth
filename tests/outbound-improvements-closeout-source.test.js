@@ -22,7 +22,7 @@ const checks = [
   ["closeout button bound", app.includes('copyResolvedOutboundImprovementsButton.addEventListener("click", copyResolvedOutboundImprovementCloseout)')],
   ["closeout download bound", app.includes('downloadResolvedOutboundImprovementsButton.addEventListener("click", downloadResolvedOutboundImprovementCloseout)')],
   ["README mentions closeout download", readme.includes("closeout copy/download")],
-  ["plan next archive restore", plan.includes("- Fix queue archive restore")]
+  ["plan next archive filtered closeout", plan.includes("- Fix queue archive filtered closeout")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);

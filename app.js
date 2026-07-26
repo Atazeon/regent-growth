@@ -396,6 +396,7 @@ const copyOpenOutboundImprovementsButton = document.querySelector("#copyOpenOutb
 const copyResolvedOutboundImprovementsButton = document.querySelector("#copyResolvedOutboundImprovementsButton");
 const downloadResolvedOutboundImprovementsButton = document.querySelector("#downloadResolvedOutboundImprovementsButton");
 const archiveResolvedOutboundImprovementsButton = document.querySelector("#archiveResolvedOutboundImprovementsButton");
+const restoreArchivedOutboundImprovementsButton = document.querySelector("#restoreArchivedOutboundImprovementsButton");
 const copyFilteredOutboundImprovementsButton = document.querySelector("#copyFilteredOutboundImprovementsButton");
 const copyOutboundImprovementsButton = document.querySelector("#copyOutboundImprovementsButton");
 const downloadFilteredOutboundImprovementsCsvButton = document.querySelector("#downloadFilteredOutboundImprovementsCsvButton");
@@ -879,6 +880,7 @@ function renderOutboundImprovementQueue() {
   copyResolvedOutboundImprovementsButton.disabled = resolvedItems.length + archivedItems.length === 0;
   downloadResolvedOutboundImprovementsButton.disabled = resolvedItems.length + archivedItems.length === 0;
   archiveResolvedOutboundImprovementsButton.disabled = resolvedItems.length === 0;
+  restoreArchivedOutboundImprovementsButton.disabled = archivedItems.length === 0;
   copyFilteredOutboundImprovementsButton.disabled = visibleItems.length === 0;
   downloadFilteredOutboundImprovementsCsvButton.disabled = visibleItems.length === 0;
   outboundImprovementQueue.innerHTML = visibleItems.length
@@ -1372,6 +1374,27 @@ function archiveResolvedOutboundImprovements() {
   saveOutboundSessionState();
   renderOutboundSession();
   setDataStatus(`Archived ${resolvedItems.length} resolved outcome-driven fix${resolvedItems.length === 1 ? "" : "es"}.`);
+}
+
+function restoreArchivedOutboundImprovements() {
+  const archivedItems = getOutboundImprovementItems().filter((item) => item.status === "Archived");
+  if (archivedItems.length === 0) {
+    setDataStatus("No archived outcome-driven fixes to restore.", "error");
+    return;
+  }
+
+  const updatedAt = new Date().toISOString();
+  archivedItems.forEach((item) => {
+    outboundSessionState.improvements[item.id] = {
+      ...(outboundSessionState.improvements[item.id] || {}),
+      status: "Resolved",
+      archivedAt: "",
+      updatedAt
+    };
+  });
+  saveOutboundSessionState();
+  renderOutboundSession();
+  setDataStatus(`Restored ${archivedItems.length} archived outcome-driven fix${archivedItems.length === 1 ? "" : "es"}.`);
 }
 
 async function copyFilteredOutboundImprovementSummary() {
@@ -8850,6 +8873,7 @@ copyOpenOutboundImprovementsButton.addEventListener("click", copyOpenOutboundImp
 copyResolvedOutboundImprovementsButton.addEventListener("click", copyResolvedOutboundImprovementCloseout);
 downloadResolvedOutboundImprovementsButton.addEventListener("click", downloadResolvedOutboundImprovementCloseout);
 archiveResolvedOutboundImprovementsButton.addEventListener("click", archiveResolvedOutboundImprovements);
+restoreArchivedOutboundImprovementsButton.addEventListener("click", restoreArchivedOutboundImprovements);
 copyFilteredOutboundImprovementsButton.addEventListener("click", copyFilteredOutboundImprovementSummary);
 copyOutboundImprovementsButton.addEventListener("click", copyOutboundImprovementSummary);
 downloadFilteredOutboundImprovementsCsvButton.addEventListener("click", downloadFilteredOutboundImprovementCsv);
