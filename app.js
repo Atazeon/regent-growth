@@ -393,6 +393,7 @@ const clearOutboundOutcomesButton = document.querySelector("#clearOutboundOutcom
 const outboundImprovementStatusFilter = document.querySelector("#outboundImprovementStatusFilter");
 const outboundImprovementOwnerFilter = document.querySelector("#outboundImprovementOwnerFilter");
 const copyOpenOutboundImprovementsButton = document.querySelector("#copyOpenOutboundImprovementsButton");
+const copyFilteredOutboundImprovementsButton = document.querySelector("#copyFilteredOutboundImprovementsButton");
 const copyOutboundImprovementsButton = document.querySelector("#copyOutboundImprovementsButton");
 const downloadOutboundImprovementsButton = document.querySelector("#downloadOutboundImprovementsButton");
 
@@ -868,6 +869,7 @@ function renderOutboundImprovementQueue() {
     button.disabled = allItems.length === 0;
   });
   copyOpenOutboundImprovementsButton.disabled = openItems.length === 0;
+  copyFilteredOutboundImprovementsButton.disabled = visibleItems.length === 0;
   outboundImprovementQueue.innerHTML = visibleItems.length
     ? visibleItems.map((item) => `
       <article data-state="${escapeHtml(item.status)}" data-due-state="${escapeHtml(getOutboundImprovementDueState(item))}">
@@ -1242,6 +1244,30 @@ function formatOpenOutboundImprovementSummary() {
   ].join("\n\n");
 }
 
+function formatFilteredOutboundImprovementSummary() {
+  const items = getVisibleOutboundImprovementItems();
+  if (items.length === 0) return "No filtered outcome-driven product fixes.";
+
+  const statusLabel = outboundImprovementStatusFilterValue === "all" ? "All statuses" : outboundImprovementStatusFilterValue;
+  const ownerLabel = outboundImprovementOwnerFilterValue === "all" ? "All owners" : outboundImprovementOwnerFilterValue;
+
+  return [
+    "Filtered Outcome-Driven Product Fixes",
+    `Status: ${statusLabel}`,
+    `Owner: ${ownerLabel}`,
+    `Visible: ${items.length}`,
+    "",
+    ...items.map((item) => [
+      `${item.status} - ${item.type}`,
+      `Company: ${item.company || "Unassigned company"}`,
+      `Owner: ${item.owner || "Unassigned"}`,
+      `Due: ${item.due ? formatDate(item.due) : "Unscheduled"}`,
+      `Fix: ${item.note}`,
+      `Execution: ${item.executionNote || "No execution note yet."}`
+    ].join("\n"))
+  ].join("\n\n");
+}
+
 async function copyOutboundImprovementSummary() {
   const items = getOutboundImprovementItems();
   if (items.length === 0) {
@@ -1262,6 +1288,17 @@ async function copyOpenOutboundImprovementSummary() {
 
   const copiedDirectly = await copyTextWithFallback(formatOpenOutboundImprovementSummary());
   setDataStatus(copiedDirectly ? "Copied open outcome-driven fixes." : "Selected and copied open outcome-driven fixes.");
+}
+
+async function copyFilteredOutboundImprovementSummary() {
+  const items = getVisibleOutboundImprovementItems();
+  if (items.length === 0) {
+    setDataStatus("No filtered outcome-driven fixes to copy.", "error");
+    return;
+  }
+
+  const copiedDirectly = await copyTextWithFallback(formatFilteredOutboundImprovementSummary());
+  setDataStatus(copiedDirectly ? "Copied filtered outcome-driven fixes." : "Selected and copied filtered outcome-driven fixes.");
 }
 
 function downloadOutboundImprovementSummary() {
@@ -8702,6 +8739,7 @@ copyOutboundOutcomesButton.addEventListener("click", copyOutboundOutcomeSummary)
 downloadOutboundOutcomesButton.addEventListener("click", downloadOutboundOutcomeSummary);
 clearOutboundOutcomesButton.addEventListener("click", clearOutboundOutcomes);
 copyOpenOutboundImprovementsButton.addEventListener("click", copyOpenOutboundImprovementSummary);
+copyFilteredOutboundImprovementsButton.addEventListener("click", copyFilteredOutboundImprovementSummary);
 copyOutboundImprovementsButton.addEventListener("click", copyOutboundImprovementSummary);
 downloadOutboundImprovementsButton.addEventListener("click", downloadOutboundImprovementSummary);
 
