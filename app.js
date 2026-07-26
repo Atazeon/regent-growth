@@ -395,6 +395,7 @@ const outboundImprovementOwnerFilter = document.querySelector("#outboundImprovem
 const copyOpenOutboundImprovementsButton = document.querySelector("#copyOpenOutboundImprovementsButton");
 const copyFilteredOutboundImprovementsButton = document.querySelector("#copyFilteredOutboundImprovementsButton");
 const copyOutboundImprovementsButton = document.querySelector("#copyOutboundImprovementsButton");
+const downloadFilteredOutboundImprovementsCsvButton = document.querySelector("#downloadFilteredOutboundImprovementsCsvButton");
 const downloadOutboundImprovementsButton = document.querySelector("#downloadOutboundImprovementsButton");
 
 function loadProspects() {
@@ -870,6 +871,7 @@ function renderOutboundImprovementQueue() {
   });
   copyOpenOutboundImprovementsButton.disabled = openItems.length === 0;
   copyFilteredOutboundImprovementsButton.disabled = visibleItems.length === 0;
+  downloadFilteredOutboundImprovementsCsvButton.disabled = visibleItems.length === 0;
   outboundImprovementQueue.innerHTML = visibleItems.length
     ? visibleItems.map((item) => `
       <article data-state="${escapeHtml(item.status)}" data-due-state="${escapeHtml(getOutboundImprovementDueState(item))}">
@@ -1299,6 +1301,30 @@ async function copyFilteredOutboundImprovementSummary() {
 
   const copiedDirectly = await copyTextWithFallback(formatFilteredOutboundImprovementSummary());
   setDataStatus(copiedDirectly ? "Copied filtered outcome-driven fixes." : "Selected and copied filtered outcome-driven fixes.");
+}
+
+function downloadFilteredOutboundImprovementCsv() {
+  const items = getVisibleOutboundImprovementItems();
+  if (items.length === 0) {
+    setDataStatus("No filtered outcome-driven fixes to export.", "error");
+    return;
+  }
+
+  const headers = ["status", "type", "company", "owner", "due", "dueState", "createdAt", "fix", "executionNote"];
+  const rows = items.map((item) => [
+    item.status,
+    item.type,
+    item.company || "Unassigned company",
+    item.owner || "Unassigned",
+    item.due,
+    getOutboundImprovementDueState(item),
+    item.createdAt,
+    item.note,
+    item.executionNote
+  ].map(csvCell).join(","));
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-filtered-fixes-${stamp}.csv`, [headers.join(","), ...rows].join("\n"), "text/csv;charset=utf-8");
+  setDataStatus(`Exported ${items.length} filtered outcome-driven fix${items.length === 1 ? "" : "es"} as CSV.`);
 }
 
 function downloadOutboundImprovementSummary() {
@@ -8741,6 +8767,7 @@ clearOutboundOutcomesButton.addEventListener("click", clearOutboundOutcomes);
 copyOpenOutboundImprovementsButton.addEventListener("click", copyOpenOutboundImprovementSummary);
 copyFilteredOutboundImprovementsButton.addEventListener("click", copyFilteredOutboundImprovementSummary);
 copyOutboundImprovementsButton.addEventListener("click", copyOutboundImprovementSummary);
+downloadFilteredOutboundImprovementsCsvButton.addEventListener("click", downloadFilteredOutboundImprovementCsv);
 downloadOutboundImprovementsButton.addEventListener("click", downloadOutboundImprovementSummary);
 
 bindCrmChecklistState();
