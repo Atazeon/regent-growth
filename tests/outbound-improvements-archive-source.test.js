@@ -25,7 +25,7 @@ const checks = [
   ["archive button bound", app.includes('archiveResolvedOutboundImprovementsButton.addEventListener("click", archiveResolvedOutboundImprovements)')],
   ["restore button bound", app.includes('restoreArchivedOutboundImprovementsButton.addEventListener("click", restoreArchivedOutboundImprovements)')],
   ["README mentions archive restore", readme.includes("resolved archive/restore")],
-  ["plan next archive filtered closeout", plan.includes("- Fix queue archive filtered closeout")]
+  ["plan next filtered closeout download", plan.includes("- Fix queue filtered closeout download")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);

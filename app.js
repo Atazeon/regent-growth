@@ -397,6 +397,7 @@ const copyResolvedOutboundImprovementsButton = document.querySelector("#copyReso
 const downloadResolvedOutboundImprovementsButton = document.querySelector("#downloadResolvedOutboundImprovementsButton");
 const archiveResolvedOutboundImprovementsButton = document.querySelector("#archiveResolvedOutboundImprovementsButton");
 const restoreArchivedOutboundImprovementsButton = document.querySelector("#restoreArchivedOutboundImprovementsButton");
+const copyFilteredCloseoutOutboundImprovementsButton = document.querySelector("#copyFilteredCloseoutOutboundImprovementsButton");
 const copyFilteredOutboundImprovementsButton = document.querySelector("#copyFilteredOutboundImprovementsButton");
 const copyOutboundImprovementsButton = document.querySelector("#copyOutboundImprovementsButton");
 const downloadFilteredOutboundImprovementsCsvButton = document.querySelector("#downloadFilteredOutboundImprovementsCsvButton");
@@ -845,6 +846,7 @@ function renderOutboundImprovementQueue() {
   const openItems = allItems.filter((item) => item.status === "Open");
   const resolvedItems = allItems.filter((item) => item.status === "Resolved");
   const archivedItems = allItems.filter((item) => item.status === "Archived");
+  const visibleCloseoutItems = visibleItems.filter((item) => ["Resolved", "Archived"].includes(item.status));
   outboundImprovementSummary.textContent = allItems.length
     ? `${visibleItems.length} visible / ${allItems.length} fix${allItems.length === 1 ? "" : "es"} queued | Open: ${counts.Open || 0} | In Progress: ${counts["In Progress"] || 0} | Resolved: ${counts.Resolved || 0} | Archived: ${counts.Archived || 0}`
     : "No product fixes queued yet.";
@@ -881,6 +883,7 @@ function renderOutboundImprovementQueue() {
   downloadResolvedOutboundImprovementsButton.disabled = resolvedItems.length + archivedItems.length === 0;
   archiveResolvedOutboundImprovementsButton.disabled = resolvedItems.length === 0;
   restoreArchivedOutboundImprovementsButton.disabled = archivedItems.length === 0;
+  copyFilteredCloseoutOutboundImprovementsButton.disabled = visibleCloseoutItems.length === 0;
   copyFilteredOutboundImprovementsButton.disabled = visibleItems.length === 0;
   downloadFilteredOutboundImprovementsCsvButton.disabled = visibleItems.length === 0;
   outboundImprovementQueue.innerHTML = visibleItems.length
@@ -1310,6 +1313,31 @@ function formatFilteredOutboundImprovementSummary() {
   ].join("\n\n");
 }
 
+function formatFilteredOutboundImprovementCloseout() {
+  const items = getVisibleOutboundImprovementItems().filter((item) => ["Resolved", "Archived"].includes(item.status));
+  if (items.length === 0) return "No visible resolved or archived outcome-driven product fixes.";
+
+  const statusLabel = outboundImprovementStatusFilterValue === "all" ? "All statuses" : outboundImprovementStatusFilterValue;
+  const ownerLabel = outboundImprovementOwnerFilterValue === "all" ? "All owners" : outboundImprovementOwnerFilterValue;
+
+  return [
+    "Filtered Fix Closeout",
+    `Status: ${statusLabel}`,
+    `Owner: ${ownerLabel}`,
+    `Closeout fixes: ${items.length}`,
+    "",
+    ...items.map((item) => [
+      `${item.status} - ${item.type}`,
+      `Company: ${item.company || "Unassigned company"}`,
+      `Owner: ${item.owner || "Unassigned"}`,
+      `Due: ${item.due ? formatDate(item.due) : "Unscheduled"}`,
+      item.archivedAt ? `Archived: ${formatDateTime(item.archivedAt)}` : "Archived: Not archived",
+      `Fix: ${item.note}`,
+      `Closeout: ${item.executionNote || "No closeout note yet."}`
+    ].join("\n"))
+  ].join("\n\n");
+}
+
 async function copyOutboundImprovementSummary() {
   const items = getOutboundImprovementItems();
   if (items.length === 0) {
@@ -1406,6 +1434,17 @@ async function copyFilteredOutboundImprovementSummary() {
 
   const copiedDirectly = await copyTextWithFallback(formatFilteredOutboundImprovementSummary());
   setDataStatus(copiedDirectly ? "Copied filtered outcome-driven fixes." : "Selected and copied filtered outcome-driven fixes.");
+}
+
+async function copyFilteredOutboundImprovementCloseout() {
+  const items = getVisibleOutboundImprovementItems().filter((item) => ["Resolved", "Archived"].includes(item.status));
+  if (items.length === 0) {
+    setDataStatus("No visible resolved or archived fixes to close out.", "error");
+    return;
+  }
+
+  const copiedDirectly = await copyTextWithFallback(formatFilteredOutboundImprovementCloseout());
+  setDataStatus(copiedDirectly ? "Copied visible fix closeout." : "Selected and copied visible fix closeout.");
 }
 
 function downloadFilteredOutboundImprovementCsv() {
@@ -8874,6 +8913,7 @@ copyResolvedOutboundImprovementsButton.addEventListener("click", copyResolvedOut
 downloadResolvedOutboundImprovementsButton.addEventListener("click", downloadResolvedOutboundImprovementCloseout);
 archiveResolvedOutboundImprovementsButton.addEventListener("click", archiveResolvedOutboundImprovements);
 restoreArchivedOutboundImprovementsButton.addEventListener("click", restoreArchivedOutboundImprovements);
+copyFilteredCloseoutOutboundImprovementsButton.addEventListener("click", copyFilteredOutboundImprovementCloseout);
 copyFilteredOutboundImprovementsButton.addEventListener("click", copyFilteredOutboundImprovementSummary);
 copyOutboundImprovementsButton.addEventListener("click", copyOutboundImprovementSummary);
 downloadFilteredOutboundImprovementsCsvButton.addEventListener("click", downloadFilteredOutboundImprovementCsv);
