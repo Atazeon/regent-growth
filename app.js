@@ -378,6 +378,7 @@ const outboundOutcomeNote = document.querySelector("#outboundOutcomeNote");
 const outboundOutcomeSummary = document.querySelector("#outboundOutcomeSummary");
 const outboundOutcomeList = document.querySelector("#outboundOutcomeList");
 const outboundImprovementSummary = document.querySelector("#outboundImprovementSummary");
+const outboundImprovementDueSummary = document.querySelector("#outboundImprovementDueSummary");
 const outboundImprovementQueue = document.querySelector("#outboundImprovementQueue");
 const focusNextOutboundStepButton = document.querySelector("#focusNextOutboundStepButton");
 const completeVisibleOutboundStepsButton = document.querySelector("#completeVisibleOutboundStepsButton");
@@ -787,6 +788,24 @@ function getOutboundImprovementCounts(items = getOutboundImprovementItems()) {
   }, { Open: 0, "In Progress": 0, Resolved: 0 });
 }
 
+function getOutboundImprovementDueState(item) {
+  if (item.status === "Resolved") return "resolved";
+  if (!item.due) return "unscheduled";
+  const days = daysUntil(item.due);
+  if (days < 0) return "overdue";
+  if (days === 0) return "today";
+  if (days <= 7) return "soon";
+  return "later";
+}
+
+function getOutboundImprovementDueCounts(items = getOutboundImprovementItems()) {
+  return items.reduce((counts, item) => {
+    const state = getOutboundImprovementDueState(item);
+    counts[state] = (counts[state] || 0) + 1;
+    return counts;
+  }, { overdue: 0, today: 0, soon: 0, later: 0, unscheduled: 0, resolved: 0 });
+}
+
 function getVisibleOutboundImprovementItems() {
   const items = getOutboundImprovementItems();
   if (outboundImprovementStatusFilterValue === "all") return items;
@@ -797,23 +816,33 @@ function renderOutboundImprovementQueue() {
   const allItems = getOutboundImprovementItems();
   const visibleItems = getVisibleOutboundImprovementItems();
   const counts = getOutboundImprovementCounts(allItems);
+  const dueCounts = getOutboundImprovementDueCounts(allItems);
   const openItems = allItems.filter((item) => item.status === "Open");
   outboundImprovementSummary.textContent = allItems.length
     ? `${visibleItems.length} visible / ${allItems.length} fix${allItems.length === 1 ? "" : "es"} queued | Open: ${counts.Open || 0} | In Progress: ${counts["In Progress"] || 0} | Resolved: ${counts.Resolved || 0}`
     : "No product fixes queued yet.";
   outboundImprovementStatusFilter.value = outboundImprovementStatusFilterValue;
+  outboundImprovementDueSummary.innerHTML = allItems.length
+    ? [
+      ["overdue", "Overdue", dueCounts.overdue],
+      ["today", "Today", dueCounts.today],
+      ["soon", "7 days", dueCounts.soon],
+      ["unscheduled", "Unscheduled", dueCounts.unscheduled],
+      ["resolved", "Resolved", dueCounts.resolved]
+    ].map(([state, label, count]) => `<span data-state="${escapeHtml(state)}">${escapeHtml(label)}: ${escapeHtml(count)}</span>`).join("")
+    : "";
   [copyOutboundImprovementsButton, downloadOutboundImprovementsButton].forEach((button) => {
     button.disabled = allItems.length === 0;
   });
   copyOpenOutboundImprovementsButton.disabled = openItems.length === 0;
   outboundImprovementQueue.innerHTML = visibleItems.length
     ? visibleItems.map((item) => `
-      <article data-state="${escapeHtml(item.status)}">
+      <article data-state="${escapeHtml(item.status)}" data-due-state="${escapeHtml(getOutboundImprovementDueState(item))}">
         <div>
           <p class="eyebrow">${escapeHtml(item.type)}</p>
           <h4>${escapeHtml(item.company || "Unassigned company")}</h4>
           <p>${escapeHtml(item.note)}</p>
-          <small>${escapeHtml(formatDateTime(item.createdAt))}</small>
+          <small>${escapeHtml(formatDateTime(item.createdAt))}${item.due ? ` | ${escapeHtml(getReminderLabel(daysUntil(item.due)))} (${escapeHtml(formatDate(item.due))})` : " | No due date"}</small>
         </div>
         <label>
           Status

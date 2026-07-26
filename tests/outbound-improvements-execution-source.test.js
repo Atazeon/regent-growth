@@ -18,8 +18,8 @@ const checks = [
   ["exports owner", app.includes('Owner: ${item.owner || "Unassigned"}')],
   ["exports execution note", app.includes('Execution: ${item.executionNote || "No execution note yet."}')],
   ["execution CSS exists", css.includes(".outbound-improvement-execution")],
-  ["README mentions execution notes", readme.includes("owner, due date, and execution notes")],
-  ["plan next dashboard", plan.includes("- Fix queue due-date dashboard")]
+  ["README mentions execution notes", readme.includes("owner") && readme.includes("execution notes")],
+  ["plan next dashboard", plan.includes("- Fix queue owner workload")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
