@@ -773,7 +773,10 @@ function getOutboundImprovementItems() {
     .filter((outcome) => ["Blocked", "Fix Needed"].includes(outcome.type))
     .map((outcome) => ({
       ...outcome,
-      status: outboundSessionState.improvements[outcome.id]?.status || "Open"
+      status: outboundSessionState.improvements[outcome.id]?.status || "Open",
+      owner: outboundSessionState.improvements[outcome.id]?.owner || "",
+      due: outboundSessionState.improvements[outcome.id]?.due || "",
+      executionNote: outboundSessionState.improvements[outcome.id]?.executionNote || ""
     }));
 }
 
@@ -820,6 +823,20 @@ function renderOutboundImprovementQueue() {
             <option value="Resolved" ${item.status === "Resolved" ? "selected" : ""}>Resolved</option>
           </select>
         </label>
+        <div class="outbound-improvement-execution">
+          <label>
+            Owner
+            <input data-action="set-outbound-improvement-owner" data-id="${escapeHtml(item.id)}" value="${escapeHtml(item.owner)}" placeholder="Owner">
+          </label>
+          <label>
+            Due
+            <input type="date" data-action="set-outbound-improvement-due" data-id="${escapeHtml(item.id)}" value="${escapeHtml(item.due)}">
+          </label>
+          <label>
+            Execution note
+            <textarea data-action="set-outbound-improvement-note" data-id="${escapeHtml(item.id)}" placeholder="Fix approach, decision, or result">${escapeHtml(item.executionNote)}</textarea>
+          </label>
+        </div>
       </article>
     `).join("")
     : `<p class="empty-state">${allItems.length ? "No fixes match this status filter." : "Log a Blocked or Fix Needed outcome to queue a product fix."}</p>`;
@@ -1103,10 +1120,25 @@ function setOutboundImprovementStatus(id, status) {
   const outcome = outboundSessionState.outcomes.find((item) => item.id === id);
   if (!outcome) return;
 
-  outboundSessionState.improvements[id] = { status, updatedAt: new Date().toISOString() };
+  outboundSessionState.improvements[id] = { ...(outboundSessionState.improvements[id] || {}), status, updatedAt: new Date().toISOString() };
   saveOutboundSessionState();
   renderOutboundSession();
   setDataStatus(`Marked improvement ${status.toLowerCase()}.`);
+}
+
+function setOutboundImprovementField(id, field, value) {
+  if (!["owner", "due", "executionNote"].includes(field)) return;
+  const outcome = outboundSessionState.outcomes.find((item) => item.id === id);
+  if (!outcome) return;
+
+  outboundSessionState.improvements[id] = {
+    ...(outboundSessionState.improvements[id] || {}),
+    [field]: value.trim(),
+    updatedAt: new Date().toISOString()
+  };
+  saveOutboundSessionState();
+  renderOutboundImprovementQueue();
+  setDataStatus("Saved improvement execution detail.");
 }
 
 function formatOutboundImprovementSummary() {
@@ -1120,8 +1152,11 @@ function formatOutboundImprovementSummary() {
     ...items.map((item) => [
       `${item.status} - ${item.type}`,
       `Company: ${item.company || "Unassigned company"}`,
+      `Owner: ${item.owner || "Unassigned"}`,
+      `Due: ${item.due ? formatDate(item.due) : "Unscheduled"}`,
       `Logged: ${formatDateTime(item.createdAt)}`,
-      `Fix: ${item.note}`
+      `Fix: ${item.note}`,
+      `Execution: ${item.executionNote || "No execution note yet."}`
     ].join("\n"))
   ].join("\n\n");
 }
@@ -1136,8 +1171,11 @@ function formatOpenOutboundImprovementSummary() {
     "",
     ...openItems.map((item) => [
       `${item.type} - ${item.company || "Unassigned company"}`,
+      `Owner: ${item.owner || "Unassigned"}`,
+      `Due: ${item.due ? formatDate(item.due) : "Unscheduled"}`,
       `Logged: ${formatDateTime(item.createdAt)}`,
-      `Fix: ${item.note}`
+      `Fix: ${item.note}`,
+      `Execution: ${item.executionNote || "No execution note yet."}`
     ].join("\n"))
   ].join("\n\n");
 }
@@ -8558,9 +8596,27 @@ outboundOutcomeList.addEventListener("click", (event) => {
 });
 outboundImprovementQueue.addEventListener("change", (event) => {
   const field = event.target.closest("select[data-action='set-outbound-improvement-status']");
-  if (!field) return;
+  if (field) {
+    setOutboundImprovementStatus(field.dataset.id, field.value);
+    return;
+  }
 
-  setOutboundImprovementStatus(field.dataset.id, field.value);
+  const dueField = event.target.closest("input[data-action='set-outbound-improvement-due']");
+  if (dueField) {
+    setOutboundImprovementField(dueField.dataset.id, "due", dueField.value);
+  }
+});
+outboundImprovementQueue.addEventListener("input", (event) => {
+  const ownerField = event.target.closest("input[data-action='set-outbound-improvement-owner']");
+  if (ownerField) {
+    setOutboundImprovementField(ownerField.dataset.id, "owner", ownerField.value);
+    return;
+  }
+
+  const noteField = event.target.closest("textarea[data-action='set-outbound-improvement-note']");
+  if (noteField) {
+    setOutboundImprovementField(noteField.dataset.id, "executionNote", noteField.value);
+  }
 });
 outboundImprovementStatusFilter.addEventListener("change", () => {
   outboundImprovementStatusFilterValue = outboundImprovementStatusFilter.value;

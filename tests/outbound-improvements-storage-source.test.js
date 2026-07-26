@@ -8,7 +8,7 @@ const checks = [
   ["fallback includes improvements", app.includes("improvements: {},\n    completed: {}")],
   ["loads improvements", app.includes("parsedState.improvements")],
   ["resets improvements", app.includes("improvements: {},\n    completed: {}")],
-  ["persists status", app.includes("outboundSessionState.improvements[id] = { status, updatedAt: new Date().toISOString() }")],
+  ["persists status", app.includes("outboundSessionState.improvements[id] = { ...(outboundSessionState.improvements[id] || {}), status, updatedAt: new Date().toISOString() }")],
   ["uses blocker outcomes", app.includes('["Blocked", "Fix Needed"].includes(outcome.type)')]
 ];
 

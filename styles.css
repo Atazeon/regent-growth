@@ -253,7 +253,7 @@ main {
   background: #fff;
   display: grid;
   gap: 12px;
-  grid-template-columns: minmax(0, 1fr) 180px;
+  grid-template-columns: minmax(0, 1fr) 180px minmax(280px, 0.8fr);
   padding: 12px;
 }
 
@@ -272,6 +272,15 @@ main {
 
 .outbound-improvement-queue small {
   color: var(--muted);
+}
+
+.outbound-improvement-execution {
+  display: grid;
+  gap: 8px;
+}
+
+.outbound-improvement-execution textarea {
+  min-height: 72px;
 }
 
 .outbound-session-list {
