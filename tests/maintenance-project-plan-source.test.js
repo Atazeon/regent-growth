@@ -9,7 +9,7 @@ const checks = [
   ["plan keeps MVP scope", plan.includes("## MVP Scope")],
   ["plan keeps current status", plan.includes("Current status:")],
   ["plan keeps Ollama direction", plan.includes("AI direction: use local Ollama")],
-  ["plan tracks maintenance next", plan.includes("- Product maintenance and real-user feedback pass") || plan.includes("- Post-launch usability improvements") || plan.includes("- First real outbound session feedback") || plan.includes("- Second outbound session refinements") || plan.includes("- Live outbound run outcomes") || plan.includes("- Outcome-driven product fixes") || plan.includes("- Improvement queue triage") || plan.includes("- Fix queue execution workflow") || plan.includes("- Fix queue due-date dashboard") || plan.includes("- Fix queue owner workload") || plan.includes("- Fix queue owner filter")]
+  ["plan tracks maintenance next", plan.includes("- Product maintenance and real-user feedback pass") || plan.includes("- Post-launch usability improvements") || plan.includes("- First real outbound session feedback") || plan.includes("- Second outbound session refinements") || plan.includes("- Live outbound run outcomes") || plan.includes("- Outcome-driven product fixes") || plan.includes("- Improvement queue triage") || plan.includes("- Fix queue execution workflow") || plan.includes("- Fix queue due-date dashboard") || plan.includes("- Fix queue owner workload") || plan.includes("- Fix queue owner filter") || plan.includes("- Fix queue owner export")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);

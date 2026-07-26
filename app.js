@@ -221,6 +221,7 @@ let dailyRunInProgress = false;
 let dailyRunStopRequested = false;
 let outboundSessionAreaFilterValue = "all";
 let outboundImprovementStatusFilterValue = "all";
+let outboundImprovementOwnerFilterValue = "all";
 let crmSyncInProgress = false;
 let pendingTeamRestore = null;
 let teamBackupsCache = [];
@@ -390,6 +391,7 @@ const copyOutboundOutcomesButton = document.querySelector("#copyOutboundOutcomes
 const downloadOutboundOutcomesButton = document.querySelector("#downloadOutboundOutcomesButton");
 const clearOutboundOutcomesButton = document.querySelector("#clearOutboundOutcomesButton");
 const outboundImprovementStatusFilter = document.querySelector("#outboundImprovementStatusFilter");
+const outboundImprovementOwnerFilter = document.querySelector("#outboundImprovementOwnerFilter");
 const copyOpenOutboundImprovementsButton = document.querySelector("#copyOpenOutboundImprovementsButton");
 const copyOutboundImprovementsButton = document.querySelector("#copyOutboundImprovementsButton");
 const downloadOutboundImprovementsButton = document.querySelector("#downloadOutboundImprovementsButton");
@@ -817,8 +819,13 @@ function getOutboundImprovementOwnerCounts(items = getOutboundImprovementItems()
 
 function getVisibleOutboundImprovementItems() {
   const items = getOutboundImprovementItems();
-  if (outboundImprovementStatusFilterValue === "all") return items;
-  return items.filter((item) => item.status === outboundImprovementStatusFilterValue);
+  return items
+    .filter((item) => outboundImprovementStatusFilterValue === "all" || item.status === outboundImprovementStatusFilterValue)
+    .filter((item) => outboundImprovementOwnerFilterValue === "all" || (item.owner || "Unassigned") === outboundImprovementOwnerFilterValue);
+}
+
+function getOutboundImprovementOwners(items = getOutboundImprovementItems()) {
+  return Array.from(new Set(items.map((item) => item.owner || "Unassigned"))).sort((first, second) => first.localeCompare(second));
 }
 
 function renderOutboundImprovementQueue() {
@@ -827,11 +834,20 @@ function renderOutboundImprovementQueue() {
   const counts = getOutboundImprovementCounts(allItems);
   const dueCounts = getOutboundImprovementDueCounts(allItems);
   const ownerCounts = getOutboundImprovementOwnerCounts(allItems);
+  const owners = getOutboundImprovementOwners(allItems);
   const openItems = allItems.filter((item) => item.status === "Open");
   outboundImprovementSummary.textContent = allItems.length
     ? `${visibleItems.length} visible / ${allItems.length} fix${allItems.length === 1 ? "" : "es"} queued | Open: ${counts.Open || 0} | In Progress: ${counts["In Progress"] || 0} | Resolved: ${counts.Resolved || 0}`
     : "No product fixes queued yet.";
   outboundImprovementStatusFilter.value = outboundImprovementStatusFilterValue;
+  outboundImprovementOwnerFilter.innerHTML = [
+    `<option value="all">All owners</option>`,
+    ...owners.map((owner) => `<option value="${escapeHtml(owner)}" ${outboundImprovementOwnerFilterValue === owner ? "selected" : ""}>${escapeHtml(owner)}</option>`)
+  ].join("");
+  if (outboundImprovementOwnerFilterValue !== "all" && !owners.includes(outboundImprovementOwnerFilterValue)) {
+    outboundImprovementOwnerFilterValue = "all";
+    outboundImprovementOwnerFilter.value = "all";
+  }
   outboundImprovementDueSummary.innerHTML = allItems.length
     ? [
       ["overdue", "Overdue", dueCounts.overdue],
@@ -8666,6 +8682,10 @@ outboundImprovementQueue.addEventListener("input", (event) => {
 });
 outboundImprovementStatusFilter.addEventListener("change", () => {
   outboundImprovementStatusFilterValue = outboundImprovementStatusFilter.value;
+  renderOutboundSession();
+});
+outboundImprovementOwnerFilter.addEventListener("change", () => {
+  outboundImprovementOwnerFilterValue = outboundImprovementOwnerFilter.value;
   renderOutboundSession();
 });
 outboundSessionNotesForm.addEventListener("submit", saveOutboundSessionNotes);
