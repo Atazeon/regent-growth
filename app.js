@@ -379,6 +379,7 @@ const outboundOutcomeSummary = document.querySelector("#outboundOutcomeSummary")
 const outboundOutcomeList = document.querySelector("#outboundOutcomeList");
 const outboundImprovementSummary = document.querySelector("#outboundImprovementSummary");
 const outboundImprovementDueSummary = document.querySelector("#outboundImprovementDueSummary");
+const outboundImprovementOwnerSummary = document.querySelector("#outboundImprovementOwnerSummary");
 const outboundImprovementQueue = document.querySelector("#outboundImprovementQueue");
 const focusNextOutboundStepButton = document.querySelector("#focusNextOutboundStepButton");
 const completeVisibleOutboundStepsButton = document.querySelector("#completeVisibleOutboundStepsButton");
@@ -806,6 +807,14 @@ function getOutboundImprovementDueCounts(items = getOutboundImprovementItems()) 
   }, { overdue: 0, today: 0, soon: 0, later: 0, unscheduled: 0, resolved: 0 });
 }
 
+function getOutboundImprovementOwnerCounts(items = getOutboundImprovementItems()) {
+  return items.reduce((counts, item) => {
+    const owner = item.owner || "Unassigned";
+    counts[owner] = (counts[owner] || 0) + 1;
+    return counts;
+  }, {});
+}
+
 function getVisibleOutboundImprovementItems() {
   const items = getOutboundImprovementItems();
   if (outboundImprovementStatusFilterValue === "all") return items;
@@ -817,6 +826,7 @@ function renderOutboundImprovementQueue() {
   const visibleItems = getVisibleOutboundImprovementItems();
   const counts = getOutboundImprovementCounts(allItems);
   const dueCounts = getOutboundImprovementDueCounts(allItems);
+  const ownerCounts = getOutboundImprovementOwnerCounts(allItems);
   const openItems = allItems.filter((item) => item.status === "Open");
   outboundImprovementSummary.textContent = allItems.length
     ? `${visibleItems.length} visible / ${allItems.length} fix${allItems.length === 1 ? "" : "es"} queued | Open: ${counts.Open || 0} | In Progress: ${counts["In Progress"] || 0} | Resolved: ${counts.Resolved || 0}`
@@ -830,6 +840,13 @@ function renderOutboundImprovementQueue() {
       ["unscheduled", "Unscheduled", dueCounts.unscheduled],
       ["resolved", "Resolved", dueCounts.resolved]
     ].map(([state, label, count]) => `<span data-state="${escapeHtml(state)}">${escapeHtml(label)}: ${escapeHtml(count)}</span>`).join("")
+    : "";
+  outboundImprovementOwnerSummary.innerHTML = allItems.length
+    ? Object.entries(ownerCounts)
+      .sort((first, second) => second[1] - first[1] || first[0].localeCompare(second[0]))
+      .slice(0, 6)
+      .map(([owner, count]) => `<span data-owner="${escapeHtml(owner)}">${escapeHtml(owner)}: ${escapeHtml(count)}</span>`)
+      .join("")
     : "";
   [copyOutboundImprovementsButton, downloadOutboundImprovementsButton].forEach((button) => {
     button.disabled = allItems.length === 0;

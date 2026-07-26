@@ -240,14 +240,16 @@ main {
   margin: 0;
 }
 
-.outbound-improvement-due-summary {
+.outbound-improvement-due-summary,
+.outbound-improvement-owner-summary {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 8px;
 }
 
-.outbound-improvement-due-summary span {
+.outbound-improvement-due-summary span,
+.outbound-improvement-owner-summary span {
   border: 1px solid var(--line);
   border-radius: 999px;
   background: #fff;
@@ -255,6 +257,11 @@ main {
   font-size: 0.82rem;
   font-weight: 700;
   padding: 5px 9px;
+}
+
+.outbound-improvement-owner-summary span {
+  border-color: #cbd8ef;
+  color: #34547e;
 }
 
 .outbound-improvement-due-summary span[data-state="overdue"] {
