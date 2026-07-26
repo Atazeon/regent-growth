@@ -9,7 +9,7 @@ const checks = [
   ["README mentions outcomes", readme.includes("live run outcomes")],
   ["plan mentions outcome counts", plan.includes("outcome counts")],
   ["plan mentions outcome actions", plan.includes("outcome copy/download/clear actions")],
-  ["plan moves to fixes", plan.includes("- Fix queue filtered closeout download")]
+  ["plan moves to fixes", plan.includes("- Fix queue archive cleanup")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);

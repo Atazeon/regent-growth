@@ -398,6 +398,7 @@ const downloadResolvedOutboundImprovementsButton = document.querySelector("#down
 const archiveResolvedOutboundImprovementsButton = document.querySelector("#archiveResolvedOutboundImprovementsButton");
 const restoreArchivedOutboundImprovementsButton = document.querySelector("#restoreArchivedOutboundImprovementsButton");
 const copyFilteredCloseoutOutboundImprovementsButton = document.querySelector("#copyFilteredCloseoutOutboundImprovementsButton");
+const downloadFilteredCloseoutOutboundImprovementsButton = document.querySelector("#downloadFilteredCloseoutOutboundImprovementsButton");
 const copyFilteredOutboundImprovementsButton = document.querySelector("#copyFilteredOutboundImprovementsButton");
 const copyOutboundImprovementsButton = document.querySelector("#copyOutboundImprovementsButton");
 const downloadFilteredOutboundImprovementsCsvButton = document.querySelector("#downloadFilteredOutboundImprovementsCsvButton");
@@ -884,6 +885,7 @@ function renderOutboundImprovementQueue() {
   archiveResolvedOutboundImprovementsButton.disabled = resolvedItems.length === 0;
   restoreArchivedOutboundImprovementsButton.disabled = archivedItems.length === 0;
   copyFilteredCloseoutOutboundImprovementsButton.disabled = visibleCloseoutItems.length === 0;
+  downloadFilteredCloseoutOutboundImprovementsButton.disabled = visibleCloseoutItems.length === 0;
   copyFilteredOutboundImprovementsButton.disabled = visibleItems.length === 0;
   downloadFilteredOutboundImprovementsCsvButton.disabled = visibleItems.length === 0;
   outboundImprovementQueue.innerHTML = visibleItems.length
@@ -1445,6 +1447,18 @@ async function copyFilteredOutboundImprovementCloseout() {
 
   const copiedDirectly = await copyTextWithFallback(formatFilteredOutboundImprovementCloseout());
   setDataStatus(copiedDirectly ? "Copied visible fix closeout." : "Selected and copied visible fix closeout.");
+}
+
+function downloadFilteredOutboundImprovementCloseout() {
+  const items = getVisibleOutboundImprovementItems().filter((item) => ["Resolved", "Archived"].includes(item.status));
+  if (items.length === 0) {
+    setDataStatus("No visible resolved or archived fixes to download.", "error");
+    return;
+  }
+
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-visible-fix-closeout-${stamp}.txt`, formatFilteredOutboundImprovementCloseout(), "text/plain;charset=utf-8");
+  setDataStatus(`Downloaded ${items.length} visible fix closeout${items.length === 1 ? "" : "s"}.`);
 }
 
 function downloadFilteredOutboundImprovementCsv() {
@@ -8914,6 +8928,7 @@ downloadResolvedOutboundImprovementsButton.addEventListener("click", downloadRes
 archiveResolvedOutboundImprovementsButton.addEventListener("click", archiveResolvedOutboundImprovements);
 restoreArchivedOutboundImprovementsButton.addEventListener("click", restoreArchivedOutboundImprovements);
 copyFilteredCloseoutOutboundImprovementsButton.addEventListener("click", copyFilteredOutboundImprovementCloseout);
+downloadFilteredCloseoutOutboundImprovementsButton.addEventListener("click", downloadFilteredOutboundImprovementCloseout);
 copyFilteredOutboundImprovementsButton.addEventListener("click", copyFilteredOutboundImprovementSummary);
 copyOutboundImprovementsButton.addEventListener("click", copyOutboundImprovementSummary);
 downloadFilteredOutboundImprovementsCsvButton.addEventListener("click", downloadFilteredOutboundImprovementCsv);

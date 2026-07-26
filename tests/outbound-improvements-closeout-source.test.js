@@ -11,6 +11,7 @@ const checks = [
   ["closeout button exists", html.includes('id="copyResolvedOutboundImprovementsButton"')],
   ["closeout download button exists", html.includes('id="downloadResolvedOutboundImprovementsButton"')],
   ["filtered closeout button exists", html.includes('id="copyFilteredCloseoutOutboundImprovementsButton"')],
+  ["filtered closeout download button exists", html.includes('id="downloadFilteredCloseoutOutboundImprovementsButton"')],
   ["closeout formatter exists", app.includes("function formatResolvedOutboundImprovementCloseout()")],
   ["filtered closeout formatter exists", app.includes("function formatFilteredOutboundImprovementCloseout()")],
   ["closeout includes resolved and archived", app.includes('["Resolved", "Archived"].includes(item.status)')],
@@ -18,16 +19,20 @@ const checks = [
   ["closeout includes execution note", app.includes('`Closeout: ${item.executionNote || "No closeout note yet."}`')],
   ["closeout copy function exists", app.includes("async function copyResolvedOutboundImprovementCloseout()")],
   ["filtered closeout copy function exists", app.includes("async function copyFilteredOutboundImprovementCloseout()")],
+  ["filtered closeout download function exists", app.includes("function downloadFilteredOutboundImprovementCloseout()")],
+  ["filtered closeout download filename exists", app.includes("regent-growth-visible-fix-closeout-")],
   ["closeout download function exists", app.includes("function downloadResolvedOutboundImprovementCloseout()")],
   ["closeout download filename exists", app.includes("regent-growth-resolved-fix-closeout-")],
   ["closeout button disabled when empty", app.includes("copyResolvedOutboundImprovementsButton.disabled = resolvedItems.length + archivedItems.length === 0")],
   ["closeout download disabled when empty", app.includes("downloadResolvedOutboundImprovementsButton.disabled = resolvedItems.length + archivedItems.length === 0")],
   ["filtered closeout disabled when empty", app.includes("copyFilteredCloseoutOutboundImprovementsButton.disabled = visibleCloseoutItems.length === 0")],
+  ["filtered closeout download disabled when empty", app.includes("downloadFilteredCloseoutOutboundImprovementsButton.disabled = visibleCloseoutItems.length === 0")],
   ["closeout button bound", app.includes('copyResolvedOutboundImprovementsButton.addEventListener("click", copyResolvedOutboundImprovementCloseout)')],
   ["closeout download bound", app.includes('downloadResolvedOutboundImprovementsButton.addEventListener("click", downloadResolvedOutboundImprovementCloseout)')],
   ["filtered closeout bound", app.includes('copyFilteredCloseoutOutboundImprovementsButton.addEventListener("click", copyFilteredOutboundImprovementCloseout)')],
-  ["README mentions filtered closeout", readme.includes("filtered closeout copy")],
-  ["plan next filtered closeout download", plan.includes("- Fix queue filtered closeout download")]
+  ["filtered closeout download bound", app.includes('downloadFilteredCloseoutOutboundImprovementsButton.addEventListener("click", downloadFilteredOutboundImprovementCloseout)')],
+  ["README mentions filtered closeout download", readme.includes("filtered closeout copy/download")],
+  ["plan next archive cleanup", plan.includes("- Fix queue archive cleanup")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);

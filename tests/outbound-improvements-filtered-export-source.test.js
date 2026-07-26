@@ -16,7 +16,7 @@ const checks = [
   ["formatter includes status", app.includes("Status: ${statusLabel}")],
   ["formatter includes owner", app.includes("Owner: ${ownerLabel}")],
   ["README mentions filtered copy", readme.includes("filtered copy")],
-  ["plan next filtered closeout download", plan.includes("- Fix queue filtered closeout download")]
+  ["plan next archive cleanup", plan.includes("- Fix queue archive cleanup")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
