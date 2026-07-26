@@ -7,7 +7,7 @@ const app = fs.readFileSync(path.join(root, "app.js"), "utf8");
 const checks = [
   ["types exist", app.includes('const outboundOutcomeTypes = ["Prospect Added", "Email Sent", "Reply Received", "Meeting Booked", "Blocked", "Fix Needed"]')],
   ["normalizer exists", app.includes("function normalizeOutboundOutcome(outcome)")],
-  ["fallback includes outcomes", app.includes("outcomes: [],\n    completed: {}")],
+  ["fallback includes outcomes", app.includes("outcomes: [],")],
   ["loads outcomes", app.includes("parsedState.outcomes") && app.includes("map(normalizeOutboundOutcome)")],
   ["summary record includes outcomes", app.includes("outcomes: outboundSessionState.outcomes")],
   ["summary record includes counts", app.includes("outcomeCounts: getOutboundOutcomeCounts()")]

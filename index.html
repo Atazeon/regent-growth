@@ -106,6 +106,17 @@
           </div>
         </div>
         <div id="outboundOutcomeList" class="outbound-outcome-list" aria-label="Outbound run outcomes"></div>
+        <div class="outbound-improvement-heading">
+          <div>
+            <h3>Improvement Queue</h3>
+            <p id="outboundImprovementSummary" class="empty-state">No product fixes queued yet.</p>
+          </div>
+          <div class="action-row" role="group" aria-label="Outbound improvement actions">
+            <button id="copyOutboundImprovementsButton" class="secondary-button" type="button">Copy fixes</button>
+            <button id="downloadOutboundImprovementsButton" class="secondary-button" type="button">Download fixes</button>
+          </div>
+        </div>
+        <div id="outboundImprovementQueue" class="outbound-improvement-queue" aria-label="Outcome-driven product fixes"></div>
         <div id="outboundSessionList" class="outbound-session-list" role="list" aria-label="First outbound session checklist"></div>
         <form id="outboundSessionNotesForm" class="outbound-session-notes-form">
           <label>

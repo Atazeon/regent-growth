@@ -376,6 +376,8 @@ const outboundOutcomeCompany = document.querySelector("#outboundOutcomeCompany")
 const outboundOutcomeNote = document.querySelector("#outboundOutcomeNote");
 const outboundOutcomeSummary = document.querySelector("#outboundOutcomeSummary");
 const outboundOutcomeList = document.querySelector("#outboundOutcomeList");
+const outboundImprovementSummary = document.querySelector("#outboundImprovementSummary");
+const outboundImprovementQueue = document.querySelector("#outboundImprovementQueue");
 const focusNextOutboundStepButton = document.querySelector("#focusNextOutboundStepButton");
 const completeVisibleOutboundStepsButton = document.querySelector("#completeVisibleOutboundStepsButton");
 const copyOutboundSessionButton = document.querySelector("#copyOutboundSessionButton");
@@ -384,6 +386,8 @@ const resetOutboundSessionButton = document.querySelector("#resetOutboundSession
 const copyOutboundOutcomesButton = document.querySelector("#copyOutboundOutcomesButton");
 const downloadOutboundOutcomesButton = document.querySelector("#downloadOutboundOutcomesButton");
 const clearOutboundOutcomesButton = document.querySelector("#clearOutboundOutcomesButton");
+const copyOutboundImprovementsButton = document.querySelector("#copyOutboundImprovementsButton");
+const downloadOutboundImprovementsButton = document.querySelector("#downloadOutboundImprovementsButton");
 
 function loadProspects() {
   const savedProspects = localStorage.getItem(storageKey);
@@ -457,6 +461,7 @@ function loadOutboundSessionState() {
     completedAt: "",
     notes: "",
     outcomes: [],
+    improvements: {},
     completed: {}
   };
   const savedState = localStorage.getItem(outboundSessionStorageKey);
@@ -473,6 +478,7 @@ function loadOutboundSessionState() {
       completedAt: parsedState.completedAt || "",
       notes: parsedState.notes || "",
       outcomes: Array.isArray(parsedState.outcomes) ? parsedState.outcomes.map(normalizeOutboundOutcome).filter((outcome) => outcome.type && outcome.note) : [],
+      improvements: typeof parsedState.improvements === "object" && parsedState.improvements ? parsedState.improvements : {},
       completed: typeof parsedState.completed === "object" && parsedState.completed ? parsedState.completed : {}
     };
   } catch {
@@ -759,6 +765,53 @@ function getOutboundOutcomeCounts() {
   }, {});
 }
 
+function getOutboundImprovementItems() {
+  return outboundSessionState.outcomes
+    .filter((outcome) => ["Blocked", "Fix Needed"].includes(outcome.type))
+    .map((outcome) => ({
+      ...outcome,
+      status: outboundSessionState.improvements[outcome.id]?.status || "Open"
+    }));
+}
+
+function getOutboundImprovementCounts(items = getOutboundImprovementItems()) {
+  return items.reduce((counts, item) => {
+    counts[item.status] = (counts[item.status] || 0) + 1;
+    return counts;
+  }, { Open: 0, "In Progress": 0, Resolved: 0 });
+}
+
+function renderOutboundImprovementQueue() {
+  const items = getOutboundImprovementItems();
+  const counts = getOutboundImprovementCounts(items);
+  outboundImprovementSummary.textContent = items.length
+    ? `${items.length} fix${items.length === 1 ? "" : "es"} queued | Open: ${counts.Open || 0} | In Progress: ${counts["In Progress"] || 0} | Resolved: ${counts.Resolved || 0}`
+    : "No product fixes queued yet.";
+  [copyOutboundImprovementsButton, downloadOutboundImprovementsButton].forEach((button) => {
+    button.disabled = items.length === 0;
+  });
+  outboundImprovementQueue.innerHTML = items.length
+    ? items.map((item) => `
+      <article data-state="${escapeHtml(item.status)}">
+        <div>
+          <p class="eyebrow">${escapeHtml(item.type)}</p>
+          <h4>${escapeHtml(item.company || "Unassigned company")}</h4>
+          <p>${escapeHtml(item.note)}</p>
+          <small>${escapeHtml(formatDateTime(item.createdAt))}</small>
+        </div>
+        <label>
+          Status
+          <select data-action="set-outbound-improvement-status" data-id="${escapeHtml(item.id)}">
+            <option value="Open" ${item.status === "Open" ? "selected" : ""}>Open</option>
+            <option value="In Progress" ${item.status === "In Progress" ? "selected" : ""}>In Progress</option>
+            <option value="Resolved" ${item.status === "Resolved" ? "selected" : ""}>Resolved</option>
+          </select>
+        </label>
+      </article>
+    `).join("")
+    : `<p class="empty-state">Log a Blocked or Fix Needed outcome to queue a product fix.</p>`;
+}
+
 function renderOutboundOutcomes() {
   const outcomes = outboundSessionState.outcomes;
   const counts = getOutboundOutcomeCounts();
@@ -786,6 +839,7 @@ function renderOutboundOutcomes() {
       </article>
     `).join("")
     : `<p class="empty-state">Log outcomes while you run outbound so the next build pass is based on real usage.</p>`;
+  renderOutboundImprovementQueue();
 }
 
 function renderOutboundSession() {
@@ -913,6 +967,7 @@ function resetOutboundSessionState() {
     completedAt: "",
     notes: "",
     outcomes: [],
+    improvements: {},
     completed: {}
   };
   localStorage.removeItem(outboundSessionStorageKey);
@@ -1028,6 +1083,57 @@ function clearOutboundOutcomes() {
   saveOutboundSessionState();
   renderOutboundSession();
   setDataStatus(`Cleared ${clearedCount} outbound outcome${clearedCount === 1 ? "" : "s"}.`);
+}
+
+function setOutboundImprovementStatus(id, status) {
+  if (!["Open", "In Progress", "Resolved"].includes(status)) return;
+  const outcome = outboundSessionState.outcomes.find((item) => item.id === id);
+  if (!outcome) return;
+
+  outboundSessionState.improvements[id] = { status, updatedAt: new Date().toISOString() };
+  saveOutboundSessionState();
+  renderOutboundSession();
+  setDataStatus(`Marked improvement ${status.toLowerCase()}.`);
+}
+
+function formatOutboundImprovementSummary() {
+  const items = getOutboundImprovementItems();
+  if (items.length === 0) return "No outcome-driven product fixes queued yet.";
+
+  return [
+    "Outcome-Driven Product Fixes",
+    `Queued: ${items.length}`,
+    "",
+    ...items.map((item) => [
+      `${item.status} - ${item.type}`,
+      `Company: ${item.company || "Unassigned company"}`,
+      `Logged: ${formatDateTime(item.createdAt)}`,
+      `Fix: ${item.note}`
+    ].join("\n"))
+  ].join("\n\n");
+}
+
+async function copyOutboundImprovementSummary() {
+  const items = getOutboundImprovementItems();
+  if (items.length === 0) {
+    setDataStatus("No outcome-driven fixes to copy.", "error");
+    return;
+  }
+
+  const copiedDirectly = await copyTextWithFallback(formatOutboundImprovementSummary());
+  setDataStatus(copiedDirectly ? "Copied outcome-driven fixes." : "Selected and copied outcome-driven fixes.");
+}
+
+function downloadOutboundImprovementSummary() {
+  const items = getOutboundImprovementItems();
+  if (items.length === 0) {
+    setDataStatus("No outcome-driven fixes to download.", "error");
+    return;
+  }
+
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-outcome-driven-fixes-${stamp}.txt`, formatOutboundImprovementSummary(), "text/plain;charset=utf-8");
+  setDataStatus("Downloaded outcome-driven fixes.");
 }
 
 function saveOutboundSessionNotes(event) {
@@ -8410,6 +8516,12 @@ outboundOutcomeList.addEventListener("click", (event) => {
 
   removeOutboundOutcome(button.dataset.id);
 });
+outboundImprovementQueue.addEventListener("change", (event) => {
+  const field = event.target.closest("select[data-action='set-outbound-improvement-status']");
+  if (!field) return;
+
+  setOutboundImprovementStatus(field.dataset.id, field.value);
+});
 outboundSessionNotesForm.addEventListener("submit", saveOutboundSessionNotes);
 outboundSessionAreaFilter.addEventListener("change", () => {
   outboundSessionAreaFilterValue = outboundSessionAreaFilter.value;
@@ -8423,6 +8535,8 @@ resetOutboundSessionButton.addEventListener("click", resetOutboundSessionState);
 copyOutboundOutcomesButton.addEventListener("click", copyOutboundOutcomeSummary);
 downloadOutboundOutcomesButton.addEventListener("click", downloadOutboundOutcomeSummary);
 clearOutboundOutcomesButton.addEventListener("click", clearOutboundOutcomes);
+copyOutboundImprovementsButton.addEventListener("click", copyOutboundImprovementSummary);
+downloadOutboundImprovementsButton.addEventListener("click", downloadOutboundImprovementSummary);
 
 bindCrmChecklistState();
 renderPromptTemplates();
