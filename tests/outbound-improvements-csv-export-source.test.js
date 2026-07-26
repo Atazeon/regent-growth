@@ -15,7 +15,7 @@ const checks = [
   ["csv uses csvCell", app.includes("].map(csvCell).join(\",\")")],
   ["csv button bound", app.includes('downloadFilteredOutboundImprovementsCsvButton.addEventListener("click", downloadFilteredOutboundImprovementCsv)')],
   ["README mentions CSV export", readme.includes("CSV export")],
-  ["plan next closeout", plan.includes("- Fix queue closeout summary")]
+  ["plan next closeout download", plan.includes("- Fix queue closeout download")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
