@@ -223,6 +223,7 @@ let outboundSessionAreaFilterValue = "all";
 let outboundImprovementStatusFilterValue = "all";
 let outboundImprovementOwnerFilterValue = "all";
 let outboundRunSnapshotSearchValue = "";
+let outboundRunSnapshotReadinessFilterValue = "all";
 let crmSyncInProgress = false;
 let pendingTeamRestore = null;
 let teamBackupsCache = [];
@@ -388,6 +389,7 @@ const outboundImprovementQueue = document.querySelector("#outboundImprovementQue
 const outboundRunSnapshotCompare = document.querySelector("#outboundRunSnapshotCompare");
 const outboundRunSnapshotSummary = document.querySelector("#outboundRunSnapshotSummary");
 const outboundRunSnapshotSearch = document.querySelector("#outboundRunSnapshotSearch");
+const outboundRunSnapshotReadinessFilter = document.querySelector("#outboundRunSnapshotReadinessFilter");
 const clearOutboundRunSnapshotSearchButton = document.querySelector("#clearOutboundRunSnapshotSearchButton");
 const focusNextOutboundStepButton = document.querySelector("#focusNextOutboundStepButton");
 const completeVisibleOutboundStepsButton = document.querySelector("#completeVisibleOutboundStepsButton");
@@ -1238,8 +1240,9 @@ function getOutboundSnapshotSearchText(snapshot) {
 
 function getVisibleOutboundRunSnapshots(snapshots) {
   const query = outboundRunSnapshotSearchValue.trim().toLowerCase();
-  if (!query) return snapshots;
-  return snapshots.filter((snapshot) => getOutboundSnapshotSearchText(snapshot).includes(query));
+  return snapshots
+    .filter((snapshot) => outboundRunSnapshotReadinessFilterValue === "all" || snapshot.readiness?.state === outboundRunSnapshotReadinessFilterValue)
+    .filter((snapshot) => !query || getOutboundSnapshotSearchText(snapshot).includes(query));
 }
 
 function formatOutboundRunSnapshotSummary(snapshots = getVisibleOutboundRunSnapshots(outboundSessionState.runSnapshots || [])) {
@@ -1575,6 +1578,11 @@ function handleOutboundRunSnapshotListClick(event) {
 
 function updateOutboundRunSnapshotSearch(event) {
   outboundRunSnapshotSearchValue = event.target.value;
+  renderOutboundRunSnapshots();
+}
+
+function updateOutboundRunSnapshotReadinessFilter() {
+  outboundRunSnapshotReadinessFilterValue = outboundRunSnapshotReadinessFilter.value;
   renderOutboundRunSnapshots();
 }
 
@@ -9509,6 +9517,7 @@ importOutboundRunSnapshotsInput.addEventListener("change", importOutboundRunSnap
 clearOutboundRunSnapshotsButton.addEventListener("click", clearOutboundRunSnapshots);
 outboundRunSnapshotList.addEventListener("click", handleOutboundRunSnapshotListClick);
 outboundRunSnapshotSearch.addEventListener("input", updateOutboundRunSnapshotSearch);
+outboundRunSnapshotReadinessFilter.addEventListener("change", updateOutboundRunSnapshotReadinessFilter);
 clearOutboundRunSnapshotSearchButton.addEventListener("click", clearOutboundRunSnapshotSearch);
 copyOutboundSessionButton.addEventListener("click", copyOutboundSessionSummary);
 downloadOutboundSessionButton.addEventListener("click", downloadOutboundSessionSummary);

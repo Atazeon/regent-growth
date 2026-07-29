@@ -87,6 +87,11 @@
         <div id="outboundRunSnapshotSummary" class="outbound-run-snapshot-summary" aria-live="polite"></div>
         <div class="outbound-run-snapshot-search-row">
           <input id="outboundRunSnapshotSearch" class="outbound-run-snapshot-search" type="search" placeholder="Search snapshots" aria-label="Search first real outbound run snapshots">
+          <select id="outboundRunSnapshotReadinessFilter" aria-label="Filter first real outbound run snapshots by readiness">
+            <option value="all">All readiness</option>
+            <option value="Ready">Ready</option>
+            <option value="Action Needed">Action Needed</option>
+          </select>
           <button id="clearOutboundRunSnapshotSearchButton" class="secondary-button" type="button" title="Clear first real outbound run snapshot search" aria-label="Clear first real outbound run snapshot search">Clear search</button>
         </div>
         <div id="outboundRunSnapshotList" class="outbound-run-snapshot-list" aria-label="First run snapshot history"></div>
