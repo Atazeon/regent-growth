@@ -317,6 +317,27 @@ main {
   min-height: 72px;
 }
 
+.outbound-run-readiness {
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f7fafc;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-top: 12px;
+  padding: 10px 12px;
+}
+
+.outbound-run-readiness strong {
+  color: var(--ink);
+}
+
+.outbound-run-readiness span {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 .outbound-session-list {
   display: grid;
   gap: 10px;

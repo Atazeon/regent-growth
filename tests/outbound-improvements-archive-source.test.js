@@ -38,7 +38,7 @@ const checks = [
   ["restore button bound", app.includes('restoreArchivedOutboundImprovementsButton.addEventListener("click", restoreArchivedOutboundImprovements)')],
   ["clear archived bound", app.includes('clearArchivedOutboundImprovementsButton.addEventListener("click", clearArchivedOutboundImprovements)')],
   ["README mentions guarded archive cleanup", readme.includes("guarded resolved archive/restore/cleanup")],
-  ["plan next real run", plan.includes("- First real outbound run with archive workflow")]
+  ["plan next packet download", plan.includes("- First run packet download")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);

@@ -65,12 +65,14 @@
             </select>
             <button id="focusNextOutboundStepButton" class="secondary-button" type="button" title="Show the next incomplete outbound session step" aria-label="Show the next incomplete outbound session step">Next</button>
             <button id="completeVisibleOutboundStepsButton" class="secondary-button" type="button" title="Complete visible outbound session steps" aria-label="Complete visible outbound session steps">Complete visible</button>
+            <button id="copyOutboundRunPacketButton" class="secondary-button" type="button" title="Copy first real outbound run packet" aria-label="Copy first real outbound run packet">Copy run packet</button>
             <button id="copyOutboundSessionButton" class="secondary-button" type="button" title="Copy outbound session summary" aria-label="Copy outbound session summary">Copy</button>
             <button id="downloadOutboundSessionButton" class="secondary-button" type="button" title="Download outbound session summary" aria-label="Download outbound session summary">Download</button>
             <button id="resetOutboundSessionButton" class="secondary-button" type="button" title="Clear outbound session progress" aria-label="Clear outbound session progress">Reset</button>
           </div>
         </div>
         <div id="outboundSessionStats" class="outbound-session-stats" aria-label="Outbound session live stats"></div>
+        <div id="outboundRunReadiness" class="outbound-run-readiness" aria-live="polite"></div>
         <div id="outboundSessionNextAction" class="outbound-session-next-action" aria-live="polite"></div>
         <form id="outboundOutcomeForm" class="outbound-outcome-form">
           <label>

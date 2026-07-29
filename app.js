@@ -367,6 +367,7 @@ const aiStatus = document.querySelector("#aiStatus");
 const dataStatus = document.querySelector("#dataStatus");
 const outboundSessionProgress = document.querySelector("#outboundSessionProgress");
 const outboundSessionStats = document.querySelector("#outboundSessionStats");
+const outboundRunReadiness = document.querySelector("#outboundRunReadiness");
 const outboundSessionAreaFilter = document.querySelector("#outboundSessionAreaFilter");
 const outboundSessionNextAction = document.querySelector("#outboundSessionNextAction");
 const outboundSessionList = document.querySelector("#outboundSessionList");
@@ -384,6 +385,7 @@ const outboundImprovementOwnerSummary = document.querySelector("#outboundImprove
 const outboundImprovementQueue = document.querySelector("#outboundImprovementQueue");
 const focusNextOutboundStepButton = document.querySelector("#focusNextOutboundStepButton");
 const completeVisibleOutboundStepsButton = document.querySelector("#completeVisibleOutboundStepsButton");
+const copyOutboundRunPacketButton = document.querySelector("#copyOutboundRunPacketButton");
 const copyOutboundSessionButton = document.querySelector("#copyOutboundSessionButton");
 const downloadOutboundSessionButton = document.querySelector("#downloadOutboundSessionButton");
 const resetOutboundSessionButton = document.querySelector("#resetOutboundSessionButton");
@@ -840,6 +842,33 @@ function getOutboundImprovementOwners(items = getOutboundImprovementItems()) {
   return Array.from(new Set(items.map((item) => item.owner || "Unassigned"))).sort((first, second) => first.localeCompare(second));
 }
 
+function getOutboundRunReadinessSummary() {
+  const completedCount = getOutboundSessionCompletedCount();
+  const counts = getOutboundImprovementCounts();
+  const archivedItems = getOutboundImprovementItems().filter((item) => item.status === "Archived");
+  const openItems = getOutboundImprovementItems().filter((item) => item.status === "Open");
+  const nextItem = getNextOutboundSessionItem();
+  const blockers = [
+    ...(counts.Open ? [`${counts.Open} open fix${counts.Open === 1 ? "" : "es"}`] : []),
+    ...(archivedItems.length && !outboundSessionState.archiveCloseoutExportedAt ? ["archived closeout not exported"] : []),
+    ...(nextItem ? [`next step: ${nextItem.label}`] : [])
+  ];
+
+  return {
+    completedCount,
+    totalCount: outboundSessionItems.length,
+    completionPercent: Math.round((completedCount / outboundSessionItems.length) * 100),
+    outcomeCount: outboundSessionState.outcomes.length,
+    openFixCount: openItems.length,
+    resolvedFixCount: counts.Resolved || 0,
+    archivedFixCount: archivedItems.length,
+    archiveCloseoutExported: Boolean(outboundSessionState.archiveCloseoutExportedAt),
+    nextStep: nextItem ? `${nextItem.area}: ${nextItem.label}` : "Session complete",
+    state: blockers.length ? "Action Needed" : "Ready",
+    blockers
+  };
+}
+
 function renderOutboundImprovementQueue() {
   const allItems = getOutboundImprovementItems();
   const visibleItems = getVisibleOutboundImprovementItems();
@@ -1001,6 +1030,11 @@ function renderOutboundSession() {
       <small>${escapeHtml(stat.detail)}</small>
     </article>
   `).join("");
+  const runReadiness = getOutboundRunReadinessSummary();
+  outboundRunReadiness.innerHTML = `
+    <strong>${escapeHtml(runReadiness.state)}</strong>
+    <span>${escapeHtml(runReadiness.completedCount)} / ${escapeHtml(runReadiness.totalCount)} steps | ${escapeHtml(runReadiness.outcomeCount)} outcomes | Open fixes: ${escapeHtml(runReadiness.openFixCount)} | Archived fixes: ${escapeHtml(runReadiness.archivedFixCount)} | ${escapeHtml(runReadiness.archiveCloseoutExported ? "Archived closeout exported" : "Archive closeout pending")}</span>
+  `;
 
   outboundSessionList.innerHTML = visibleItems.map((item) => {
     const index = outboundSessionItems.findIndex((sessionItem) => sessionItem.id === item.id);
@@ -1066,6 +1100,52 @@ function formatOutboundSessionSummary() {
     "Session Feedback",
     record.notes || "No feedback saved yet."
   ].join("\n");
+}
+
+function formatOutboundRunPacket() {
+  const readiness = getOutboundRunReadinessSummary();
+  const stats = getOutboundSessionStats().map((stat) => `${stat.label}: ${stat.value} (${stat.detail})`);
+  const counts = getOutboundOutcomeCounts();
+  const outcomeCounts = outboundOutcomeTypes
+    .filter((type) => counts[type])
+    .map((type) => `${type}: ${counts[type]}`);
+  const fixes = getOutboundImprovementItems();
+  const openFixes = fixes.filter((item) => item.status === "Open");
+  const archivedFixes = fixes.filter((item) => item.status === "Archived");
+
+  return [
+    "First Real Outbound Run Packet",
+    `Created: ${formatDateTime(new Date().toISOString())}`,
+    `Status: ${readiness.state}`,
+    `Progress: ${readiness.completedCount} / ${readiness.totalCount} (${readiness.completionPercent}%)`,
+    `Next: ${readiness.nextStep}`,
+    "",
+    "Live Stats",
+    ...stats,
+    "",
+    "Run Outcomes",
+    ...(outcomeCounts.length ? outcomeCounts : ["No outcomes logged yet."]),
+    "",
+    "Fix Queue",
+    `Open: ${readiness.openFixCount}`,
+    `Resolved: ${readiness.resolvedFixCount}`,
+    `Archived: ${readiness.archivedFixCount}`,
+    `Archive closeout: ${readiness.archiveCloseoutExported ? "Exported" : "Not exported"}`,
+    "",
+    "Open Fixes",
+    ...(openFixes.length ? openFixes.map((item) => `${item.company || "Unassigned company"} | ${item.type} | ${item.note}`) : ["No open fixes."]),
+    "",
+    "Archived Fixes",
+    ...(archivedFixes.length ? archivedFixes.map((item) => `${item.company || "Unassigned company"} | archived ${formatDateTime(item.archivedAt)} | ${item.executionNote || "No closeout note."}`) : ["No archived fixes."]),
+    "",
+    "Action Needed",
+    ...(readiness.blockers.length ? readiness.blockers : ["None."])
+  ].join("\n");
+}
+
+async function copyOutboundRunPacket() {
+  const copiedDirectly = await copyTextWithFallback(formatOutboundRunPacket());
+  setDataStatus(copiedDirectly ? "Copied first real outbound run packet." : "Selected and copied first real outbound run packet.");
 }
 
 async function copyOutboundSessionSummary() {
@@ -8961,6 +9041,7 @@ outboundSessionAreaFilter.addEventListener("change", () => {
 });
 focusNextOutboundStepButton.addEventListener("click", focusNextOutboundStep);
 completeVisibleOutboundStepsButton.addEventListener("click", completeVisibleOutboundSteps);
+copyOutboundRunPacketButton.addEventListener("click", copyOutboundRunPacket);
 copyOutboundSessionButton.addEventListener("click", copyOutboundSessionSummary);
 downloadOutboundSessionButton.addEventListener("click", downloadOutboundSessionSummary);
 resetOutboundSessionButton.addEventListener("click", resetOutboundSessionState);

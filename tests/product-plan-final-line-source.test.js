@@ -5,7 +5,7 @@ const root = path.resolve(__dirname, "..");
 const plan = fs.readFileSync(path.join(root, "PROJECT_PLAN.md"), "utf8");
 
 const checks = [
-  ["plan has final later item", plan.includes("- First real outbound run with archive workflow")],
+  ["plan has final later item", plan.includes("- First run packet download")],
   ["plan documents MVP status", plan.includes("Current status: the local prototype now supports")],
   ["plan documents Ollama direction", plan.includes("AI direction: use local Ollama")],
   ["plan documents qwen3", plan.includes("qwen3:8b")],
