@@ -386,6 +386,7 @@ const outboundImprovementDueSummary = document.querySelector("#outboundImproveme
 const outboundImprovementOwnerSummary = document.querySelector("#outboundImprovementOwnerSummary");
 const outboundImprovementQueue = document.querySelector("#outboundImprovementQueue");
 const outboundRunSnapshotCompare = document.querySelector("#outboundRunSnapshotCompare");
+const outboundRunSnapshotSummary = document.querySelector("#outboundRunSnapshotSummary");
 const outboundRunSnapshotSearch = document.querySelector("#outboundRunSnapshotSearch");
 const focusNextOutboundStepButton = document.querySelector("#focusNextOutboundStepButton");
 const completeVisibleOutboundStepsButton = document.querySelector("#completeVisibleOutboundStepsButton");
@@ -1180,6 +1181,9 @@ function renderOutboundRunSnapshots() {
   const snapshots = outboundSessionState.runSnapshots || [];
   const visibleSnapshots = getVisibleOutboundRunSnapshots(snapshots);
   const comparison = getOutboundRunSnapshotComparison(snapshots);
+  outboundRunSnapshotSummary.textContent = snapshots.length
+    ? `${visibleSnapshots.length} of ${snapshots.length} saved first-run snapshots shown | History keeps latest 10`
+    : "No saved first-run snapshots yet.";
   outboundRunSnapshotCompare.innerHTML = comparison
     ? `
       <strong>Newest snapshot vs previous</strong>
