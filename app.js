@@ -387,6 +387,7 @@ const focusNextOutboundStepButton = document.querySelector("#focusNextOutboundSt
 const completeVisibleOutboundStepsButton = document.querySelector("#completeVisibleOutboundStepsButton");
 const copyOutboundRunPacketButton = document.querySelector("#copyOutboundRunPacketButton");
 const downloadOutboundRunPacketButton = document.querySelector("#downloadOutboundRunPacketButton");
+const downloadOutboundRunPacketJsonButton = document.querySelector("#downloadOutboundRunPacketJsonButton");
 const copyOutboundSessionButton = document.querySelector("#copyOutboundSessionButton");
 const downloadOutboundSessionButton = document.querySelector("#downloadOutboundSessionButton");
 const resetOutboundSessionButton = document.querySelector("#resetOutboundSessionButton");
@@ -1144,6 +1145,23 @@ function formatOutboundRunPacket() {
   ].join("\n");
 }
 
+function getOutboundRunPacketRecord() {
+  const readiness = getOutboundRunReadinessSummary();
+  const fixes = getOutboundImprovementItems();
+
+  return {
+    exportedAt: new Date().toISOString(),
+    readiness,
+    stats: getOutboundSessionStats(),
+    outcomeCounts: getOutboundOutcomeCounts(),
+    outcomes: outboundSessionState.outcomes,
+    fixes,
+    openFixes: fixes.filter((item) => item.status === "Open"),
+    closeoutFixes: fixes.filter((item) => ["Resolved", "Archived"].includes(item.status)),
+    session: getOutboundSessionSummaryRecord()
+  };
+}
+
 async function copyOutboundRunPacket() {
   const copiedDirectly = await copyTextWithFallback(formatOutboundRunPacket());
   setDataStatus(copiedDirectly ? "Copied first real outbound run packet." : "Selected and copied first real outbound run packet.");
@@ -1153,6 +1171,12 @@ function downloadOutboundRunPacket() {
   const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
   downloadFile(`regent-growth-first-run-packet-${stamp}.txt`, formatOutboundRunPacket(), "text/plain;charset=utf-8");
   setDataStatus("Downloaded first real outbound run packet.");
+}
+
+function downloadOutboundRunPacketJson() {
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-first-run-packet-${stamp}.json`, JSON.stringify(getOutboundRunPacketRecord(), null, 2), "application/json;charset=utf-8");
+  setDataStatus("Downloaded first real outbound run packet JSON.");
 }
 
 async function copyOutboundSessionSummary() {
@@ -9050,6 +9074,7 @@ focusNextOutboundStepButton.addEventListener("click", focusNextOutboundStep);
 completeVisibleOutboundStepsButton.addEventListener("click", completeVisibleOutboundSteps);
 copyOutboundRunPacketButton.addEventListener("click", copyOutboundRunPacket);
 downloadOutboundRunPacketButton.addEventListener("click", downloadOutboundRunPacket);
+downloadOutboundRunPacketJsonButton.addEventListener("click", downloadOutboundRunPacketJson);
 copyOutboundSessionButton.addEventListener("click", copyOutboundSessionSummary);
 downloadOutboundSessionButton.addEventListener("click", downloadOutboundSessionSummary);
 resetOutboundSessionButton.addEventListener("click", resetOutboundSessionState);
