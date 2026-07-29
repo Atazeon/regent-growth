@@ -1242,7 +1242,7 @@ function getOutboundSnapshotSearchText(snapshot) {
 function getVisibleOutboundRunSnapshots(snapshots) {
   const query = outboundRunSnapshotSearchValue.trim().toLowerCase();
   return snapshots
-    .filter((snapshot) => outboundRunSnapshotReadinessFilterValue === "all" || snapshot.readiness?.state === outboundRunSnapshotReadinessFilterValue)
+    .filter((snapshot) => outboundRunSnapshotReadinessFilterValue === "all" || (snapshot.readiness?.state || "Unknown") === outboundRunSnapshotReadinessFilterValue)
     .filter((snapshot) => !query || getOutboundSnapshotSearchText(snapshot).includes(query));
 }
 

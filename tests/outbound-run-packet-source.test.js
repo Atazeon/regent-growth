@@ -25,6 +25,7 @@ const checks = [
   ["run snapshot summary region exists", html.includes('id="outboundRunSnapshotSummary"')],
   ["run snapshot search exists", html.includes('id="outboundRunSnapshotSearch"')],
   ["run snapshot readiness filter exists", html.includes('id="outboundRunSnapshotReadinessFilter"')],
+  ["run snapshot unknown readiness option exists", html.includes('<option value="Unknown">Unknown</option>')],
   ["run snapshot search clear button exists", html.includes('id="clearOutboundRunSnapshotSearchButton"')],
   ["run snapshot list exists", html.includes('id="outboundRunSnapshotList"')],
   ["run readiness selector exists", app.includes('const outboundRunReadiness = document.querySelector("#outboundRunReadiness")')],
@@ -61,7 +62,7 @@ const checks = [
   ["run snapshot readiness filter state exists", app.includes('let outboundRunSnapshotReadinessFilterValue = "all"')],
   ["run snapshot search text helper exists", app.includes("function getOutboundSnapshotSearchText(snapshot)")],
   ["run snapshot visible helper exists", app.includes("function getVisibleOutboundRunSnapshots(snapshots)")],
-  ["run snapshot readiness filter logic exists", app.includes('snapshot.readiness?.state === outboundRunSnapshotReadinessFilterValue')],
+  ["run snapshot readiness filter logic exists", app.includes('(snapshot.readiness?.state || "Unknown") === outboundRunSnapshotReadinessFilterValue')],
   ["run snapshot readiness filter handler exists", app.includes("function updateOutboundRunSnapshotReadinessFilter()")],
   ["run snapshot readiness counts helper exists", app.includes("function getOutboundRunSnapshotReadinessCounts(snapshots)")],
   ["run snapshot search clear handler exists", app.includes("function clearOutboundRunSnapshotSearch()")],
@@ -146,8 +147,8 @@ const checks = [
   ["snapshot note CSS exists", css.includes(".outbound-run-snapshot-list p")],
   ["snapshot timeline cue CSS exists", css.includes(".outbound-run-snapshot-list em")],
   ["snapshot CSS exists", css.includes(".outbound-run-snapshot-list")],
-  ["README mentions snapshot readiness counts", readme.includes("first-run snapshot history/export/import/filtered export/CSV export/copy summary/clear/compare/restore/naming/delete/notes/search/readiness filter/filter reset/readiness counts/count summary/timeline cues")],
-  ["plan next snapshot unknown readiness", plan.includes("- First run snapshot unknown readiness")]
+  ["README mentions snapshot unknown readiness", readme.includes("first-run snapshot history/export/import/filtered export/CSV export/copy summary/clear/compare/restore/naming/delete/notes/search/readiness filter/unknown readiness/filter reset/readiness counts/count summary/timeline cues")],
+  ["plan next snapshot readiness count chips", plan.includes("- First run snapshot readiness count chips")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
