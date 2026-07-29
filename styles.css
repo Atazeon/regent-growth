@@ -338,6 +338,29 @@ main {
   font-size: 0.9rem;
 }
 
+.outbound-run-snapshot-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.outbound-run-snapshot-list article {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  padding: 10px 12px;
+}
+
+.outbound-run-snapshot-list div {
+  display: grid;
+  gap: 4px;
+}
+
+.outbound-run-snapshot-list span {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
 .outbound-session-list {
   display: grid;
   gap: 10px;

@@ -368,6 +368,7 @@ const dataStatus = document.querySelector("#dataStatus");
 const outboundSessionProgress = document.querySelector("#outboundSessionProgress");
 const outboundSessionStats = document.querySelector("#outboundSessionStats");
 const outboundRunReadiness = document.querySelector("#outboundRunReadiness");
+const outboundRunSnapshotList = document.querySelector("#outboundRunSnapshotList");
 const outboundSessionAreaFilter = document.querySelector("#outboundSessionAreaFilter");
 const outboundSessionNextAction = document.querySelector("#outboundSessionNextAction");
 const outboundSessionList = document.querySelector("#outboundSessionList");
@@ -388,6 +389,7 @@ const completeVisibleOutboundStepsButton = document.querySelector("#completeVisi
 const copyOutboundRunPacketButton = document.querySelector("#copyOutboundRunPacketButton");
 const downloadOutboundRunPacketButton = document.querySelector("#downloadOutboundRunPacketButton");
 const downloadOutboundRunPacketJsonButton = document.querySelector("#downloadOutboundRunPacketJsonButton");
+const saveOutboundRunSnapshotButton = document.querySelector("#saveOutboundRunSnapshotButton");
 const copyOutboundSessionButton = document.querySelector("#copyOutboundSessionButton");
 const downloadOutboundSessionButton = document.querySelector("#downloadOutboundSessionButton");
 const resetOutboundSessionButton = document.querySelector("#resetOutboundSessionButton");
@@ -483,6 +485,7 @@ function loadOutboundSessionState() {
     outcomes: [],
     improvements: {},
     archiveCloseoutExportedAt: "",
+    runSnapshots: [],
     completed: {}
   };
   const savedState = localStorage.getItem(outboundSessionStorageKey);
@@ -501,6 +504,7 @@ function loadOutboundSessionState() {
       outcomes: Array.isArray(parsedState.outcomes) ? parsedState.outcomes.map(normalizeOutboundOutcome).filter((outcome) => outcome.type && outcome.note) : [],
       improvements: typeof parsedState.improvements === "object" && parsedState.improvements ? parsedState.improvements : {},
       archiveCloseoutExportedAt: parsedState.archiveCloseoutExportedAt || "",
+      runSnapshots: Array.isArray(parsedState.runSnapshots) ? parsedState.runSnapshots.slice(0, 10) : [],
       completed: typeof parsedState.completed === "object" && parsedState.completed ? parsedState.completed : {}
     };
   } catch {
@@ -1037,6 +1041,7 @@ function renderOutboundSession() {
     <strong>${escapeHtml(runReadiness.state)}</strong>
     <span>${escapeHtml(runReadiness.completedCount)} / ${escapeHtml(runReadiness.totalCount)} steps | ${escapeHtml(runReadiness.outcomeCount)} outcomes | Open fixes: ${escapeHtml(runReadiness.openFixCount)} | Archived fixes: ${escapeHtml(runReadiness.archivedFixCount)} | ${escapeHtml(runReadiness.archiveCloseoutExported ? "Archived closeout exported" : "Archive closeout pending")}</span>
   `;
+  renderOutboundRunSnapshots();
 
   outboundSessionList.innerHTML = visibleItems.map((item) => {
     const index = outboundSessionItems.findIndex((sessionItem) => sessionItem.id === item.id);
@@ -1162,6 +1167,32 @@ function getOutboundRunPacketRecord() {
   };
 }
 
+function renderOutboundRunSnapshots() {
+  const snapshots = outboundSessionState.runSnapshots || [];
+  outboundRunSnapshotList.innerHTML = snapshots.length
+    ? snapshots.slice(0, 5).map((snapshot) => `
+      <article>
+        <div>
+          <strong>${escapeHtml(formatDateTime(snapshot.savedAt || snapshot.exportedAt))}</strong>
+          <span>${escapeHtml(snapshot.readiness?.state || "Unknown")} | ${escapeHtml(snapshot.readiness?.completedCount || 0)} / ${escapeHtml(snapshot.readiness?.totalCount || outboundSessionItems.length)} steps | Outcomes: ${escapeHtml(snapshot.outcomes?.length || 0)} | Open fixes: ${escapeHtml(snapshot.readiness?.openFixCount || 0)} | Archived: ${escapeHtml(snapshot.readiness?.archivedFixCount || 0)}</span>
+        </div>
+      </article>
+    `).join("")
+    : `<p class="empty-state">No first-run snapshots saved yet.</p>`;
+}
+
+function saveOutboundRunSnapshot() {
+  const snapshot = {
+    id: crypto.randomUUID(),
+    savedAt: new Date().toISOString(),
+    ...getOutboundRunPacketRecord()
+  };
+  outboundSessionState.runSnapshots = [snapshot, ...(outboundSessionState.runSnapshots || [])].slice(0, 10);
+  saveOutboundSessionState();
+  renderOutboundRunSnapshots();
+  setDataStatus("Saved first real outbound run snapshot.");
+}
+
 async function copyOutboundRunPacket() {
   const copiedDirectly = await copyTextWithFallback(formatOutboundRunPacket());
   setDataStatus(copiedDirectly ? "Copied first real outbound run packet." : "Selected and copied first real outbound run packet.");
@@ -1200,6 +1231,7 @@ function resetOutboundSessionState() {
     outcomes: [],
     improvements: {},
     archiveCloseoutExportedAt: "",
+    runSnapshots: [],
     completed: {}
   };
   localStorage.removeItem(outboundSessionStorageKey);
@@ -9075,6 +9107,7 @@ completeVisibleOutboundStepsButton.addEventListener("click", completeVisibleOutb
 copyOutboundRunPacketButton.addEventListener("click", copyOutboundRunPacket);
 downloadOutboundRunPacketButton.addEventListener("click", downloadOutboundRunPacket);
 downloadOutboundRunPacketJsonButton.addEventListener("click", downloadOutboundRunPacketJson);
+saveOutboundRunSnapshotButton.addEventListener("click", saveOutboundRunSnapshot);
 copyOutboundSessionButton.addEventListener("click", copyOutboundSessionSummary);
 downloadOutboundSessionButton.addEventListener("click", downloadOutboundSessionSummary);
 resetOutboundSessionButton.addEventListener("click", resetOutboundSessionState);
