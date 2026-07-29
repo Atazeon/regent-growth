@@ -23,6 +23,7 @@ const checks = [
   ["run readiness region exists", html.includes('id="outboundRunReadiness"')],
   ["run snapshot compare region exists", html.includes('id="outboundRunSnapshotCompare"')],
   ["run snapshot summary region exists", html.includes('id="outboundRunSnapshotSummary"')],
+  ["run snapshot launch checklist region exists", html.includes('id="outboundRunSnapshotLaunchChecklist"')],
   ["run snapshot search exists", html.includes('id="outboundRunSnapshotSearch"')],
   ["run snapshot readiness filter exists", html.includes('id="outboundRunSnapshotReadinessFilter"')],
   ["run snapshot unknown readiness option exists", html.includes('<option value="Unknown">Unknown</option>')],
@@ -31,6 +32,7 @@ const checks = [
   ["run readiness selector exists", app.includes('const outboundRunReadiness = document.querySelector("#outboundRunReadiness")')],
   ["run snapshot compare selector exists", app.includes('const outboundRunSnapshotCompare = document.querySelector("#outboundRunSnapshotCompare")')],
   ["run snapshot summary selector exists", app.includes('const outboundRunSnapshotSummary = document.querySelector("#outboundRunSnapshotSummary")')],
+  ["run snapshot launch checklist selector exists", app.includes('const outboundRunSnapshotLaunchChecklist = document.querySelector("#outboundRunSnapshotLaunchChecklist")')],
   ["run snapshot search selector exists", app.includes('const outboundRunSnapshotSearch = document.querySelector("#outboundRunSnapshotSearch")')],
   ["run snapshot readiness filter selector exists", app.includes('const outboundRunSnapshotReadinessFilter = document.querySelector("#outboundRunSnapshotReadinessFilter")')],
   ["run snapshot search clear selector exists", app.includes('const clearOutboundRunSnapshotSearchButton = document.querySelector("#clearOutboundRunSnapshotSearchButton")')],
@@ -72,6 +74,10 @@ const checks = [
   ["run snapshot summary chip text exists", app.includes("saved first-run snapshots shown</span>")],
   ["run snapshot summary ready chip exists", app.includes("<strong>Ready: ${escapeHtml(readinessCounts.Ready)}</strong>")],
   ["run snapshot summary unknown chip exists", app.includes("<strong>Unknown: ${escapeHtml(readinessCounts.Unknown)}</strong>")],
+  ["run snapshot launch checklist helper exists", app.includes("function getOutboundRunSnapshotLaunchChecklist(snapshots, visibleSnapshots)")],
+  ["run snapshot launch checklist rendered", app.includes("outboundRunSnapshotLaunchChecklist.innerHTML = getOutboundRunSnapshotLaunchChecklist")],
+  ["run snapshot launch checklist baseline exists", app.includes("Baseline compare ready")],
+  ["run snapshot launch checklist blocked state exists", app.includes('item.ready ? "ready" : "blocked"')],
   ["run snapshot search empty state exists", app.includes("No first-run snapshots match this search.")],
   ["run snapshot compare formatter exists", app.includes("function formatSignedDelta(value)")],
   ["run snapshot compare function exists", app.includes("function getOutboundRunSnapshotComparison(snapshots)")],
@@ -146,6 +152,9 @@ const checks = [
   ["snapshot compare CSS exists", css.includes(".outbound-run-snapshot-compare")],
   ["snapshot summary CSS exists", css.includes(".outbound-run-snapshot-summary")],
   ["snapshot summary chip CSS exists", css.includes(".outbound-run-snapshot-summary strong")],
+  ["snapshot launch checklist CSS exists", css.includes(".outbound-run-snapshot-launch-checklist")],
+  ["snapshot launch checklist ready CSS exists", css.includes('.outbound-run-snapshot-launch-checklist span[data-state="ready"]')],
+  ["snapshot launch checklist blocked CSS exists", css.includes('.outbound-run-snapshot-launch-checklist span[data-state="blocked"]')],
   ["snapshot search row CSS exists", css.includes(".outbound-run-snapshot-search-row")],
   ["snapshot readiness select CSS exists", css.includes(".outbound-run-snapshot-search-row select")],
   ["snapshot search CSS exists", css.includes(".outbound-run-snapshot-search")],
@@ -154,8 +163,8 @@ const checks = [
   ["snapshot note CSS exists", css.includes(".outbound-run-snapshot-list p")],
   ["snapshot timeline cue CSS exists", css.includes(".outbound-run-snapshot-list em")],
   ["snapshot CSS exists", css.includes(".outbound-run-snapshot-list")],
-  ["README mentions snapshot QA hardening", readme.includes("first-run snapshot history/export/import/filtered export/CSV export/copy summary/clear/compare/restore/naming/delete/notes/search/readiness filter/unknown readiness/filter reset/readiness counts/count chips/count summary/timeline cues/compact controls/QA hardening")],
-  ["plan next snapshot launch checklist", plan.includes("- First run snapshot launch checklist")]
+  ["README mentions snapshot launch checklist", readme.includes("first-run snapshot history/export/import/filtered export/CSV export/copy summary/clear/compare/restore/naming/delete/notes/search/readiness filter/unknown readiness/filter reset/readiness counts/count chips/count summary/timeline cues/compact controls/QA hardening/launch checklist")],
+  ["plan next launch rehearsal", plan.includes("- First real outbound launch rehearsal")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);

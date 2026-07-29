@@ -392,6 +392,32 @@ main {
   padding: 4px 8px;
 }
 
+.outbound-run-snapshot-launch-checklist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.outbound-run-snapshot-launch-checklist span {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--muted);
+  font-size: 0.82rem;
+  padding: 5px 9px;
+}
+
+.outbound-run-snapshot-launch-checklist span[data-state="ready"] {
+  border-color: rgba(29, 154, 138, 0.38);
+  color: var(--accent-dark);
+}
+
+.outbound-run-snapshot-launch-checklist span[data-state="blocked"] {
+  border-color: rgba(199, 119, 0, 0.35);
+  color: var(--warn);
+}
+
 .outbound-run-snapshot-list {
   display: grid;
   gap: 8px;

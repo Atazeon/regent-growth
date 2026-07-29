@@ -388,6 +388,7 @@ const outboundImprovementOwnerSummary = document.querySelector("#outboundImprove
 const outboundImprovementQueue = document.querySelector("#outboundImprovementQueue");
 const outboundRunSnapshotCompare = document.querySelector("#outboundRunSnapshotCompare");
 const outboundRunSnapshotSummary = document.querySelector("#outboundRunSnapshotSummary");
+const outboundRunSnapshotLaunchChecklist = document.querySelector("#outboundRunSnapshotLaunchChecklist");
 const outboundRunSnapshotSearch = document.querySelector("#outboundRunSnapshotSearch");
 const outboundRunSnapshotReadinessFilter = document.querySelector("#outboundRunSnapshotReadinessFilter");
 const clearOutboundRunSnapshotSearchButton = document.querySelector("#clearOutboundRunSnapshotSearchButton");
@@ -1204,6 +1205,9 @@ function renderOutboundRunSnapshots() {
       <span>History keeps latest 10</span>
     `
     : "No saved first-run snapshots yet.";
+  outboundRunSnapshotLaunchChecklist.innerHTML = getOutboundRunSnapshotLaunchChecklist(snapshots, visibleSnapshots).map((item) => `
+    <span data-state="${escapeHtml(item.ready ? "ready" : "blocked")}">${escapeHtml(item.label)}</span>
+  `).join("");
   outboundRunSnapshotCompare.innerHTML = comparison
     ? `
       <strong>Newest snapshot vs previous</strong>
@@ -1258,6 +1262,27 @@ function getOutboundRunSnapshotReadinessCounts(snapshots) {
     counts[state] = (counts[state] || 0) + 1;
     return counts;
   }, { Ready: 0, "Action Needed": 0, Unknown: 0 });
+}
+
+function getOutboundRunSnapshotLaunchChecklist(snapshots, visibleSnapshots) {
+  return [
+    {
+      label: snapshots.length ? "Snapshot saved" : "Save first snapshot",
+      ready: snapshots.length > 0
+    },
+    {
+      label: snapshots.length >= 2 ? "Baseline compare ready" : "Save second snapshot",
+      ready: snapshots.length >= 2
+    },
+    {
+      label: visibleSnapshots.length ? "Visible export ready" : "No visible snapshots",
+      ready: visibleSnapshots.length > 0
+    },
+    {
+      label: snapshots.length <= 10 ? "History within limit" : "Trim snapshot history",
+      ready: snapshots.length <= 10
+    }
+  ];
 }
 
 function formatOutboundRunSnapshotSummary(snapshots = getVisibleOutboundRunSnapshots(outboundSessionState.runSnapshots || [])) {
