@@ -397,6 +397,7 @@ const saveOutboundRunSnapshotButton = document.querySelector("#saveOutboundRunSn
 const downloadOutboundRunSnapshotsButton = document.querySelector("#downloadOutboundRunSnapshotsButton");
 const downloadVisibleOutboundRunSnapshotsButton = document.querySelector("#downloadVisibleOutboundRunSnapshotsButton");
 const downloadOutboundRunSnapshotsCsvButton = document.querySelector("#downloadOutboundRunSnapshotsCsvButton");
+const copyOutboundRunSnapshotsButton = document.querySelector("#copyOutboundRunSnapshotsButton");
 const importOutboundRunSnapshotsButton = document.querySelector("#importOutboundRunSnapshotsButton");
 const importOutboundRunSnapshotsInput = document.querySelector("#importOutboundRunSnapshotsInput");
 const clearOutboundRunSnapshotsButton = document.querySelector("#clearOutboundRunSnapshotsButton");
@@ -1035,6 +1036,7 @@ function renderOutboundSession() {
   downloadOutboundRunSnapshotsButton.disabled = !(outboundSessionState.runSnapshots || []).length;
   downloadVisibleOutboundRunSnapshotsButton.disabled = getVisibleOutboundRunSnapshots(outboundSessionState.runSnapshots || []).length === 0;
   downloadOutboundRunSnapshotsCsvButton.disabled = getVisibleOutboundRunSnapshots(outboundSessionState.runSnapshots || []).length === 0;
+  copyOutboundRunSnapshotsButton.disabled = getVisibleOutboundRunSnapshots(outboundSessionState.runSnapshots || []).length === 0;
   clearOutboundRunSnapshotsButton.disabled = !(outboundSessionState.runSnapshots || []).length;
   resetOutboundSessionButton.disabled = completedCount === 0 && !outboundSessionState.notes;
   resetOutboundSessionButton.title = resetOutboundSessionButton.disabled
@@ -1187,6 +1189,7 @@ function renderOutboundRunSnapshots() {
   const comparison = getOutboundRunSnapshotComparison(snapshots);
   downloadVisibleOutboundRunSnapshotsButton.disabled = visibleSnapshots.length === 0;
   downloadOutboundRunSnapshotsCsvButton.disabled = visibleSnapshots.length === 0;
+  copyOutboundRunSnapshotsButton.disabled = visibleSnapshots.length === 0;
   outboundRunSnapshotSummary.textContent = snapshots.length
     ? `${visibleSnapshots.length} of ${snapshots.length} saved first-run snapshots shown | History keeps latest 10`
     : "No saved first-run snapshots yet.";
@@ -1234,6 +1237,24 @@ function getVisibleOutboundRunSnapshots(snapshots) {
   const query = outboundRunSnapshotSearchValue.trim().toLowerCase();
   if (!query) return snapshots;
   return snapshots.filter((snapshot) => getOutboundSnapshotSearchText(snapshot).includes(query));
+}
+
+function formatOutboundRunSnapshotSummary(snapshots = getVisibleOutboundRunSnapshots(outboundSessionState.runSnapshots || [])) {
+  return [
+    "First Real Outbound Run Snapshots",
+    outboundRunSnapshotSearchValue.trim() ? `Search: ${outboundRunSnapshotSearchValue.trim()}` : "Search: All snapshots",
+    `Count: ${snapshots.length}`,
+    "",
+    ...snapshots.map((snapshot, index) => {
+      const readiness = snapshot.readiness || {};
+      return [
+        `${index + 1}. ${snapshot.label || formatDateTime(snapshot.savedAt || snapshot.exportedAt)}`,
+        snapshot.note ? `Note: ${snapshot.note}` : "",
+        `Saved: ${formatDateTime(snapshot.savedAt || snapshot.exportedAt)}`,
+        `State: ${readiness.state || "Unknown"} | Steps: ${readiness.completedCount || 0}/${readiness.totalCount || outboundSessionItems.length} | Outcomes: ${Array.isArray(snapshot.outcomes) ? snapshot.outcomes.length : 0} | Open fixes: ${readiness.openFixCount || 0} | Archived: ${readiness.archivedFixCount || 0}`
+      ].filter(Boolean).join("\n");
+    })
+  ].join("\n");
 }
 
 function formatSignedDelta(value) {
@@ -1360,6 +1381,17 @@ function downloadOutboundRunSnapshotsCsv() {
   const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
   downloadFile(`regent-growth-first-run-snapshots-${stamp}.csv`, [headers, ...rows].map((row) => row.map(csvCell).join(",")).join("\n"), "text/csv;charset=utf-8");
   setDataStatus(`Downloaded ${snapshots.length} first real outbound run snapshot${snapshots.length === 1 ? "" : "s"} as CSV.`);
+}
+
+async function copyOutboundRunSnapshotSummary() {
+  const snapshots = getVisibleOutboundRunSnapshots(outboundSessionState.runSnapshots || []);
+  if (snapshots.length === 0) {
+    setDataStatus("No visible first real outbound run snapshots to copy.", "error");
+    return;
+  }
+
+  const copiedDirectly = await copyTextWithFallback(formatOutboundRunSnapshotSummary(snapshots));
+  setDataStatus(copiedDirectly ? "Copied visible first real outbound run snapshot summary." : "Selected and copied visible first real outbound run snapshot summary.");
 }
 
 function getImportedOutboundRunSnapshots(payload) {
@@ -9461,6 +9493,7 @@ saveOutboundRunSnapshotButton.addEventListener("click", saveOutboundRunSnapshot)
 downloadOutboundRunSnapshotsButton.addEventListener("click", downloadOutboundRunSnapshots);
 downloadVisibleOutboundRunSnapshotsButton.addEventListener("click", downloadVisibleOutboundRunSnapshots);
 downloadOutboundRunSnapshotsCsvButton.addEventListener("click", downloadOutboundRunSnapshotsCsv);
+copyOutboundRunSnapshotsButton.addEventListener("click", copyOutboundRunSnapshotSummary);
 importOutboundRunSnapshotsButton.addEventListener("click", () => importOutboundRunSnapshotsInput.click());
 importOutboundRunSnapshotsInput.addEventListener("change", importOutboundRunSnapshots);
 clearOutboundRunSnapshotsButton.addEventListener("click", clearOutboundRunSnapshots);
