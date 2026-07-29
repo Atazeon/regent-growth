@@ -17,6 +17,7 @@ const checks = [
   ["run snapshots filtered download button exists", html.includes('id="downloadVisibleOutboundRunSnapshotsButton"')],
   ["run snapshots CSV button exists", html.includes('id="downloadOutboundRunSnapshotsCsvButton"')],
   ["run snapshots copy button exists", html.includes('id="copyOutboundRunSnapshotsButton"')],
+  ["run snapshot launch checklist copy button exists", html.includes('id="copyOutboundRunSnapshotLaunchChecklistButton"')],
   ["run snapshots import button exists", html.includes('id="importOutboundRunSnapshotsButton"')],
   ["run snapshots import input exists", html.includes('id="importOutboundRunSnapshotsInput"')],
   ["run snapshots clear button exists", html.includes('id="clearOutboundRunSnapshotsButton"')],
@@ -44,6 +45,7 @@ const checks = [
   ["run snapshots filtered download selector exists", app.includes('const downloadVisibleOutboundRunSnapshotsButton = document.querySelector("#downloadVisibleOutboundRunSnapshotsButton")')],
   ["run snapshots CSV selector exists", app.includes('const downloadOutboundRunSnapshotsCsvButton = document.querySelector("#downloadOutboundRunSnapshotsCsvButton")')],
   ["run snapshots copy selector exists", app.includes('const copyOutboundRunSnapshotsButton = document.querySelector("#copyOutboundRunSnapshotsButton")')],
+  ["run snapshot launch checklist copy selector exists", app.includes('const copyOutboundRunSnapshotLaunchChecklistButton = document.querySelector("#copyOutboundRunSnapshotLaunchChecklistButton")')],
   ["run snapshots import button selector exists", app.includes('const importOutboundRunSnapshotsButton = document.querySelector("#importOutboundRunSnapshotsButton")')],
   ["run snapshots import input selector exists", app.includes('const importOutboundRunSnapshotsInput = document.querySelector("#importOutboundRunSnapshotsInput")')],
   ["run snapshots clear selector exists", app.includes('const clearOutboundRunSnapshotsButton = document.querySelector("#clearOutboundRunSnapshotsButton")')],
@@ -78,6 +80,8 @@ const checks = [
   ["run snapshot launch checklist rendered", app.includes("outboundRunSnapshotLaunchChecklist.innerHTML = getOutboundRunSnapshotLaunchChecklist")],
   ["run snapshot launch checklist baseline exists", app.includes("Baseline compare ready")],
   ["run snapshot launch checklist blocked state exists", app.includes('item.ready ? "ready" : "blocked"')],
+  ["run snapshot launch checklist formatter exists", app.includes("function formatOutboundRunSnapshotLaunchChecklist()")],
+  ["run snapshot launch checklist copy handler exists", app.includes("async function copyOutboundRunSnapshotLaunchChecklist()")],
   ["run snapshot search empty state exists", app.includes("No first-run snapshots match this search.")],
   ["run snapshot compare formatter exists", app.includes("function formatSignedDelta(value)")],
   ["run snapshot compare function exists", app.includes("function getOutboundRunSnapshotComparison(snapshots)")],
@@ -141,6 +145,7 @@ const checks = [
   ["run snapshots filtered download bound", app.includes('downloadVisibleOutboundRunSnapshotsButton.addEventListener("click", downloadVisibleOutboundRunSnapshots)')],
   ["run snapshots CSV bound", app.includes('downloadOutboundRunSnapshotsCsvButton.addEventListener("click", downloadOutboundRunSnapshotsCsv)')],
   ["run snapshots copy bound", app.includes('copyOutboundRunSnapshotsButton.addEventListener("click", copyOutboundRunSnapshotSummary)')],
+  ["run snapshot launch checklist copy bound", app.includes('copyOutboundRunSnapshotLaunchChecklistButton.addEventListener("click", copyOutboundRunSnapshotLaunchChecklist)')],
   ["run snapshots import click bound", app.includes('importOutboundRunSnapshotsButton.addEventListener("click", () => importOutboundRunSnapshotsInput.click())')],
   ["run snapshots import change bound", app.includes('importOutboundRunSnapshotsInput.addEventListener("change", importOutboundRunSnapshots)')],
   ["run snapshots clear bound", app.includes('clearOutboundRunSnapshotsButton.addEventListener("click", clearOutboundRunSnapshots)')],
@@ -163,8 +168,8 @@ const checks = [
   ["snapshot note CSS exists", css.includes(".outbound-run-snapshot-list p")],
   ["snapshot timeline cue CSS exists", css.includes(".outbound-run-snapshot-list em")],
   ["snapshot CSS exists", css.includes(".outbound-run-snapshot-list")],
-  ["README mentions snapshot launch checklist", readme.includes("first-run snapshot history/export/import/filtered export/CSV export/copy summary/clear/compare/restore/naming/delete/notes/search/readiness filter/unknown readiness/filter reset/readiness counts/count chips/count summary/timeline cues/compact controls/QA hardening/launch checklist")],
-  ["plan next launch rehearsal", plan.includes("- First real outbound launch rehearsal")]
+  ["README mentions launch checklist copy", readme.includes("first-run snapshot history/export/import/filtered export/CSV export/copy summary/launch checklist copy/clear/compare/restore/naming/delete/notes/search/readiness filter/unknown readiness/filter reset/readiness counts/count chips/count summary/timeline cues/compact controls/QA hardening/launch checklist")],
+  ["plan next run execution", plan.includes("- First real outbound run execution")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);

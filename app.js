@@ -402,6 +402,7 @@ const downloadOutboundRunSnapshotsButton = document.querySelector("#downloadOutb
 const downloadVisibleOutboundRunSnapshotsButton = document.querySelector("#downloadVisibleOutboundRunSnapshotsButton");
 const downloadOutboundRunSnapshotsCsvButton = document.querySelector("#downloadOutboundRunSnapshotsCsvButton");
 const copyOutboundRunSnapshotsButton = document.querySelector("#copyOutboundRunSnapshotsButton");
+const copyOutboundRunSnapshotLaunchChecklistButton = document.querySelector("#copyOutboundRunSnapshotLaunchChecklistButton");
 const importOutboundRunSnapshotsButton = document.querySelector("#importOutboundRunSnapshotsButton");
 const importOutboundRunSnapshotsInput = document.querySelector("#importOutboundRunSnapshotsInput");
 const clearOutboundRunSnapshotsButton = document.querySelector("#clearOutboundRunSnapshotsButton");
@@ -1285,6 +1286,15 @@ function getOutboundRunSnapshotLaunchChecklist(snapshots, visibleSnapshots) {
   ];
 }
 
+function formatOutboundRunSnapshotLaunchChecklist() {
+  const snapshots = outboundSessionState.runSnapshots || [];
+  const visibleSnapshots = getVisibleOutboundRunSnapshots(snapshots);
+  return [
+    "First Real Outbound Launch Checklist",
+    ...getOutboundRunSnapshotLaunchChecklist(snapshots, visibleSnapshots).map((item) => `${item.ready ? "[x]" : "[ ]"} ${item.label}`)
+  ].join("\n");
+}
+
 function formatOutboundRunSnapshotSummary(snapshots = getVisibleOutboundRunSnapshots(outboundSessionState.runSnapshots || [])) {
   return [
     "First Real Outbound Run Snapshots",
@@ -1438,6 +1448,11 @@ async function copyOutboundRunSnapshotSummary() {
 
   const copiedDirectly = await copyTextWithFallback(formatOutboundRunSnapshotSummary(snapshots));
   setDataStatus(copiedDirectly ? "Copied visible first real outbound run snapshot summary." : "Selected and copied visible first real outbound run snapshot summary.");
+}
+
+async function copyOutboundRunSnapshotLaunchChecklist() {
+  const copiedDirectly = await copyTextWithFallback(formatOutboundRunSnapshotLaunchChecklist());
+  setDataStatus(copiedDirectly ? "Copied first real outbound launch checklist." : "Selected and copied first real outbound launch checklist.");
 }
 
 function getImportedOutboundRunSnapshots(payload) {
@@ -9558,6 +9573,7 @@ downloadOutboundRunSnapshotsButton.addEventListener("click", downloadOutboundRun
 downloadVisibleOutboundRunSnapshotsButton.addEventListener("click", downloadVisibleOutboundRunSnapshots);
 downloadOutboundRunSnapshotsCsvButton.addEventListener("click", downloadOutboundRunSnapshotsCsv);
 copyOutboundRunSnapshotsButton.addEventListener("click", copyOutboundRunSnapshotSummary);
+copyOutboundRunSnapshotLaunchChecklistButton.addEventListener("click", copyOutboundRunSnapshotLaunchChecklist);
 importOutboundRunSnapshotsButton.addEventListener("click", () => importOutboundRunSnapshotsInput.click());
 importOutboundRunSnapshotsInput.addEventListener("change", importOutboundRunSnapshots);
 clearOutboundRunSnapshotsButton.addEventListener("click", clearOutboundRunSnapshots);
