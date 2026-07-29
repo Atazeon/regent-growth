@@ -101,6 +101,7 @@ const checks = [
   ["run snapshot restore confirm exists", app.includes("Current outbound session progress will be replaced.")],
   ["run snapshot restore keeps snapshots", app.includes("runSnapshots: snapshots")],
   ["run snapshot save exists", app.includes("function saveOutboundRunSnapshot()")],
+  ["run snapshot save fallback id exists", app.includes("id: createId()")],
   ["run snapshots download exists", app.includes("function downloadOutboundRunSnapshots()")],
   ["run snapshots filtered download exists", app.includes("function downloadVisibleOutboundRunSnapshots()")],
   ["run snapshots filtered filename exists", app.includes("regent-growth-first-run-visible-snapshots-")],
@@ -109,6 +110,7 @@ const checks = [
   ["run snapshots CSV export exists", app.includes("function downloadOutboundRunSnapshotsCsv()")],
   ["run snapshots CSV filename exists", app.includes("regent-growth-first-run-snapshots-${stamp}.csv")],
   ["run snapshots CSV headers exist", app.includes('"label", "note", "savedAt", "state", "completedSteps"')],
+  ["run snapshots CSV unknown state exists", app.includes('readiness.state || "Unknown"')],
   ["run snapshots CSV disabled exists", app.includes("downloadOutboundRunSnapshotsCsvButton.disabled = visibleSnapshots.length === 0")],
   ["run snapshots copy handler exists", app.includes("async function copyOutboundRunSnapshotSummary()")],
   ["run snapshots copy disabled exists", app.includes("copyOutboundRunSnapshotsButton.disabled = visibleSnapshots.length === 0")],
@@ -116,6 +118,7 @@ const checks = [
   ["run snapshots import handler exists", app.includes("async function importOutboundRunSnapshots(event)")],
   ["run snapshots import parses JSON file", app.includes("JSON.parse(await file.text())")],
   ["run snapshots import merges by id", app.includes("existingById.set(snapshot.id, snapshot)")],
+  ["run snapshots import normalizes readiness", app.includes('state: snapshot.readiness?.state || "Unknown"')],
   ["run snapshots import cap exists", app.includes(".slice(0, 10);")],
   ["run snapshots clear exists", app.includes("function clearOutboundRunSnapshots()")],
   ["run snapshots download filename exists", app.includes("regent-growth-first-run-snapshots-")],
@@ -151,8 +154,8 @@ const checks = [
   ["snapshot note CSS exists", css.includes(".outbound-run-snapshot-list p")],
   ["snapshot timeline cue CSS exists", css.includes(".outbound-run-snapshot-list em")],
   ["snapshot CSS exists", css.includes(".outbound-run-snapshot-list")],
-  ["README mentions snapshot compact controls", readme.includes("first-run snapshot history/export/import/filtered export/CSV export/copy summary/clear/compare/restore/naming/delete/notes/search/readiness filter/unknown readiness/filter reset/readiness counts/count chips/count summary/timeline cues/compact controls")],
-  ["plan next snapshot QA pass", plan.includes("- First run snapshot QA pass")]
+  ["README mentions snapshot QA hardening", readme.includes("first-run snapshot history/export/import/filtered export/CSV export/copy summary/clear/compare/restore/naming/delete/notes/search/readiness filter/unknown readiness/filter reset/readiness counts/count chips/count summary/timeline cues/compact controls/QA hardening")],
+  ["plan next snapshot launch checklist", plan.includes("- First run snapshot launch checklist")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);

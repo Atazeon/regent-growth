@@ -1329,7 +1329,7 @@ function getOutboundSnapshotImprovementMap(snapshot) {
 
 function saveOutboundRunSnapshot() {
   const snapshot = {
-    id: crypto.randomUUID(),
+    id: createId(),
     label: "",
     note: "",
     savedAt: new Date().toISOString(),
@@ -1390,7 +1390,7 @@ function downloadOutboundRunSnapshotsCsv() {
       snapshot.label || "",
       snapshot.note || "",
       snapshot.savedAt || snapshot.exportedAt || "",
-      readiness.state || "",
+      readiness.state || "Unknown",
       readiness.completedCount || 0,
       readiness.totalCount || outboundSessionItems.length,
       Array.isArray(snapshot.outcomes) ? snapshot.outcomes.length : 0,
@@ -1421,9 +1421,13 @@ function getImportedOutboundRunSnapshots(payload) {
     .filter((snapshot) => snapshot && typeof snapshot === "object" && snapshot.session && snapshot.readiness)
     .map((snapshot) => ({
       ...snapshot,
-      id: snapshot.id || crypto.randomUUID(),
+      id: snapshot.id || createId(),
       label: snapshot.label || "",
       note: snapshot.note || "",
+      readiness: {
+        ...snapshot.readiness,
+        state: snapshot.readiness?.state || "Unknown"
+      },
       savedAt: snapshot.savedAt || snapshot.exportedAt || new Date().toISOString(),
       exportedAt: snapshot.exportedAt || snapshot.savedAt || new Date().toISOString(),
       outcomes: Array.isArray(snapshot.outcomes) ? snapshot.outcomes : [],
