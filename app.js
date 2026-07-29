@@ -392,6 +392,8 @@ const downloadOutboundRunPacketButton = document.querySelector("#downloadOutboun
 const downloadOutboundRunPacketJsonButton = document.querySelector("#downloadOutboundRunPacketJsonButton");
 const saveOutboundRunSnapshotButton = document.querySelector("#saveOutboundRunSnapshotButton");
 const downloadOutboundRunSnapshotsButton = document.querySelector("#downloadOutboundRunSnapshotsButton");
+const importOutboundRunSnapshotsButton = document.querySelector("#importOutboundRunSnapshotsButton");
+const importOutboundRunSnapshotsInput = document.querySelector("#importOutboundRunSnapshotsInput");
 const clearOutboundRunSnapshotsButton = document.querySelector("#clearOutboundRunSnapshotsButton");
 const copyOutboundSessionButton = document.querySelector("#copyOutboundSessionButton");
 const downloadOutboundSessionButton = document.querySelector("#downloadOutboundSessionButton");
@@ -1270,6 +1272,45 @@ function downloadOutboundRunSnapshots() {
   };
   downloadFile(`regent-growth-first-run-snapshots-${stamp}.json`, JSON.stringify(payload, null, 2), "application/json;charset=utf-8");
   setDataStatus(`Downloaded ${snapshots.length} first real outbound run snapshot${snapshots.length === 1 ? "" : "s"}.`);
+}
+
+function getImportedOutboundRunSnapshots(payload) {
+  const candidates = Array.isArray(payload) ? payload : Array.isArray(payload?.snapshots) ? payload.snapshots : [payload];
+  return candidates
+    .filter((snapshot) => snapshot && typeof snapshot === "object" && snapshot.session && snapshot.readiness)
+    .map((snapshot) => ({
+      ...snapshot,
+      id: snapshot.id || crypto.randomUUID(),
+      savedAt: snapshot.savedAt || snapshot.exportedAt || new Date().toISOString(),
+      exportedAt: snapshot.exportedAt || snapshot.savedAt || new Date().toISOString(),
+      outcomes: Array.isArray(snapshot.outcomes) ? snapshot.outcomes : [],
+      fixes: Array.isArray(snapshot.fixes) ? snapshot.fixes : []
+    }));
+}
+
+async function importOutboundRunSnapshots(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  try {
+    const importedSnapshots = getImportedOutboundRunSnapshots(JSON.parse(await file.text()));
+    if (importedSnapshots.length === 0) {
+      throw new Error("No valid first real outbound run snapshots found.");
+    }
+
+    const existingById = new Map((outboundSessionState.runSnapshots || []).map((snapshot) => [snapshot.id, snapshot]));
+    importedSnapshots.forEach((snapshot) => existingById.set(snapshot.id, snapshot));
+    outboundSessionState.runSnapshots = Array.from(existingById.values())
+      .sort((first, second) => new Date(second.savedAt || second.exportedAt) - new Date(first.savedAt || first.exportedAt))
+      .slice(0, 10);
+    saveOutboundSessionState();
+    renderOutboundSession();
+    setDataStatus(`Imported ${importedSnapshots.length} first real outbound run snapshot${importedSnapshots.length === 1 ? "" : "s"}.`);
+  } catch (error) {
+    setDataStatus(`Snapshot import failed: ${error.message}`, "error");
+  } finally {
+    event.target.value = "";
+  }
 }
 
 function restoreOutboundRunSnapshot(id) {
@@ -9243,6 +9284,8 @@ downloadOutboundRunPacketButton.addEventListener("click", downloadOutboundRunPac
 downloadOutboundRunPacketJsonButton.addEventListener("click", downloadOutboundRunPacketJson);
 saveOutboundRunSnapshotButton.addEventListener("click", saveOutboundRunSnapshot);
 downloadOutboundRunSnapshotsButton.addEventListener("click", downloadOutboundRunSnapshots);
+importOutboundRunSnapshotsButton.addEventListener("click", () => importOutboundRunSnapshotsInput.click());
+importOutboundRunSnapshotsInput.addEventListener("change", importOutboundRunSnapshots);
 clearOutboundRunSnapshotsButton.addEventListener("click", clearOutboundRunSnapshots);
 outboundRunSnapshotList.addEventListener("click", handleOutboundRunSnapshotListClick);
 copyOutboundSessionButton.addEventListener("click", copyOutboundSessionSummary);

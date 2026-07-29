@@ -14,6 +14,8 @@ const checks = [
   ["run packet JSON button exists", html.includes('id="downloadOutboundRunPacketJsonButton"')],
   ["run snapshot button exists", html.includes('id="saveOutboundRunSnapshotButton"')],
   ["run snapshots download button exists", html.includes('id="downloadOutboundRunSnapshotsButton"')],
+  ["run snapshots import button exists", html.includes('id="importOutboundRunSnapshotsButton"')],
+  ["run snapshots import input exists", html.includes('id="importOutboundRunSnapshotsInput"')],
   ["run snapshots clear button exists", html.includes('id="clearOutboundRunSnapshotsButton"')],
   ["run readiness region exists", html.includes('id="outboundRunReadiness"')],
   ["run snapshot compare region exists", html.includes('id="outboundRunSnapshotCompare"')],
@@ -25,6 +27,8 @@ const checks = [
   ["run packet JSON selector exists", app.includes('const downloadOutboundRunPacketJsonButton = document.querySelector("#downloadOutboundRunPacketJsonButton")')],
   ["run snapshot selector exists", app.includes('const saveOutboundRunSnapshotButton = document.querySelector("#saveOutboundRunSnapshotButton")')],
   ["run snapshots download selector exists", app.includes('const downloadOutboundRunSnapshotsButton = document.querySelector("#downloadOutboundRunSnapshotsButton")')],
+  ["run snapshots import button selector exists", app.includes('const importOutboundRunSnapshotsButton = document.querySelector("#importOutboundRunSnapshotsButton")')],
+  ["run snapshots import input selector exists", app.includes('const importOutboundRunSnapshotsInput = document.querySelector("#importOutboundRunSnapshotsInput")')],
   ["run snapshots clear selector exists", app.includes('const clearOutboundRunSnapshotsButton = document.querySelector("#clearOutboundRunSnapshotsButton")')],
   ["run snapshot list selector exists", app.includes('const outboundRunSnapshotList = document.querySelector("#outboundRunSnapshotList")')],
   ["run readiness summary exists", app.includes("function getOutboundRunReadinessSummary()")],
@@ -51,6 +55,11 @@ const checks = [
   ["run snapshot restore keeps snapshots", app.includes("runSnapshots: snapshots")],
   ["run snapshot save exists", app.includes("function saveOutboundRunSnapshot()")],
   ["run snapshots download exists", app.includes("function downloadOutboundRunSnapshots()")],
+  ["run snapshots import parser exists", app.includes("function getImportedOutboundRunSnapshots(payload)")],
+  ["run snapshots import handler exists", app.includes("async function importOutboundRunSnapshots(event)")],
+  ["run snapshots import parses JSON file", app.includes("JSON.parse(await file.text())")],
+  ["run snapshots import merges by id", app.includes("existingById.set(snapshot.id, snapshot)")],
+  ["run snapshots import cap exists", app.includes(".slice(0, 10);")],
   ["run snapshots clear exists", app.includes("function clearOutboundRunSnapshots()")],
   ["run snapshots download filename exists", app.includes("regent-growth-first-run-snapshots-")],
   ["run snapshots download disabled", app.includes("downloadOutboundRunSnapshotsButton.disabled = !(outboundSessionState.runSnapshots || []).length")],
@@ -63,13 +72,15 @@ const checks = [
   ["run packet JSON bound", app.includes('downloadOutboundRunPacketJsonButton.addEventListener("click", downloadOutboundRunPacketJson)')],
   ["run snapshot bound", app.includes('saveOutboundRunSnapshotButton.addEventListener("click", saveOutboundRunSnapshot)')],
   ["run snapshots download bound", app.includes('downloadOutboundRunSnapshotsButton.addEventListener("click", downloadOutboundRunSnapshots)')],
+  ["run snapshots import click bound", app.includes('importOutboundRunSnapshotsButton.addEventListener("click", () => importOutboundRunSnapshotsInput.click())')],
+  ["run snapshots import change bound", app.includes('importOutboundRunSnapshotsInput.addEventListener("change", importOutboundRunSnapshots)')],
   ["run snapshots clear bound", app.includes('clearOutboundRunSnapshotsButton.addEventListener("click", clearOutboundRunSnapshots)')],
   ["run snapshots list click bound", app.includes('outboundRunSnapshotList.addEventListener("click", handleOutboundRunSnapshotListClick)')],
   ["run readiness CSS exists", css.includes(".outbound-run-readiness")],
   ["snapshot compare CSS exists", css.includes(".outbound-run-snapshot-compare")],
   ["snapshot CSS exists", css.includes(".outbound-run-snapshot-list")],
-  ["README mentions snapshot restore", readme.includes("first-run snapshot history/export/clear/compare/restore")],
-  ["plan next snapshot import", plan.includes("- First run snapshot import")]
+  ["README mentions snapshot import", readme.includes("first-run snapshot history/export/import/clear/compare/restore")],
+  ["plan next snapshot naming", plan.includes("- First run snapshot naming")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
