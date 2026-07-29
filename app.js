@@ -391,6 +391,7 @@ const downloadOutboundRunPacketButton = document.querySelector("#downloadOutboun
 const downloadOutboundRunPacketJsonButton = document.querySelector("#downloadOutboundRunPacketJsonButton");
 const saveOutboundRunSnapshotButton = document.querySelector("#saveOutboundRunSnapshotButton");
 const downloadOutboundRunSnapshotsButton = document.querySelector("#downloadOutboundRunSnapshotsButton");
+const clearOutboundRunSnapshotsButton = document.querySelector("#clearOutboundRunSnapshotsButton");
 const copyOutboundSessionButton = document.querySelector("#copyOutboundSessionButton");
 const downloadOutboundSessionButton = document.querySelector("#downloadOutboundSessionButton");
 const resetOutboundSessionButton = document.querySelector("#resetOutboundSessionButton");
@@ -1024,6 +1025,7 @@ function renderOutboundSession() {
     : `Complete ${visibleIncompleteCount} visible outbound session step${visibleIncompleteCount === 1 ? "" : "s"}`;
   completeVisibleOutboundStepsButton.setAttribute("aria-label", completeVisibleOutboundStepsButton.title);
   downloadOutboundRunSnapshotsButton.disabled = !(outboundSessionState.runSnapshots || []).length;
+  clearOutboundRunSnapshotsButton.disabled = !(outboundSessionState.runSnapshots || []).length;
   resetOutboundSessionButton.disabled = completedCount === 0 && !outboundSessionState.notes;
   resetOutboundSessionButton.title = resetOutboundSessionButton.disabled
     ? "No outbound session progress to clear"
@@ -1210,6 +1212,25 @@ function downloadOutboundRunSnapshots() {
   };
   downloadFile(`regent-growth-first-run-snapshots-${stamp}.json`, JSON.stringify(payload, null, 2), "application/json;charset=utf-8");
   setDataStatus(`Downloaded ${snapshots.length} first real outbound run snapshot${snapshots.length === 1 ? "" : "s"}.`);
+}
+
+function clearOutboundRunSnapshots() {
+  const snapshots = outboundSessionState.runSnapshots || [];
+  if (snapshots.length === 0) {
+    setDataStatus("No first real outbound run snapshots to clear.", "error");
+    return;
+  }
+
+  const confirmed = confirm(`Clear ${snapshots.length} saved first real outbound run snapshot${snapshots.length === 1 ? "" : "s"}?`);
+  if (!confirmed) {
+    setDataStatus("Snapshot clear canceled.");
+    return;
+  }
+
+  outboundSessionState.runSnapshots = [];
+  saveOutboundSessionState();
+  renderOutboundSession();
+  setDataStatus("Cleared first real outbound run snapshots.");
 }
 
 async function copyOutboundRunPacket() {
@@ -9128,6 +9149,7 @@ downloadOutboundRunPacketButton.addEventListener("click", downloadOutboundRunPac
 downloadOutboundRunPacketJsonButton.addEventListener("click", downloadOutboundRunPacketJson);
 saveOutboundRunSnapshotButton.addEventListener("click", saveOutboundRunSnapshot);
 downloadOutboundRunSnapshotsButton.addEventListener("click", downloadOutboundRunSnapshots);
+clearOutboundRunSnapshotsButton.addEventListener("click", clearOutboundRunSnapshots);
 copyOutboundSessionButton.addEventListener("click", copyOutboundSessionSummary);
 downloadOutboundSessionButton.addEventListener("click", downloadOutboundSessionSummary);
 resetOutboundSessionButton.addEventListener("click", resetOutboundSessionState);

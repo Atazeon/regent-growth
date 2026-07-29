@@ -14,6 +14,7 @@ const checks = [
   ["run packet JSON button exists", html.includes('id="downloadOutboundRunPacketJsonButton"')],
   ["run snapshot button exists", html.includes('id="saveOutboundRunSnapshotButton"')],
   ["run snapshots download button exists", html.includes('id="downloadOutboundRunSnapshotsButton"')],
+  ["run snapshots clear button exists", html.includes('id="clearOutboundRunSnapshotsButton"')],
   ["run readiness region exists", html.includes('id="outboundRunReadiness"')],
   ["run snapshot list exists", html.includes('id="outboundRunSnapshotList"')],
   ["run readiness selector exists", app.includes('const outboundRunReadiness = document.querySelector("#outboundRunReadiness")')],
@@ -22,6 +23,7 @@ const checks = [
   ["run packet JSON selector exists", app.includes('const downloadOutboundRunPacketJsonButton = document.querySelector("#downloadOutboundRunPacketJsonButton")')],
   ["run snapshot selector exists", app.includes('const saveOutboundRunSnapshotButton = document.querySelector("#saveOutboundRunSnapshotButton")')],
   ["run snapshots download selector exists", app.includes('const downloadOutboundRunSnapshotsButton = document.querySelector("#downloadOutboundRunSnapshotsButton")')],
+  ["run snapshots clear selector exists", app.includes('const clearOutboundRunSnapshotsButton = document.querySelector("#clearOutboundRunSnapshotsButton")')],
   ["run snapshot list selector exists", app.includes('const outboundRunSnapshotList = document.querySelector("#outboundRunSnapshotList")')],
   ["run readiness summary exists", app.includes("function getOutboundRunReadinessSummary()")],
   ["run packet formatter exists", app.includes("function formatOutboundRunPacket()")],
@@ -37,18 +39,23 @@ const checks = [
   ["run snapshot render exists", app.includes("function renderOutboundRunSnapshots()")],
   ["run snapshot save exists", app.includes("function saveOutboundRunSnapshot()")],
   ["run snapshots download exists", app.includes("function downloadOutboundRunSnapshots()")],
+  ["run snapshots clear exists", app.includes("function clearOutboundRunSnapshots()")],
   ["run snapshots download filename exists", app.includes("regent-growth-first-run-snapshots-")],
   ["run snapshots download disabled", app.includes("downloadOutboundRunSnapshotsButton.disabled = !(outboundSessionState.runSnapshots || []).length")],
+  ["run snapshots clear disabled", app.includes("clearOutboundRunSnapshotsButton.disabled = !(outboundSessionState.runSnapshots || []).length")],
+  ["run snapshots clear confirm exists", app.includes("Clear ${snapshots.length} saved first real outbound run snapshot")],
+  ["run snapshots clear resets state", app.includes("outboundSessionState.runSnapshots = []")],
   ["run snapshot limit exists", app.includes(".slice(0, 10)")],
   ["run packet button bound", app.includes('copyOutboundRunPacketButton.addEventListener("click", copyOutboundRunPacket)')],
   ["run packet download bound", app.includes('downloadOutboundRunPacketButton.addEventListener("click", downloadOutboundRunPacket)')],
   ["run packet JSON bound", app.includes('downloadOutboundRunPacketJsonButton.addEventListener("click", downloadOutboundRunPacketJson)')],
   ["run snapshot bound", app.includes('saveOutboundRunSnapshotButton.addEventListener("click", saveOutboundRunSnapshot)')],
   ["run snapshots download bound", app.includes('downloadOutboundRunSnapshotsButton.addEventListener("click", downloadOutboundRunSnapshots)')],
+  ["run snapshots clear bound", app.includes('clearOutboundRunSnapshotsButton.addEventListener("click", clearOutboundRunSnapshots)')],
   ["run readiness CSS exists", css.includes(".outbound-run-readiness")],
   ["snapshot CSS exists", css.includes(".outbound-run-snapshot-list")],
-  ["README mentions snapshot export", readme.includes("first-run snapshot history/export")],
-  ["plan next snapshot clear", plan.includes("- First run snapshot clear")]
+  ["README mentions snapshot clear", readme.includes("first-run snapshot history/export/clear")],
+  ["plan next snapshot compare", plan.includes("- First run snapshot compare")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
