@@ -400,6 +400,14 @@ main {
   color: var(--muted);
 }
 
+.outbound-run-snapshot-list em {
+  color: var(--accent-dark);
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
 .outbound-run-snapshot-list p {
   margin: 0;
   color: var(--ink);

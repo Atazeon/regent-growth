@@ -73,6 +73,8 @@ const checks = [
   ["run snapshot note button exists", app.includes('data-action="note-outbound-run-snapshot"')],
   ["run snapshot label render exists", app.includes("snapshot.label || formatDateTime")],
   ["run snapshot note render exists", app.includes("snapshot.note ? `<p>")],
+  ["run snapshot latest cue exists", app.includes("Latest visible snapshot")],
+  ["run snapshot position cue exists", app.includes("Snapshot ${index + 1} of ${visibleSnapshots.length}")],
   ["run snapshot label timestamp exists", app.includes("snapshot.label ? `<small>")],
   ["run snapshot completed map helper exists", app.includes("function getOutboundSnapshotCompletedMap(snapshot)")],
   ["run snapshot improvement map helper exists", app.includes("function getOutboundSnapshotImprovementMap(snapshot)")],
@@ -133,9 +135,10 @@ const checks = [
   ["snapshot search CSS exists", css.includes(".outbound-run-snapshot-search")],
   ["snapshot actions CSS exists", css.includes(".outbound-run-snapshot-actions")],
   ["snapshot note CSS exists", css.includes(".outbound-run-snapshot-list p")],
+  ["snapshot timeline cue CSS exists", css.includes(".outbound-run-snapshot-list em")],
   ["snapshot CSS exists", css.includes(".outbound-run-snapshot-list")],
-  ["README mentions snapshot search reset", readme.includes("first-run snapshot history/export/import/filtered export/CSV export/copy summary/clear/compare/restore/naming/delete/notes/search/reset/count summary")],
-  ["plan next snapshot timeline polish", plan.includes("- First run snapshot timeline polish")]
+  ["README mentions snapshot timeline cues", readme.includes("first-run snapshot history/export/import/filtered export/CSV export/copy summary/clear/compare/restore/naming/delete/notes/search/reset/count summary/timeline cues")],
+  ["plan next snapshot readiness filter", plan.includes("- First run snapshot readiness filter")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);

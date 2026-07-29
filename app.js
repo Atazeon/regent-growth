@@ -1202,10 +1202,11 @@ function renderOutboundRunSnapshots() {
     `
     : `<span>Save at least two snapshots to compare first-run progress.</span>`;
   outboundRunSnapshotList.innerHTML = visibleSnapshots.length
-    ? visibleSnapshots.slice(0, 5).map((snapshot) => `
+    ? visibleSnapshots.slice(0, 5).map((snapshot, index) => `
       <article>
         <div>
           <strong>${escapeHtml(snapshot.label || formatDateTime(snapshot.savedAt || snapshot.exportedAt))}</strong>
+          <em>${escapeHtml(index === 0 ? "Latest visible snapshot" : `Snapshot ${index + 1} of ${visibleSnapshots.length}`)}</em>
           ${snapshot.label ? `<small>${escapeHtml(formatDateTime(snapshot.savedAt || snapshot.exportedAt))}</small>` : ""}
           ${snapshot.note ? `<p>${escapeHtml(snapshot.note)}</p>` : ""}
           <span>${escapeHtml(snapshot.readiness?.state || "Unknown")} | ${escapeHtml(snapshot.readiness?.completedCount || 0)} / ${escapeHtml(snapshot.readiness?.totalCount || outboundSessionItems.length)} steps | Outcomes: ${escapeHtml(snapshot.outcomes?.length || 0)} | Open fixes: ${escapeHtml(snapshot.readiness?.openFixCount || 0)} | Archived: ${escapeHtml(snapshot.readiness?.archivedFixCount || 0)}</span>
