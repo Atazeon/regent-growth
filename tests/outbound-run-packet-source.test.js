@@ -43,6 +43,12 @@ const checks = [
   ["run snapshot compare function exists", app.includes("function getOutboundRunSnapshotComparison(snapshots)")],
   ["run snapshot compare empty message exists", app.includes("Save at least two snapshots to compare first-run progress.")],
   ["run snapshot compare completed delta exists", app.includes("completedSteps: formatSignedDelta")],
+  ["run snapshot restore button exists", app.includes('data-action="restore-outbound-run-snapshot"')],
+  ["run snapshot completed map helper exists", app.includes("function getOutboundSnapshotCompletedMap(snapshot)")],
+  ["run snapshot improvement map helper exists", app.includes("function getOutboundSnapshotImprovementMap(snapshot)")],
+  ["run snapshot restore handler exists", app.includes("function restoreOutboundRunSnapshot(id)")],
+  ["run snapshot restore confirm exists", app.includes("Current outbound session progress will be replaced.")],
+  ["run snapshot restore keeps snapshots", app.includes("runSnapshots: snapshots")],
   ["run snapshot save exists", app.includes("function saveOutboundRunSnapshot()")],
   ["run snapshots download exists", app.includes("function downloadOutboundRunSnapshots()")],
   ["run snapshots clear exists", app.includes("function clearOutboundRunSnapshots()")],
@@ -58,11 +64,12 @@ const checks = [
   ["run snapshot bound", app.includes('saveOutboundRunSnapshotButton.addEventListener("click", saveOutboundRunSnapshot)')],
   ["run snapshots download bound", app.includes('downloadOutboundRunSnapshotsButton.addEventListener("click", downloadOutboundRunSnapshots)')],
   ["run snapshots clear bound", app.includes('clearOutboundRunSnapshotsButton.addEventListener("click", clearOutboundRunSnapshots)')],
+  ["run snapshots list click bound", app.includes('outboundRunSnapshotList.addEventListener("click", handleOutboundRunSnapshotListClick)')],
   ["run readiness CSS exists", css.includes(".outbound-run-readiness")],
   ["snapshot compare CSS exists", css.includes(".outbound-run-snapshot-compare")],
   ["snapshot CSS exists", css.includes(".outbound-run-snapshot-list")],
-  ["README mentions snapshot compare", readme.includes("first-run snapshot history/export/clear/compare")],
-  ["plan next snapshot restore", plan.includes("- First run snapshot restore")]
+  ["README mentions snapshot restore", readme.includes("first-run snapshot history/export/clear/compare/restore")],
+  ["plan next snapshot import", plan.includes("- First run snapshot import")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);

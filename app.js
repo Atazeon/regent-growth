@@ -1188,6 +1188,7 @@ function renderOutboundRunSnapshots() {
           <strong>${escapeHtml(formatDateTime(snapshot.savedAt || snapshot.exportedAt))}</strong>
           <span>${escapeHtml(snapshot.readiness?.state || "Unknown")} | ${escapeHtml(snapshot.readiness?.completedCount || 0)} / ${escapeHtml(snapshot.readiness?.totalCount || outboundSessionItems.length)} steps | Outcomes: ${escapeHtml(snapshot.outcomes?.length || 0)} | Open fixes: ${escapeHtml(snapshot.readiness?.openFixCount || 0)} | Archived: ${escapeHtml(snapshot.readiness?.archivedFixCount || 0)}</span>
         </div>
+        <button class="secondary-button" type="button" data-action="restore-outbound-run-snapshot" data-id="${escapeHtml(snapshot.id)}">Restore</button>
       </article>
     `).join("")
     : `<p class="empty-state">No first-run snapshots saved yet.</p>`;
@@ -1214,6 +1215,32 @@ function getOutboundRunSnapshotComparison(snapshots) {
     archivedFixes: formatSignedDelta((latestReadiness.archivedFixCount || 0) - (previousReadiness.archivedFixCount || 0)),
     state: `${latestReadiness.state || "Unknown"} from ${previousReadiness.state || "Unknown"}`
   };
+}
+
+function getOutboundSnapshotCompletedMap(snapshot) {
+  const items = snapshot.session?.items || [];
+  return items.reduce((completed, item) => {
+    if (outboundSessionItems.some((sessionItem) => sessionItem.id === item.id)) {
+      completed[item.id] = Boolean(item.completed);
+    }
+    return completed;
+  }, {});
+}
+
+function getOutboundSnapshotImprovementMap(snapshot) {
+  const fixes = Array.isArray(snapshot.fixes) ? snapshot.fixes : [];
+  return fixes.reduce((improvements, item) => {
+    if (item.id) {
+      improvements[item.id] = {
+        status: item.status || "Open",
+        owner: item.owner || "",
+        due: item.due || "",
+        executionNote: item.executionNote || "",
+        archivedAt: item.archivedAt || ""
+      };
+    }
+    return improvements;
+  }, {});
 }
 
 function saveOutboundRunSnapshot() {
@@ -1245,6 +1272,36 @@ function downloadOutboundRunSnapshots() {
   setDataStatus(`Downloaded ${snapshots.length} first real outbound run snapshot${snapshots.length === 1 ? "" : "s"}.`);
 }
 
+function restoreOutboundRunSnapshot(id) {
+  const snapshots = outboundSessionState.runSnapshots || [];
+  const snapshot = snapshots.find((item) => item.id === id);
+  if (!snapshot) {
+    setDataStatus("Saved first real outbound run snapshot was not found.", "error");
+    return;
+  }
+
+  const confirmed = confirm(`Restore first real outbound run snapshot from ${formatDateTime(snapshot.savedAt || snapshot.exportedAt)}? Current outbound session progress will be replaced.`);
+  if (!confirmed) {
+    setDataStatus("Snapshot restore canceled.");
+    return;
+  }
+
+  outboundSessionState = {
+    startedAt: snapshot.session?.startedAt || new Date().toISOString(),
+    updatedAt: snapshot.session?.updatedAt || snapshot.savedAt || snapshot.exportedAt || "",
+    completedAt: snapshot.session?.completedAt || "",
+    notes: snapshot.session?.notes || "",
+    outcomes: Array.isArray(snapshot.outcomes) ? snapshot.outcomes : [],
+    improvements: getOutboundSnapshotImprovementMap(snapshot),
+    archiveCloseoutExportedAt: snapshot.readiness?.archiveCloseoutExported ? outboundSessionState.archiveCloseoutExportedAt || snapshot.savedAt || snapshot.exportedAt || new Date().toISOString() : "",
+    runSnapshots: snapshots,
+    completed: getOutboundSnapshotCompletedMap(snapshot)
+  };
+  saveOutboundSessionState();
+  renderOutboundSession();
+  setDataStatus("Restored first real outbound run snapshot.");
+}
+
 function clearOutboundRunSnapshots() {
   const snapshots = outboundSessionState.runSnapshots || [];
   if (snapshots.length === 0) {
@@ -1262,6 +1319,12 @@ function clearOutboundRunSnapshots() {
   saveOutboundSessionState();
   renderOutboundSession();
   setDataStatus("Cleared first real outbound run snapshots.");
+}
+
+function handleOutboundRunSnapshotListClick(event) {
+  const restoreButton = event.target.closest('[data-action="restore-outbound-run-snapshot"]');
+  if (!restoreButton) return;
+  restoreOutboundRunSnapshot(restoreButton.dataset.id);
 }
 
 async function copyOutboundRunPacket() {
@@ -9181,6 +9244,7 @@ downloadOutboundRunPacketJsonButton.addEventListener("click", downloadOutboundRu
 saveOutboundRunSnapshotButton.addEventListener("click", saveOutboundRunSnapshot);
 downloadOutboundRunSnapshotsButton.addEventListener("click", downloadOutboundRunSnapshots);
 clearOutboundRunSnapshotsButton.addEventListener("click", clearOutboundRunSnapshots);
+outboundRunSnapshotList.addEventListener("click", handleOutboundRunSnapshotListClick);
 copyOutboundSessionButton.addEventListener("click", copyOutboundSessionSummary);
 downloadOutboundSessionButton.addEventListener("click", downloadOutboundSessionSummary);
 resetOutboundSessionButton.addEventListener("click", resetOutboundSessionState);
