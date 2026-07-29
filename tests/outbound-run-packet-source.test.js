@@ -147,11 +147,12 @@ const checks = [
   ["snapshot readiness select CSS exists", css.includes(".outbound-run-snapshot-search-row select")],
   ["snapshot search CSS exists", css.includes(".outbound-run-snapshot-search")],
   ["snapshot actions CSS exists", css.includes(".outbound-run-snapshot-actions")],
+  ["snapshot compact action CSS exists", css.includes(".outbound-run-snapshot-actions .secondary-button")],
   ["snapshot note CSS exists", css.includes(".outbound-run-snapshot-list p")],
   ["snapshot timeline cue CSS exists", css.includes(".outbound-run-snapshot-list em")],
   ["snapshot CSS exists", css.includes(".outbound-run-snapshot-list")],
-  ["README mentions snapshot readiness count chips", readme.includes("first-run snapshot history/export/import/filtered export/CSV export/copy summary/clear/compare/restore/naming/delete/notes/search/readiness filter/unknown readiness/filter reset/readiness counts/count chips/count summary/timeline cues")],
-  ["plan next snapshot compact controls", plan.includes("- First run snapshot compact controls")]
+  ["README mentions snapshot compact controls", readme.includes("first-run snapshot history/export/import/filtered export/CSV export/copy summary/clear/compare/restore/naming/delete/notes/search/readiness filter/unknown readiness/filter reset/readiness counts/count chips/count summary/timeline cues/compact controls")],
+  ["plan next snapshot QA pass", plan.includes("- First run snapshot QA pass")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);

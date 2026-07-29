@@ -444,6 +444,11 @@ main {
   gap: 8px;
 }
 
+.outbound-run-snapshot-actions .secondary-button {
+  padding: 6px 8px;
+  font-size: 0.78rem;
+}
+
 .outbound-session-list {
   display: grid;
   gap: 10px;
