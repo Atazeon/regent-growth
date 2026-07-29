@@ -388,6 +388,7 @@ const outboundImprovementQueue = document.querySelector("#outboundImprovementQue
 const outboundRunSnapshotCompare = document.querySelector("#outboundRunSnapshotCompare");
 const outboundRunSnapshotSummary = document.querySelector("#outboundRunSnapshotSummary");
 const outboundRunSnapshotSearch = document.querySelector("#outboundRunSnapshotSearch");
+const clearOutboundRunSnapshotSearchButton = document.querySelector("#clearOutboundRunSnapshotSearchButton");
 const focusNextOutboundStepButton = document.querySelector("#focusNextOutboundStepButton");
 const completeVisibleOutboundStepsButton = document.querySelector("#completeVisibleOutboundStepsButton");
 const copyOutboundRunPacketButton = document.querySelector("#copyOutboundRunPacketButton");
@@ -1187,6 +1188,7 @@ function renderOutboundRunSnapshots() {
   const snapshots = outboundSessionState.runSnapshots || [];
   const visibleSnapshots = getVisibleOutboundRunSnapshots(snapshots);
   const comparison = getOutboundRunSnapshotComparison(snapshots);
+  clearOutboundRunSnapshotSearchButton.disabled = !outboundRunSnapshotSearchValue.trim();
   downloadVisibleOutboundRunSnapshotsButton.disabled = visibleSnapshots.length === 0;
   downloadOutboundRunSnapshotsCsvButton.disabled = visibleSnapshots.length === 0;
   copyOutboundRunSnapshotsButton.disabled = visibleSnapshots.length === 0;
@@ -1573,6 +1575,13 @@ function handleOutboundRunSnapshotListClick(event) {
 function updateOutboundRunSnapshotSearch(event) {
   outboundRunSnapshotSearchValue = event.target.value;
   renderOutboundRunSnapshots();
+}
+
+function clearOutboundRunSnapshotSearch() {
+  outboundRunSnapshotSearchValue = "";
+  outboundRunSnapshotSearch.value = "";
+  renderOutboundRunSnapshots();
+  setDataStatus("Cleared first real outbound run snapshot search.");
 }
 
 async function copyOutboundRunPacket() {
@@ -9499,6 +9508,7 @@ importOutboundRunSnapshotsInput.addEventListener("change", importOutboundRunSnap
 clearOutboundRunSnapshotsButton.addEventListener("click", clearOutboundRunSnapshots);
 outboundRunSnapshotList.addEventListener("click", handleOutboundRunSnapshotListClick);
 outboundRunSnapshotSearch.addEventListener("input", updateOutboundRunSnapshotSearch);
+clearOutboundRunSnapshotSearchButton.addEventListener("click", clearOutboundRunSnapshotSearch);
 copyOutboundSessionButton.addEventListener("click", copyOutboundSessionSummary);
 downloadOutboundSessionButton.addEventListener("click", downloadOutboundSessionSummary);
 resetOutboundSessionButton.addEventListener("click", resetOutboundSessionState);

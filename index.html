@@ -85,7 +85,10 @@
         <div id="outboundRunReadiness" class="outbound-run-readiness" aria-live="polite"></div>
         <div id="outboundRunSnapshotCompare" class="outbound-run-snapshot-compare" aria-live="polite"></div>
         <div id="outboundRunSnapshotSummary" class="outbound-run-snapshot-summary" aria-live="polite"></div>
-        <input id="outboundRunSnapshotSearch" class="outbound-run-snapshot-search" type="search" placeholder="Search snapshots" aria-label="Search first real outbound run snapshots">
+        <div class="outbound-run-snapshot-search-row">
+          <input id="outboundRunSnapshotSearch" class="outbound-run-snapshot-search" type="search" placeholder="Search snapshots" aria-label="Search first real outbound run snapshots">
+          <button id="clearOutboundRunSnapshotSearchButton" class="secondary-button" type="button" title="Clear first real outbound run snapshot search" aria-label="Clear first real outbound run snapshot search">Clear search</button>
+        </div>
         <div id="outboundRunSnapshotList" class="outbound-run-snapshot-list" aria-label="First run snapshot history"></div>
         <div id="outboundSessionNextAction" class="outbound-session-next-action" aria-live="polite"></div>
         <form id="outboundOutcomeForm" class="outbound-outcome-form">

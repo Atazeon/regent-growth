@@ -24,11 +24,13 @@ const checks = [
   ["run snapshot compare region exists", html.includes('id="outboundRunSnapshotCompare"')],
   ["run snapshot summary region exists", html.includes('id="outboundRunSnapshotSummary"')],
   ["run snapshot search exists", html.includes('id="outboundRunSnapshotSearch"')],
+  ["run snapshot search clear button exists", html.includes('id="clearOutboundRunSnapshotSearchButton"')],
   ["run snapshot list exists", html.includes('id="outboundRunSnapshotList"')],
   ["run readiness selector exists", app.includes('const outboundRunReadiness = document.querySelector("#outboundRunReadiness")')],
   ["run snapshot compare selector exists", app.includes('const outboundRunSnapshotCompare = document.querySelector("#outboundRunSnapshotCompare")')],
   ["run snapshot summary selector exists", app.includes('const outboundRunSnapshotSummary = document.querySelector("#outboundRunSnapshotSummary")')],
   ["run snapshot search selector exists", app.includes('const outboundRunSnapshotSearch = document.querySelector("#outboundRunSnapshotSearch")')],
+  ["run snapshot search clear selector exists", app.includes('const clearOutboundRunSnapshotSearchButton = document.querySelector("#clearOutboundRunSnapshotSearchButton")')],
   ["run packet button selector exists", app.includes('const copyOutboundRunPacketButton = document.querySelector("#copyOutboundRunPacketButton")')],
   ["run packet download selector exists", app.includes('const downloadOutboundRunPacketButton = document.querySelector("#downloadOutboundRunPacketButton")')],
   ["run packet JSON selector exists", app.includes('const downloadOutboundRunPacketJsonButton = document.querySelector("#downloadOutboundRunPacketJsonButton")')],
@@ -56,6 +58,8 @@ const checks = [
   ["run snapshot search state exists", app.includes('let outboundRunSnapshotSearchValue = ""')],
   ["run snapshot search text helper exists", app.includes("function getOutboundSnapshotSearchText(snapshot)")],
   ["run snapshot visible helper exists", app.includes("function getVisibleOutboundRunSnapshots(snapshots)")],
+  ["run snapshot search clear handler exists", app.includes("function clearOutboundRunSnapshotSearch()")],
+  ["run snapshot search clear disabled exists", app.includes("clearOutboundRunSnapshotSearchButton.disabled = !outboundRunSnapshotSearchValue.trim()")],
   ["run snapshot summary formatter exists", app.includes("function formatOutboundRunSnapshotSummary(")],
   ["run snapshot summary text exists", app.includes("saved first-run snapshots shown | History keeps latest 10")],
   ["run snapshot search empty state exists", app.includes("No first-run snapshots match this search.")],
@@ -121,15 +125,17 @@ const checks = [
   ["run snapshots clear bound", app.includes('clearOutboundRunSnapshotsButton.addEventListener("click", clearOutboundRunSnapshots)')],
   ["run snapshots list click bound", app.includes('outboundRunSnapshotList.addEventListener("click", handleOutboundRunSnapshotListClick)')],
   ["run snapshots search bound", app.includes('outboundRunSnapshotSearch.addEventListener("input", updateOutboundRunSnapshotSearch)')],
+  ["run snapshots clear search bound", app.includes('clearOutboundRunSnapshotSearchButton.addEventListener("click", clearOutboundRunSnapshotSearch)')],
   ["run readiness CSS exists", css.includes(".outbound-run-readiness")],
   ["snapshot compare CSS exists", css.includes(".outbound-run-snapshot-compare")],
   ["snapshot summary CSS exists", css.includes(".outbound-run-snapshot-summary")],
+  ["snapshot search row CSS exists", css.includes(".outbound-run-snapshot-search-row")],
   ["snapshot search CSS exists", css.includes(".outbound-run-snapshot-search")],
   ["snapshot actions CSS exists", css.includes(".outbound-run-snapshot-actions")],
   ["snapshot note CSS exists", css.includes(".outbound-run-snapshot-list p")],
   ["snapshot CSS exists", css.includes(".outbound-run-snapshot-list")],
-  ["README mentions snapshot summary copy", readme.includes("first-run snapshot history/export/import/filtered export/CSV export/copy summary/clear/compare/restore/naming/delete/notes/search/count summary")],
-  ["plan next snapshot search reset", plan.includes("- First run snapshot search reset")]
+  ["README mentions snapshot search reset", readme.includes("first-run snapshot history/export/import/filtered export/CSV export/copy summary/clear/compare/restore/naming/delete/notes/search/reset/count summary")],
+  ["plan next snapshot timeline polish", plan.includes("- First run snapshot timeline polish")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);

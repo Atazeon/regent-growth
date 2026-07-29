@@ -19,7 +19,7 @@ const checks = [
   ["article due state renders", app.includes('data-due-state="${escapeHtml(getOutboundImprovementDueState(item))}"')],
   ["due chips styled", css.includes(".outbound-improvement-due-summary")],
   ["README mentions due dashboard", readme.includes("due date dashboard")],
-  ["plan next owner workload", plan.includes("- First run snapshot search reset")]
+  ["plan next owner workload", plan.includes("- First run snapshot timeline polish")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
