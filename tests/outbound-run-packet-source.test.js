@@ -64,7 +64,8 @@ const checks = [
   ["run snapshot readiness filter logic exists", app.includes('snapshot.readiness?.state === outboundRunSnapshotReadinessFilterValue')],
   ["run snapshot readiness filter handler exists", app.includes("function updateOutboundRunSnapshotReadinessFilter()")],
   ["run snapshot search clear handler exists", app.includes("function clearOutboundRunSnapshotSearch()")],
-  ["run snapshot search clear disabled exists", app.includes("clearOutboundRunSnapshotSearchButton.disabled = !outboundRunSnapshotSearchValue.trim()")],
+  ["run snapshot filter reset disabled exists", app.includes('clearOutboundRunSnapshotSearchButton.disabled = !outboundRunSnapshotSearchValue.trim() && outboundRunSnapshotReadinessFilterValue === "all"')],
+  ["run snapshot filter reset readiness exists", app.includes('outboundRunSnapshotReadinessFilter.value = "all"')],
   ["run snapshot summary formatter exists", app.includes("function formatOutboundRunSnapshotSummary(")],
   ["run snapshot summary text exists", app.includes("saved first-run snapshots shown | History keeps latest 10")],
   ["run snapshot search empty state exists", app.includes("No first-run snapshots match this search.")],
@@ -144,8 +145,8 @@ const checks = [
   ["snapshot note CSS exists", css.includes(".outbound-run-snapshot-list p")],
   ["snapshot timeline cue CSS exists", css.includes(".outbound-run-snapshot-list em")],
   ["snapshot CSS exists", css.includes(".outbound-run-snapshot-list")],
-  ["README mentions snapshot readiness filter", readme.includes("first-run snapshot history/export/import/filtered export/CSV export/copy summary/clear/compare/restore/naming/delete/notes/search/readiness filter/reset/count summary/timeline cues")],
-  ["plan next snapshot filter reset", plan.includes("- First run snapshot filter reset")]
+  ["README mentions snapshot filter reset", readme.includes("first-run snapshot history/export/import/filtered export/CSV export/copy summary/clear/compare/restore/naming/delete/notes/search/readiness filter/filter reset/count summary/timeline cues")],
+  ["plan next snapshot readiness counts", plan.includes("- First run snapshot readiness counts")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);

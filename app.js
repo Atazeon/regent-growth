@@ -1190,7 +1190,7 @@ function renderOutboundRunSnapshots() {
   const snapshots = outboundSessionState.runSnapshots || [];
   const visibleSnapshots = getVisibleOutboundRunSnapshots(snapshots);
   const comparison = getOutboundRunSnapshotComparison(snapshots);
-  clearOutboundRunSnapshotSearchButton.disabled = !outboundRunSnapshotSearchValue.trim();
+  clearOutboundRunSnapshotSearchButton.disabled = !outboundRunSnapshotSearchValue.trim() && outboundRunSnapshotReadinessFilterValue === "all";
   downloadVisibleOutboundRunSnapshotsButton.disabled = visibleSnapshots.length === 0;
   downloadOutboundRunSnapshotsCsvButton.disabled = visibleSnapshots.length === 0;
   copyOutboundRunSnapshotsButton.disabled = visibleSnapshots.length === 0;
@@ -1588,9 +1588,11 @@ function updateOutboundRunSnapshotReadinessFilter() {
 
 function clearOutboundRunSnapshotSearch() {
   outboundRunSnapshotSearchValue = "";
+  outboundRunSnapshotReadinessFilterValue = "all";
   outboundRunSnapshotSearch.value = "";
+  outboundRunSnapshotReadinessFilter.value = "all";
   renderOutboundRunSnapshots();
-  setDataStatus("Cleared first real outbound run snapshot search.");
+  setDataStatus("Cleared first real outbound run snapshot filters.");
 }
 
 async function copyOutboundRunPacket() {
