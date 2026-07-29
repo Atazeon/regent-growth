@@ -8,7 +8,7 @@ const plan = fs.readFileSync(path.join(root, "PROJECT_PLAN.md"), "utf8");
 const checks = [
   ["README mentions area filters", readme.includes("area filters") && readme.includes("next-step controls")],
   ["plan mentions area filters", plan.includes("area filters, next-step focus, visible-step completion")],
-  ["plan moved to outcomes", plan.includes("- First run snapshot delete")]
+  ["plan moved to outcomes", plan.includes("- First run snapshot notes")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);

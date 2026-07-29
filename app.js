@@ -1194,6 +1194,7 @@ function renderOutboundRunSnapshots() {
         <div class="outbound-run-snapshot-actions">
           <button class="secondary-button" type="button" data-action="rename-outbound-run-snapshot" data-id="${escapeHtml(snapshot.id)}">Rename</button>
           <button class="secondary-button" type="button" data-action="restore-outbound-run-snapshot" data-id="${escapeHtml(snapshot.id)}">Restore</button>
+          <button class="secondary-button" type="button" data-action="delete-outbound-run-snapshot" data-id="${escapeHtml(snapshot.id)}">Delete</button>
         </div>
       </article>
     `).join("")
@@ -1369,6 +1370,27 @@ function renameOutboundRunSnapshot(id) {
   setDataStatus(snapshot.label ? "Renamed first real outbound run snapshot." : "Cleared first real outbound run snapshot label.");
 }
 
+function deleteOutboundRunSnapshot(id) {
+  const snapshots = outboundSessionState.runSnapshots || [];
+  const snapshot = snapshots.find((item) => item.id === id);
+  if (!snapshot) {
+    setDataStatus("Saved first real outbound run snapshot was not found.", "error");
+    return;
+  }
+
+  const label = snapshot.label || formatDateTime(snapshot.savedAt || snapshot.exportedAt);
+  const confirmed = confirm(`Delete first real outbound run snapshot "${label}"?`);
+  if (!confirmed) {
+    setDataStatus("Snapshot delete canceled.");
+    return;
+  }
+
+  outboundSessionState.runSnapshots = snapshots.filter((item) => item.id !== id);
+  saveOutboundSessionState();
+  renderOutboundSession();
+  setDataStatus("Deleted first real outbound run snapshot.");
+}
+
 function clearOutboundRunSnapshots() {
   const snapshots = outboundSessionState.runSnapshots || [];
   if (snapshots.length === 0) {
@@ -1398,6 +1420,12 @@ function handleOutboundRunSnapshotListClick(event) {
   const renameButton = event.target.closest('[data-action="rename-outbound-run-snapshot"]');
   if (renameButton) {
     renameOutboundRunSnapshot(renameButton.dataset.id);
+    return;
+  }
+
+  const deleteButton = event.target.closest('[data-action="delete-outbound-run-snapshot"]');
+  if (deleteButton) {
+    deleteOutboundRunSnapshot(deleteButton.dataset.id);
   }
 }
 

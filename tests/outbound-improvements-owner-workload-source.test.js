@@ -16,7 +16,7 @@ const checks = [
   ["owner chips sort", app.includes(".sort((first, second) => second[1] - first[1] || first[0].localeCompare(second[0]))")],
   ["owner chips styled", css.includes(".outbound-improvement-owner-summary")],
   ["README mentions owner workload", readme.includes("owner workload")],
-  ["plan next owner filter", plan.includes("- First run snapshot delete")]
+  ["plan next owner filter", plan.includes("- First run snapshot notes")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
