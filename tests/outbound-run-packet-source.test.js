@@ -16,8 +16,10 @@ const checks = [
   ["run snapshots download button exists", html.includes('id="downloadOutboundRunSnapshotsButton"')],
   ["run snapshots clear button exists", html.includes('id="clearOutboundRunSnapshotsButton"')],
   ["run readiness region exists", html.includes('id="outboundRunReadiness"')],
+  ["run snapshot compare region exists", html.includes('id="outboundRunSnapshotCompare"')],
   ["run snapshot list exists", html.includes('id="outboundRunSnapshotList"')],
   ["run readiness selector exists", app.includes('const outboundRunReadiness = document.querySelector("#outboundRunReadiness")')],
+  ["run snapshot compare selector exists", app.includes('const outboundRunSnapshotCompare = document.querySelector("#outboundRunSnapshotCompare")')],
   ["run packet button selector exists", app.includes('const copyOutboundRunPacketButton = document.querySelector("#copyOutboundRunPacketButton")')],
   ["run packet download selector exists", app.includes('const downloadOutboundRunPacketButton = document.querySelector("#downloadOutboundRunPacketButton")')],
   ["run packet JSON selector exists", app.includes('const downloadOutboundRunPacketJsonButton = document.querySelector("#downloadOutboundRunPacketJsonButton")')],
@@ -37,6 +39,10 @@ const checks = [
   ["run packet JSON payload includes closeout fixes", app.includes("closeoutFixes: fixes.filter((item) => [\"Resolved\", \"Archived\"].includes(item.status))")],
   ["run snapshot state exists", app.includes("runSnapshots: []")],
   ["run snapshot render exists", app.includes("function renderOutboundRunSnapshots()")],
+  ["run snapshot compare formatter exists", app.includes("function formatSignedDelta(value)")],
+  ["run snapshot compare function exists", app.includes("function getOutboundRunSnapshotComparison(snapshots)")],
+  ["run snapshot compare empty message exists", app.includes("Save at least two snapshots to compare first-run progress.")],
+  ["run snapshot compare completed delta exists", app.includes("completedSteps: formatSignedDelta")],
   ["run snapshot save exists", app.includes("function saveOutboundRunSnapshot()")],
   ["run snapshots download exists", app.includes("function downloadOutboundRunSnapshots()")],
   ["run snapshots clear exists", app.includes("function clearOutboundRunSnapshots()")],
@@ -53,9 +59,10 @@ const checks = [
   ["run snapshots download bound", app.includes('downloadOutboundRunSnapshotsButton.addEventListener("click", downloadOutboundRunSnapshots)')],
   ["run snapshots clear bound", app.includes('clearOutboundRunSnapshotsButton.addEventListener("click", clearOutboundRunSnapshots)')],
   ["run readiness CSS exists", css.includes(".outbound-run-readiness")],
+  ["snapshot compare CSS exists", css.includes(".outbound-run-snapshot-compare")],
   ["snapshot CSS exists", css.includes(".outbound-run-snapshot-list")],
-  ["README mentions snapshot clear", readme.includes("first-run snapshot history/export/clear")],
-  ["plan next snapshot compare", plan.includes("- First run snapshot compare")]
+  ["README mentions snapshot compare", readme.includes("first-run snapshot history/export/clear/compare")],
+  ["plan next snapshot restore", plan.includes("- First run snapshot restore")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);

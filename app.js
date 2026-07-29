@@ -384,6 +384,7 @@ const outboundImprovementSummary = document.querySelector("#outboundImprovementS
 const outboundImprovementDueSummary = document.querySelector("#outboundImprovementDueSummary");
 const outboundImprovementOwnerSummary = document.querySelector("#outboundImprovementOwnerSummary");
 const outboundImprovementQueue = document.querySelector("#outboundImprovementQueue");
+const outboundRunSnapshotCompare = document.querySelector("#outboundRunSnapshotCompare");
 const focusNextOutboundStepButton = document.querySelector("#focusNextOutboundStepButton");
 const completeVisibleOutboundStepsButton = document.querySelector("#completeVisibleOutboundStepsButton");
 const copyOutboundRunPacketButton = document.querySelector("#copyOutboundRunPacketButton");
@@ -1173,6 +1174,13 @@ function getOutboundRunPacketRecord() {
 
 function renderOutboundRunSnapshots() {
   const snapshots = outboundSessionState.runSnapshots || [];
+  const comparison = getOutboundRunSnapshotComparison(snapshots);
+  outboundRunSnapshotCompare.innerHTML = comparison
+    ? `
+      <strong>Newest snapshot vs previous</strong>
+      <span>${escapeHtml(comparison.completedSteps)} completed steps | ${escapeHtml(comparison.outcomes)} outcomes | ${escapeHtml(comparison.openFixes)} open fixes | ${escapeHtml(comparison.archivedFixes)} archived fixes | State: ${escapeHtml(comparison.state)}</span>
+    `
+    : `<span>Save at least two snapshots to compare first-run progress.</span>`;
   outboundRunSnapshotList.innerHTML = snapshots.length
     ? snapshots.slice(0, 5).map((snapshot) => `
       <article>
@@ -1183,6 +1191,29 @@ function renderOutboundRunSnapshots() {
       </article>
     `).join("")
     : `<p class="empty-state">No first-run snapshots saved yet.</p>`;
+}
+
+function formatSignedDelta(value) {
+  const number = Number(value) || 0;
+  return number > 0 ? `+${number}` : `${number}`;
+}
+
+function getOutboundRunSnapshotComparison(snapshots) {
+  if (!Array.isArray(snapshots) || snapshots.length < 2) return null;
+
+  const latest = snapshots[0];
+  const previous = snapshots[1];
+  const latestReadiness = latest.readiness || {};
+  const previousReadiness = previous.readiness || {};
+  const latestOutcomes = Array.isArray(latest.outcomes) ? latest.outcomes.length : 0;
+  const previousOutcomes = Array.isArray(previous.outcomes) ? previous.outcomes.length : 0;
+  return {
+    completedSteps: formatSignedDelta((latestReadiness.completedCount || 0) - (previousReadiness.completedCount || 0)),
+    outcomes: formatSignedDelta(latestOutcomes - previousOutcomes),
+    openFixes: formatSignedDelta((latestReadiness.openFixCount || 0) - (previousReadiness.openFixCount || 0)),
+    archivedFixes: formatSignedDelta((latestReadiness.archivedFixCount || 0) - (previousReadiness.archivedFixCount || 0)),
+    state: `${latestReadiness.state || "Unknown"} from ${previousReadiness.state || "Unknown"}`
+  };
 }
 
 function saveOutboundRunSnapshot() {
