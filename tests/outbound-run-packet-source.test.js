@@ -69,7 +69,9 @@ const checks = [
   ["run snapshot filter reset disabled exists", app.includes('clearOutboundRunSnapshotSearchButton.disabled = !outboundRunSnapshotSearchValue.trim() && outboundRunSnapshotReadinessFilterValue === "all"')],
   ["run snapshot filter reset readiness exists", app.includes('outboundRunSnapshotReadinessFilter.value = "all"')],
   ["run snapshot summary formatter exists", app.includes("function formatOutboundRunSnapshotSummary(")],
-  ["run snapshot summary text exists", app.includes("saved first-run snapshots shown | Ready: ${readinessCounts.Ready} | Action Needed: ${readinessCounts[\"Action Needed\"]} | History keeps latest 10")],
+  ["run snapshot summary chip text exists", app.includes("saved first-run snapshots shown</span>")],
+  ["run snapshot summary ready chip exists", app.includes("<strong>Ready: ${escapeHtml(readinessCounts.Ready)}</strong>")],
+  ["run snapshot summary unknown chip exists", app.includes("<strong>Unknown: ${escapeHtml(readinessCounts.Unknown)}</strong>")],
   ["run snapshot search empty state exists", app.includes("No first-run snapshots match this search.")],
   ["run snapshot compare formatter exists", app.includes("function formatSignedDelta(value)")],
   ["run snapshot compare function exists", app.includes("function getOutboundRunSnapshotComparison(snapshots)")],
@@ -140,6 +142,7 @@ const checks = [
   ["run readiness CSS exists", css.includes(".outbound-run-readiness")],
   ["snapshot compare CSS exists", css.includes(".outbound-run-snapshot-compare")],
   ["snapshot summary CSS exists", css.includes(".outbound-run-snapshot-summary")],
+  ["snapshot summary chip CSS exists", css.includes(".outbound-run-snapshot-summary strong")],
   ["snapshot search row CSS exists", css.includes(".outbound-run-snapshot-search-row")],
   ["snapshot readiness select CSS exists", css.includes(".outbound-run-snapshot-search-row select")],
   ["snapshot search CSS exists", css.includes(".outbound-run-snapshot-search")],
@@ -147,8 +150,8 @@ const checks = [
   ["snapshot note CSS exists", css.includes(".outbound-run-snapshot-list p")],
   ["snapshot timeline cue CSS exists", css.includes(".outbound-run-snapshot-list em")],
   ["snapshot CSS exists", css.includes(".outbound-run-snapshot-list")],
-  ["README mentions snapshot unknown readiness", readme.includes("first-run snapshot history/export/import/filtered export/CSV export/copy summary/clear/compare/restore/naming/delete/notes/search/readiness filter/unknown readiness/filter reset/readiness counts/count summary/timeline cues")],
-  ["plan next snapshot readiness count chips", plan.includes("- First run snapshot readiness count chips")]
+  ["README mentions snapshot readiness count chips", readme.includes("first-run snapshot history/export/import/filtered export/CSV export/copy summary/clear/compare/restore/naming/delete/notes/search/readiness filter/unknown readiness/filter reset/readiness counts/count chips/count summary/timeline cues")],
+  ["plan next snapshot compact controls", plan.includes("- First run snapshot compact controls")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);

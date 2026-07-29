@@ -1195,8 +1195,14 @@ function renderOutboundRunSnapshots() {
   downloadVisibleOutboundRunSnapshotsButton.disabled = visibleSnapshots.length === 0;
   downloadOutboundRunSnapshotsCsvButton.disabled = visibleSnapshots.length === 0;
   copyOutboundRunSnapshotsButton.disabled = visibleSnapshots.length === 0;
-  outboundRunSnapshotSummary.textContent = snapshots.length
-    ? `${visibleSnapshots.length} of ${snapshots.length} saved first-run snapshots shown | Ready: ${readinessCounts.Ready} | Action Needed: ${readinessCounts["Action Needed"]} | History keeps latest 10`
+  outboundRunSnapshotSummary.innerHTML = snapshots.length
+    ? `
+      <span>${escapeHtml(visibleSnapshots.length)} of ${escapeHtml(snapshots.length)} saved first-run snapshots shown</span>
+      <strong>Ready: ${escapeHtml(readinessCounts.Ready)}</strong>
+      <strong>Action Needed: ${escapeHtml(readinessCounts["Action Needed"])}</strong>
+      <strong>Unknown: ${escapeHtml(readinessCounts.Unknown)}</strong>
+      <span>History keeps latest 10</span>
+    `
     : "No saved first-run snapshots yet.";
   outboundRunSnapshotCompare.innerHTML = comparison
     ? `
