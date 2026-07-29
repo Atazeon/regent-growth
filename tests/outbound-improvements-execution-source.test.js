@@ -19,7 +19,7 @@ const checks = [
   ["exports execution note", app.includes('Execution: ${item.executionNote || "No execution note yet."}')],
   ["execution CSS exists", css.includes(".outbound-improvement-execution")],
   ["README mentions execution notes", readme.includes("owner") && readme.includes("execution notes")],
-  ["plan next dashboard", plan.includes("- First run snapshot readiness counts")]
+  ["plan next dashboard", plan.includes("- First run snapshot unknown readiness")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);

@@ -1190,12 +1190,13 @@ function renderOutboundRunSnapshots() {
   const snapshots = outboundSessionState.runSnapshots || [];
   const visibleSnapshots = getVisibleOutboundRunSnapshots(snapshots);
   const comparison = getOutboundRunSnapshotComparison(snapshots);
+  const readinessCounts = getOutboundRunSnapshotReadinessCounts(snapshots);
   clearOutboundRunSnapshotSearchButton.disabled = !outboundRunSnapshotSearchValue.trim() && outboundRunSnapshotReadinessFilterValue === "all";
   downloadVisibleOutboundRunSnapshotsButton.disabled = visibleSnapshots.length === 0;
   downloadOutboundRunSnapshotsCsvButton.disabled = visibleSnapshots.length === 0;
   copyOutboundRunSnapshotsButton.disabled = visibleSnapshots.length === 0;
   outboundRunSnapshotSummary.textContent = snapshots.length
-    ? `${visibleSnapshots.length} of ${snapshots.length} saved first-run snapshots shown | History keeps latest 10`
+    ? `${visibleSnapshots.length} of ${snapshots.length} saved first-run snapshots shown | Ready: ${readinessCounts.Ready} | Action Needed: ${readinessCounts["Action Needed"]} | History keeps latest 10`
     : "No saved first-run snapshots yet.";
   outboundRunSnapshotCompare.innerHTML = comparison
     ? `
@@ -1243,6 +1244,14 @@ function getVisibleOutboundRunSnapshots(snapshots) {
   return snapshots
     .filter((snapshot) => outboundRunSnapshotReadinessFilterValue === "all" || snapshot.readiness?.state === outboundRunSnapshotReadinessFilterValue)
     .filter((snapshot) => !query || getOutboundSnapshotSearchText(snapshot).includes(query));
+}
+
+function getOutboundRunSnapshotReadinessCounts(snapshots) {
+  return snapshots.reduce((counts, snapshot) => {
+    const state = snapshot.readiness?.state || "Unknown";
+    counts[state] = (counts[state] || 0) + 1;
+    return counts;
+  }, { Ready: 0, "Action Needed": 0, Unknown: 0 });
 }
 
 function formatOutboundRunSnapshotSummary(snapshots = getVisibleOutboundRunSnapshots(outboundSessionState.runSnapshots || [])) {
