@@ -1187,10 +1187,14 @@ function renderOutboundRunSnapshots() {
     ? snapshots.slice(0, 5).map((snapshot) => `
       <article>
         <div>
-          <strong>${escapeHtml(formatDateTime(snapshot.savedAt || snapshot.exportedAt))}</strong>
+          <strong>${escapeHtml(snapshot.label || formatDateTime(snapshot.savedAt || snapshot.exportedAt))}</strong>
+          ${snapshot.label ? `<small>${escapeHtml(formatDateTime(snapshot.savedAt || snapshot.exportedAt))}</small>` : ""}
           <span>${escapeHtml(snapshot.readiness?.state || "Unknown")} | ${escapeHtml(snapshot.readiness?.completedCount || 0)} / ${escapeHtml(snapshot.readiness?.totalCount || outboundSessionItems.length)} steps | Outcomes: ${escapeHtml(snapshot.outcomes?.length || 0)} | Open fixes: ${escapeHtml(snapshot.readiness?.openFixCount || 0)} | Archived: ${escapeHtml(snapshot.readiness?.archivedFixCount || 0)}</span>
         </div>
-        <button class="secondary-button" type="button" data-action="restore-outbound-run-snapshot" data-id="${escapeHtml(snapshot.id)}">Restore</button>
+        <div class="outbound-run-snapshot-actions">
+          <button class="secondary-button" type="button" data-action="rename-outbound-run-snapshot" data-id="${escapeHtml(snapshot.id)}">Rename</button>
+          <button class="secondary-button" type="button" data-action="restore-outbound-run-snapshot" data-id="${escapeHtml(snapshot.id)}">Restore</button>
+        </div>
       </article>
     `).join("")
     : `<p class="empty-state">No first-run snapshots saved yet.</p>`;
@@ -1248,6 +1252,7 @@ function getOutboundSnapshotImprovementMap(snapshot) {
 function saveOutboundRunSnapshot() {
   const snapshot = {
     id: crypto.randomUUID(),
+    label: "",
     savedAt: new Date().toISOString(),
     ...getOutboundRunPacketRecord()
   };
@@ -1281,6 +1286,7 @@ function getImportedOutboundRunSnapshots(payload) {
     .map((snapshot) => ({
       ...snapshot,
       id: snapshot.id || crypto.randomUUID(),
+      label: snapshot.label || "",
       savedAt: snapshot.savedAt || snapshot.exportedAt || new Date().toISOString(),
       exportedAt: snapshot.exportedAt || snapshot.savedAt || new Date().toISOString(),
       outcomes: Array.isArray(snapshot.outcomes) ? snapshot.outcomes : [],
@@ -1343,6 +1349,26 @@ function restoreOutboundRunSnapshot(id) {
   setDataStatus("Restored first real outbound run snapshot.");
 }
 
+function renameOutboundRunSnapshot(id) {
+  const snapshots = outboundSessionState.runSnapshots || [];
+  const snapshot = snapshots.find((item) => item.id === id);
+  if (!snapshot) {
+    setDataStatus("Saved first real outbound run snapshot was not found.", "error");
+    return;
+  }
+
+  const label = prompt("Snapshot label", snapshot.label || "");
+  if (label === null) {
+    setDataStatus("Snapshot rename canceled.");
+    return;
+  }
+
+  snapshot.label = label.trim();
+  saveOutboundSessionState();
+  renderOutboundSession();
+  setDataStatus(snapshot.label ? "Renamed first real outbound run snapshot." : "Cleared first real outbound run snapshot label.");
+}
+
 function clearOutboundRunSnapshots() {
   const snapshots = outboundSessionState.runSnapshots || [];
   if (snapshots.length === 0) {
@@ -1364,8 +1390,15 @@ function clearOutboundRunSnapshots() {
 
 function handleOutboundRunSnapshotListClick(event) {
   const restoreButton = event.target.closest('[data-action="restore-outbound-run-snapshot"]');
-  if (!restoreButton) return;
-  restoreOutboundRunSnapshot(restoreButton.dataset.id);
+  if (restoreButton) {
+    restoreOutboundRunSnapshot(restoreButton.dataset.id);
+    return;
+  }
+
+  const renameButton = event.target.closest('[data-action="rename-outbound-run-snapshot"]');
+  if (renameButton) {
+    renameOutboundRunSnapshot(renameButton.dataset.id);
+  }
 }
 
 async function copyOutboundRunPacket() {

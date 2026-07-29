@@ -375,9 +375,20 @@ main {
   gap: 4px;
 }
 
+.outbound-run-snapshot-list small {
+  color: var(--muted);
+}
+
 .outbound-run-snapshot-list span {
   color: var(--muted);
   font-size: 0.88rem;
+}
+
+.outbound-run-snapshot-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .outbound-session-list {
