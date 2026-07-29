@@ -395,6 +395,7 @@ const clearOutboundRunSnapshotSearchButton = document.querySelector("#clearOutbo
 const focusNextOutboundStepButton = document.querySelector("#focusNextOutboundStepButton");
 const completeVisibleOutboundStepsButton = document.querySelector("#completeVisibleOutboundStepsButton");
 const copyOutboundRunPacketButton = document.querySelector("#copyOutboundRunPacketButton");
+const copyOutboundRunExecutionButton = document.querySelector("#copyOutboundRunExecutionButton");
 const downloadOutboundRunPacketButton = document.querySelector("#downloadOutboundRunPacketButton");
 const downloadOutboundRunPacketJsonButton = document.querySelector("#downloadOutboundRunPacketJsonButton");
 const saveOutboundRunSnapshotButton = document.querySelector("#saveOutboundRunSnapshotButton");
@@ -1657,6 +1658,30 @@ function clearOutboundRunSnapshotSearch() {
 async function copyOutboundRunPacket() {
   const copiedDirectly = await copyTextWithFallback(formatOutboundRunPacket());
   setDataStatus(copiedDirectly ? "Copied first real outbound run packet." : "Selected and copied first real outbound run packet.");
+}
+
+function formatOutboundRunExecutionChecklist() {
+  const readiness = getOutboundRunReadinessSummary();
+  const launchChecklist = getOutboundRunSnapshotLaunchChecklist(outboundSessionState.runSnapshots || [], getVisibleOutboundRunSnapshots(outboundSessionState.runSnapshots || []));
+  return [
+    "First Real Outbound Run Execution Checklist",
+    `Readiness: ${readiness.state}`,
+    `Next step: ${readiness.nextStep}`,
+    "",
+    "Snapshot Launch Checks",
+    ...launchChecklist.map((item) => `${item.ready ? "[x]" : "[ ]"} ${item.label}`),
+    "",
+    "Blockers",
+    ...(readiness.blockers.length ? readiness.blockers.map((blocker) => `- ${blocker}`) : ["- None"]),
+    "",
+    "Execution Rule",
+    "Run the next visible outbound step, log outcomes, save a snapshot, then export or copy the run packet."
+  ].join("\n");
+}
+
+async function copyOutboundRunExecutionChecklist() {
+  const copiedDirectly = await copyTextWithFallback(formatOutboundRunExecutionChecklist());
+  setDataStatus(copiedDirectly ? "Copied first real outbound run execution checklist." : "Selected and copied first real outbound run execution checklist.");
 }
 
 function downloadOutboundRunPacket() {
@@ -9566,6 +9591,7 @@ outboundSessionAreaFilter.addEventListener("change", () => {
 focusNextOutboundStepButton.addEventListener("click", focusNextOutboundStep);
 completeVisibleOutboundStepsButton.addEventListener("click", completeVisibleOutboundSteps);
 copyOutboundRunPacketButton.addEventListener("click", copyOutboundRunPacket);
+copyOutboundRunExecutionButton.addEventListener("click", copyOutboundRunExecutionChecklist);
 downloadOutboundRunPacketButton.addEventListener("click", downloadOutboundRunPacket);
 downloadOutboundRunPacketJsonButton.addEventListener("click", downloadOutboundRunPacketJson);
 saveOutboundRunSnapshotButton.addEventListener("click", saveOutboundRunSnapshot);

@@ -10,6 +10,7 @@ const plan = fs.readFileSync(path.join(root, "PROJECT_PLAN.md"), "utf8");
 
 const checks = [
   ["run packet button exists", html.includes('id="copyOutboundRunPacketButton"')],
+  ["run execution button exists", html.includes('id="copyOutboundRunExecutionButton"')],
   ["run packet download button exists", html.includes('id="downloadOutboundRunPacketButton"')],
   ["run packet JSON button exists", html.includes('id="downloadOutboundRunPacketJsonButton"')],
   ["run snapshot button exists", html.includes('id="saveOutboundRunSnapshotButton"')],
@@ -38,6 +39,7 @@ const checks = [
   ["run snapshot readiness filter selector exists", app.includes('const outboundRunSnapshotReadinessFilter = document.querySelector("#outboundRunSnapshotReadinessFilter")')],
   ["run snapshot search clear selector exists", app.includes('const clearOutboundRunSnapshotSearchButton = document.querySelector("#clearOutboundRunSnapshotSearchButton")')],
   ["run packet button selector exists", app.includes('const copyOutboundRunPacketButton = document.querySelector("#copyOutboundRunPacketButton")')],
+  ["run execution button selector exists", app.includes('const copyOutboundRunExecutionButton = document.querySelector("#copyOutboundRunExecutionButton")')],
   ["run packet download selector exists", app.includes('const downloadOutboundRunPacketButton = document.querySelector("#downloadOutboundRunPacketButton")')],
   ["run packet JSON selector exists", app.includes('const downloadOutboundRunPacketJsonButton = document.querySelector("#downloadOutboundRunPacketJsonButton")')],
   ["run snapshot selector exists", app.includes('const saveOutboundRunSnapshotButton = document.querySelector("#saveOutboundRunSnapshotButton")')],
@@ -60,6 +62,9 @@ const checks = [
   ["run packet JSON handler exists", app.includes("function downloadOutboundRunPacketJson()")],
   ["run packet download filename exists", app.includes("regent-growth-first-run-packet-")],
   ["run packet JSON payload includes closeout fixes", app.includes("closeoutFixes: fixes.filter((item) => [\"Resolved\", \"Archived\"].includes(item.status))")],
+  ["run execution checklist formatter exists", app.includes("function formatOutboundRunExecutionChecklist()")],
+  ["run execution checklist handler exists", app.includes("async function copyOutboundRunExecutionChecklist()")],
+  ["run execution checklist rule exists", app.includes("Run the next visible outbound step, log outcomes, save a snapshot")],
   ["run snapshot state exists", app.includes("runSnapshots: []")],
   ["run snapshot render exists", app.includes("function renderOutboundRunSnapshots()")],
   ["run snapshot search state exists", app.includes('let outboundRunSnapshotSearchValue = ""')],
@@ -138,6 +143,7 @@ const checks = [
   ["run snapshots clear resets state", app.includes("outboundSessionState.runSnapshots = []")],
   ["run snapshot limit exists", app.includes(".slice(0, 10)")],
   ["run packet button bound", app.includes('copyOutboundRunPacketButton.addEventListener("click", copyOutboundRunPacket)')],
+  ["run execution button bound", app.includes('copyOutboundRunExecutionButton.addEventListener("click", copyOutboundRunExecutionChecklist)')],
   ["run packet download bound", app.includes('downloadOutboundRunPacketButton.addEventListener("click", downloadOutboundRunPacket)')],
   ["run packet JSON bound", app.includes('downloadOutboundRunPacketJsonButton.addEventListener("click", downloadOutboundRunPacketJson)')],
   ["run snapshot bound", app.includes('saveOutboundRunSnapshotButton.addEventListener("click", saveOutboundRunSnapshot)')],
@@ -168,8 +174,8 @@ const checks = [
   ["snapshot note CSS exists", css.includes(".outbound-run-snapshot-list p")],
   ["snapshot timeline cue CSS exists", css.includes(".outbound-run-snapshot-list em")],
   ["snapshot CSS exists", css.includes(".outbound-run-snapshot-list")],
-  ["README mentions launch checklist copy", readme.includes("first-run snapshot history/export/import/filtered export/CSV export/copy summary/launch checklist copy/clear/compare/restore/naming/delete/notes/search/readiness filter/unknown readiness/filter reset/readiness counts/count chips/count summary/timeline cues/compact controls/QA hardening/launch checklist")],
-  ["plan next run execution", plan.includes("- First real outbound run execution")]
+  ["README mentions run execution checklist", readme.includes("first real run packet copy/execution checklist/download/JSON export")],
+  ["plan next live dry run", plan.includes("- First real outbound run live dry run")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
