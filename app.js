@@ -396,6 +396,7 @@ const downloadOutboundRunPacketJsonButton = document.querySelector("#downloadOut
 const saveOutboundRunSnapshotButton = document.querySelector("#saveOutboundRunSnapshotButton");
 const downloadOutboundRunSnapshotsButton = document.querySelector("#downloadOutboundRunSnapshotsButton");
 const downloadVisibleOutboundRunSnapshotsButton = document.querySelector("#downloadVisibleOutboundRunSnapshotsButton");
+const downloadOutboundRunSnapshotsCsvButton = document.querySelector("#downloadOutboundRunSnapshotsCsvButton");
 const importOutboundRunSnapshotsButton = document.querySelector("#importOutboundRunSnapshotsButton");
 const importOutboundRunSnapshotsInput = document.querySelector("#importOutboundRunSnapshotsInput");
 const clearOutboundRunSnapshotsButton = document.querySelector("#clearOutboundRunSnapshotsButton");
@@ -1033,6 +1034,7 @@ function renderOutboundSession() {
   completeVisibleOutboundStepsButton.setAttribute("aria-label", completeVisibleOutboundStepsButton.title);
   downloadOutboundRunSnapshotsButton.disabled = !(outboundSessionState.runSnapshots || []).length;
   downloadVisibleOutboundRunSnapshotsButton.disabled = getVisibleOutboundRunSnapshots(outboundSessionState.runSnapshots || []).length === 0;
+  downloadOutboundRunSnapshotsCsvButton.disabled = getVisibleOutboundRunSnapshots(outboundSessionState.runSnapshots || []).length === 0;
   clearOutboundRunSnapshotsButton.disabled = !(outboundSessionState.runSnapshots || []).length;
   resetOutboundSessionButton.disabled = completedCount === 0 && !outboundSessionState.notes;
   resetOutboundSessionButton.title = resetOutboundSessionButton.disabled
@@ -1184,6 +1186,7 @@ function renderOutboundRunSnapshots() {
   const visibleSnapshots = getVisibleOutboundRunSnapshots(snapshots);
   const comparison = getOutboundRunSnapshotComparison(snapshots);
   downloadVisibleOutboundRunSnapshotsButton.disabled = visibleSnapshots.length === 0;
+  downloadOutboundRunSnapshotsCsvButton.disabled = visibleSnapshots.length === 0;
   outboundRunSnapshotSummary.textContent = snapshots.length
     ? `${visibleSnapshots.length} of ${snapshots.length} saved first-run snapshots shown | History keeps latest 10`
     : "No saved first-run snapshots yet.";
@@ -1329,6 +1332,34 @@ function downloadVisibleOutboundRunSnapshots() {
   };
   downloadFile(`regent-growth-first-run-visible-snapshots-${stamp}.json`, JSON.stringify(payload, null, 2), "application/json;charset=utf-8");
   setDataStatus(`Downloaded ${snapshots.length} visible first real outbound run snapshot${snapshots.length === 1 ? "" : "s"}.`);
+}
+
+function downloadOutboundRunSnapshotsCsv() {
+  const snapshots = getVisibleOutboundRunSnapshots(outboundSessionState.runSnapshots || []);
+  if (snapshots.length === 0) {
+    setDataStatus("No visible first real outbound run snapshots to export as CSV.", "error");
+    return;
+  }
+
+  const headers = ["label", "note", "savedAt", "state", "completedSteps", "totalSteps", "outcomes", "openFixes", "resolvedFixes", "archivedFixes"];
+  const rows = snapshots.map((snapshot) => {
+    const readiness = snapshot.readiness || {};
+    return [
+      snapshot.label || "",
+      snapshot.note || "",
+      snapshot.savedAt || snapshot.exportedAt || "",
+      readiness.state || "",
+      readiness.completedCount || 0,
+      readiness.totalCount || outboundSessionItems.length,
+      Array.isArray(snapshot.outcomes) ? snapshot.outcomes.length : 0,
+      readiness.openFixCount || 0,
+      readiness.resolvedFixCount || 0,
+      readiness.archivedFixCount || 0
+    ];
+  });
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-first-run-snapshots-${stamp}.csv`, [headers, ...rows].map((row) => row.map(csvCell).join(",")).join("\n"), "text/csv;charset=utf-8");
+  setDataStatus(`Downloaded ${snapshots.length} first real outbound run snapshot${snapshots.length === 1 ? "" : "s"} as CSV.`);
 }
 
 function getImportedOutboundRunSnapshots(payload) {
@@ -9429,6 +9460,7 @@ downloadOutboundRunPacketJsonButton.addEventListener("click", downloadOutboundRu
 saveOutboundRunSnapshotButton.addEventListener("click", saveOutboundRunSnapshot);
 downloadOutboundRunSnapshotsButton.addEventListener("click", downloadOutboundRunSnapshots);
 downloadVisibleOutboundRunSnapshotsButton.addEventListener("click", downloadVisibleOutboundRunSnapshots);
+downloadOutboundRunSnapshotsCsvButton.addEventListener("click", downloadOutboundRunSnapshotsCsv);
 importOutboundRunSnapshotsButton.addEventListener("click", () => importOutboundRunSnapshotsInput.click());
 importOutboundRunSnapshotsInput.addEventListener("change", importOutboundRunSnapshots);
 clearOutboundRunSnapshotsButton.addEventListener("click", clearOutboundRunSnapshots);

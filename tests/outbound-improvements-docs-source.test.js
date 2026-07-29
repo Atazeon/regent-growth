@@ -8,7 +8,7 @@ const plan = fs.readFileSync(path.join(root, "PROJECT_PLAN.md"), "utf8");
 const checks = [
   ["README mentions fix queue", readme.includes("outcome-driven fix queue")],
   ["plan mentions queue statuses", plan.includes("filterable outcome-driven fix queue with open/in-progress/resolved/archived statuses")],
-  ["plan next triage", plan.includes("- First run snapshot CSV export")]
+  ["plan next triage", plan.includes("- First run snapshot summary copy")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
