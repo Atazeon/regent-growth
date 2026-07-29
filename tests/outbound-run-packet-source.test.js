@@ -50,15 +50,20 @@ const checks = [
   ["run snapshot restore button exists", app.includes('data-action="restore-outbound-run-snapshot"')],
   ["run snapshot rename button exists", app.includes('data-action="rename-outbound-run-snapshot"')],
   ["run snapshot delete button exists", app.includes('data-action="delete-outbound-run-snapshot"')],
+  ["run snapshot note button exists", app.includes('data-action="note-outbound-run-snapshot"')],
   ["run snapshot label render exists", app.includes("snapshot.label || formatDateTime")],
+  ["run snapshot note render exists", app.includes("snapshot.note ? `<p>")],
   ["run snapshot label timestamp exists", app.includes("snapshot.label ? `<small>")],
   ["run snapshot completed map helper exists", app.includes("function getOutboundSnapshotCompletedMap(snapshot)")],
   ["run snapshot improvement map helper exists", app.includes("function getOutboundSnapshotImprovementMap(snapshot)")],
   ["run snapshot restore handler exists", app.includes("function restoreOutboundRunSnapshot(id)")],
   ["run snapshot rename handler exists", app.includes("function renameOutboundRunSnapshot(id)")],
   ["run snapshot delete handler exists", app.includes("function deleteOutboundRunSnapshot(id)")],
+  ["run snapshot note handler exists", app.includes("function updateOutboundRunSnapshotNote(id)")],
   ["run snapshot rename prompt exists", app.includes('prompt("Snapshot label", snapshot.label || "")')],
+  ["run snapshot note prompt exists", app.includes('prompt("Snapshot note", snapshot.note || "")')],
   ["run snapshot label save exists", app.includes("snapshot.label = label.trim()")],
+  ["run snapshot note save exists", app.includes("snapshot.note = note.trim()")],
   ["run snapshot delete confirm exists", app.includes('Delete first real outbound run snapshot "${label}"?')],
   ["run snapshot delete filter exists", app.includes("snapshots.filter((item) => item.id !== id)")],
   ["run snapshot restore confirm exists", app.includes("Current outbound session progress will be replaced.")],
@@ -89,9 +94,10 @@ const checks = [
   ["run readiness CSS exists", css.includes(".outbound-run-readiness")],
   ["snapshot compare CSS exists", css.includes(".outbound-run-snapshot-compare")],
   ["snapshot actions CSS exists", css.includes(".outbound-run-snapshot-actions")],
+  ["snapshot note CSS exists", css.includes(".outbound-run-snapshot-list p")],
   ["snapshot CSS exists", css.includes(".outbound-run-snapshot-list")],
-  ["README mentions snapshot delete", readme.includes("first-run snapshot history/export/import/clear/compare/restore/naming/delete")],
-  ["plan next snapshot notes", plan.includes("- First run snapshot notes")]
+  ["README mentions snapshot notes", readme.includes("first-run snapshot history/export/import/clear/compare/restore/naming/delete/notes")],
+  ["plan next snapshot search", plan.includes("- First run snapshot search")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
