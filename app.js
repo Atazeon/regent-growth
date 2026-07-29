@@ -222,6 +222,7 @@ let dailyRunStopRequested = false;
 let outboundSessionAreaFilterValue = "all";
 let outboundImprovementStatusFilterValue = "all";
 let outboundImprovementOwnerFilterValue = "all";
+let outboundRunSnapshotSearchValue = "";
 let crmSyncInProgress = false;
 let pendingTeamRestore = null;
 let teamBackupsCache = [];
@@ -385,6 +386,7 @@ const outboundImprovementDueSummary = document.querySelector("#outboundImproveme
 const outboundImprovementOwnerSummary = document.querySelector("#outboundImprovementOwnerSummary");
 const outboundImprovementQueue = document.querySelector("#outboundImprovementQueue");
 const outboundRunSnapshotCompare = document.querySelector("#outboundRunSnapshotCompare");
+const outboundRunSnapshotSearch = document.querySelector("#outboundRunSnapshotSearch");
 const focusNextOutboundStepButton = document.querySelector("#focusNextOutboundStepButton");
 const completeVisibleOutboundStepsButton = document.querySelector("#completeVisibleOutboundStepsButton");
 const copyOutboundRunPacketButton = document.querySelector("#copyOutboundRunPacketButton");
@@ -1176,6 +1178,7 @@ function getOutboundRunPacketRecord() {
 
 function renderOutboundRunSnapshots() {
   const snapshots = outboundSessionState.runSnapshots || [];
+  const visibleSnapshots = getVisibleOutboundRunSnapshots(snapshots);
   const comparison = getOutboundRunSnapshotComparison(snapshots);
   outboundRunSnapshotCompare.innerHTML = comparison
     ? `
@@ -1183,8 +1186,8 @@ function renderOutboundRunSnapshots() {
       <span>${escapeHtml(comparison.completedSteps)} completed steps | ${escapeHtml(comparison.outcomes)} outcomes | ${escapeHtml(comparison.openFixes)} open fixes | ${escapeHtml(comparison.archivedFixes)} archived fixes | State: ${escapeHtml(comparison.state)}</span>
     `
     : `<span>Save at least two snapshots to compare first-run progress.</span>`;
-  outboundRunSnapshotList.innerHTML = snapshots.length
-    ? snapshots.slice(0, 5).map((snapshot) => `
+  outboundRunSnapshotList.innerHTML = visibleSnapshots.length
+    ? visibleSnapshots.slice(0, 5).map((snapshot) => `
       <article>
         <div>
           <strong>${escapeHtml(snapshot.label || formatDateTime(snapshot.savedAt || snapshot.exportedAt))}</strong>
@@ -1200,7 +1203,27 @@ function renderOutboundRunSnapshots() {
         </div>
       </article>
     `).join("")
-    : `<p class="empty-state">No first-run snapshots saved yet.</p>`;
+    : `<p class="empty-state">${snapshots.length ? "No first-run snapshots match this search." : "No first-run snapshots saved yet."}</p>`;
+}
+
+function getOutboundSnapshotSearchText(snapshot) {
+  const readiness = snapshot.readiness || {};
+  return [
+    snapshot.label,
+    snapshot.note,
+    readiness.state,
+    readiness.completedCount,
+    readiness.totalCount,
+    readiness.openFixCount,
+    readiness.archivedFixCount,
+    formatDateTime(snapshot.savedAt || snapshot.exportedAt)
+  ].filter((value) => value !== undefined && value !== null).join(" ").toLowerCase();
+}
+
+function getVisibleOutboundRunSnapshots(snapshots) {
+  const query = outboundRunSnapshotSearchValue.trim().toLowerCase();
+  if (!query) return snapshots;
+  return snapshots.filter((snapshot) => getOutboundSnapshotSearchText(snapshot).includes(query));
 }
 
 function formatSignedDelta(value) {
@@ -1457,6 +1480,11 @@ function handleOutboundRunSnapshotListClick(event) {
   if (deleteButton) {
     deleteOutboundRunSnapshot(deleteButton.dataset.id);
   }
+}
+
+function updateOutboundRunSnapshotSearch(event) {
+  outboundRunSnapshotSearchValue = event.target.value;
+  renderOutboundRunSnapshots();
 }
 
 async function copyOutboundRunPacket() {
@@ -9379,6 +9407,7 @@ importOutboundRunSnapshotsButton.addEventListener("click", () => importOutboundR
 importOutboundRunSnapshotsInput.addEventListener("change", importOutboundRunSnapshots);
 clearOutboundRunSnapshotsButton.addEventListener("click", clearOutboundRunSnapshots);
 outboundRunSnapshotList.addEventListener("click", handleOutboundRunSnapshotListClick);
+outboundRunSnapshotSearch.addEventListener("input", updateOutboundRunSnapshotSearch);
 copyOutboundSessionButton.addEventListener("click", copyOutboundSessionSummary);
 downloadOutboundSessionButton.addEventListener("click", downloadOutboundSessionSummary);
 resetOutboundSessionButton.addEventListener("click", resetOutboundSessionState);

@@ -19,9 +19,11 @@ const checks = [
   ["run snapshots clear button exists", html.includes('id="clearOutboundRunSnapshotsButton"')],
   ["run readiness region exists", html.includes('id="outboundRunReadiness"')],
   ["run snapshot compare region exists", html.includes('id="outboundRunSnapshotCompare"')],
+  ["run snapshot search exists", html.includes('id="outboundRunSnapshotSearch"')],
   ["run snapshot list exists", html.includes('id="outboundRunSnapshotList"')],
   ["run readiness selector exists", app.includes('const outboundRunReadiness = document.querySelector("#outboundRunReadiness")')],
   ["run snapshot compare selector exists", app.includes('const outboundRunSnapshotCompare = document.querySelector("#outboundRunSnapshotCompare")')],
+  ["run snapshot search selector exists", app.includes('const outboundRunSnapshotSearch = document.querySelector("#outboundRunSnapshotSearch")')],
   ["run packet button selector exists", app.includes('const copyOutboundRunPacketButton = document.querySelector("#copyOutboundRunPacketButton")')],
   ["run packet download selector exists", app.includes('const downloadOutboundRunPacketButton = document.querySelector("#downloadOutboundRunPacketButton")')],
   ["run packet JSON selector exists", app.includes('const downloadOutboundRunPacketJsonButton = document.querySelector("#downloadOutboundRunPacketJsonButton")')],
@@ -43,6 +45,10 @@ const checks = [
   ["run packet JSON payload includes closeout fixes", app.includes("closeoutFixes: fixes.filter((item) => [\"Resolved\", \"Archived\"].includes(item.status))")],
   ["run snapshot state exists", app.includes("runSnapshots: []")],
   ["run snapshot render exists", app.includes("function renderOutboundRunSnapshots()")],
+  ["run snapshot search state exists", app.includes('let outboundRunSnapshotSearchValue = ""')],
+  ["run snapshot search text helper exists", app.includes("function getOutboundSnapshotSearchText(snapshot)")],
+  ["run snapshot visible helper exists", app.includes("function getVisibleOutboundRunSnapshots(snapshots)")],
+  ["run snapshot search empty state exists", app.includes("No first-run snapshots match this search.")],
   ["run snapshot compare formatter exists", app.includes("function formatSignedDelta(value)")],
   ["run snapshot compare function exists", app.includes("function getOutboundRunSnapshotComparison(snapshots)")],
   ["run snapshot compare empty message exists", app.includes("Save at least two snapshots to compare first-run progress.")],
@@ -91,13 +97,15 @@ const checks = [
   ["run snapshots import change bound", app.includes('importOutboundRunSnapshotsInput.addEventListener("change", importOutboundRunSnapshots)')],
   ["run snapshots clear bound", app.includes('clearOutboundRunSnapshotsButton.addEventListener("click", clearOutboundRunSnapshots)')],
   ["run snapshots list click bound", app.includes('outboundRunSnapshotList.addEventListener("click", handleOutboundRunSnapshotListClick)')],
+  ["run snapshots search bound", app.includes('outboundRunSnapshotSearch.addEventListener("input", updateOutboundRunSnapshotSearch)')],
   ["run readiness CSS exists", css.includes(".outbound-run-readiness")],
   ["snapshot compare CSS exists", css.includes(".outbound-run-snapshot-compare")],
+  ["snapshot search CSS exists", css.includes(".outbound-run-snapshot-search")],
   ["snapshot actions CSS exists", css.includes(".outbound-run-snapshot-actions")],
   ["snapshot note CSS exists", css.includes(".outbound-run-snapshot-list p")],
   ["snapshot CSS exists", css.includes(".outbound-run-snapshot-list")],
-  ["README mentions snapshot notes", readme.includes("first-run snapshot history/export/import/clear/compare/restore/naming/delete/notes")],
-  ["plan next snapshot search", plan.includes("- First run snapshot search")]
+  ["README mentions snapshot search", readme.includes("first-run snapshot history/export/import/clear/compare/restore/naming/delete/notes/search")],
+  ["plan next snapshot count summary", plan.includes("- First run snapshot count summary")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
