@@ -386,6 +386,7 @@ const outboundImprovementQueue = document.querySelector("#outboundImprovementQue
 const focusNextOutboundStepButton = document.querySelector("#focusNextOutboundStepButton");
 const completeVisibleOutboundStepsButton = document.querySelector("#completeVisibleOutboundStepsButton");
 const copyOutboundRunPacketButton = document.querySelector("#copyOutboundRunPacketButton");
+const downloadOutboundRunPacketButton = document.querySelector("#downloadOutboundRunPacketButton");
 const copyOutboundSessionButton = document.querySelector("#copyOutboundSessionButton");
 const downloadOutboundSessionButton = document.querySelector("#downloadOutboundSessionButton");
 const resetOutboundSessionButton = document.querySelector("#resetOutboundSessionButton");
@@ -1146,6 +1147,12 @@ function formatOutboundRunPacket() {
 async function copyOutboundRunPacket() {
   const copiedDirectly = await copyTextWithFallback(formatOutboundRunPacket());
   setDataStatus(copiedDirectly ? "Copied first real outbound run packet." : "Selected and copied first real outbound run packet.");
+}
+
+function downloadOutboundRunPacket() {
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-first-run-packet-${stamp}.txt`, formatOutboundRunPacket(), "text/plain;charset=utf-8");
+  setDataStatus("Downloaded first real outbound run packet.");
 }
 
 async function copyOutboundSessionSummary() {
@@ -9042,6 +9049,7 @@ outboundSessionAreaFilter.addEventListener("change", () => {
 focusNextOutboundStepButton.addEventListener("click", focusNextOutboundStep);
 completeVisibleOutboundStepsButton.addEventListener("click", completeVisibleOutboundSteps);
 copyOutboundRunPacketButton.addEventListener("click", copyOutboundRunPacket);
+downloadOutboundRunPacketButton.addEventListener("click", downloadOutboundRunPacket);
 copyOutboundSessionButton.addEventListener("click", copyOutboundSessionSummary);
 downloadOutboundSessionButton.addEventListener("click", downloadOutboundSessionSummary);
 resetOutboundSessionButton.addEventListener("click", resetOutboundSessionState);
