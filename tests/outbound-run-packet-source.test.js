@@ -14,6 +14,7 @@ const checks = [
   ["run packet JSON button exists", html.includes('id="downloadOutboundRunPacketJsonButton"')],
   ["run snapshot button exists", html.includes('id="saveOutboundRunSnapshotButton"')],
   ["run snapshots download button exists", html.includes('id="downloadOutboundRunSnapshotsButton"')],
+  ["run snapshots filtered download button exists", html.includes('id="downloadVisibleOutboundRunSnapshotsButton"')],
   ["run snapshots import button exists", html.includes('id="importOutboundRunSnapshotsButton"')],
   ["run snapshots import input exists", html.includes('id="importOutboundRunSnapshotsInput"')],
   ["run snapshots clear button exists", html.includes('id="clearOutboundRunSnapshotsButton"')],
@@ -31,6 +32,7 @@ const checks = [
   ["run packet JSON selector exists", app.includes('const downloadOutboundRunPacketJsonButton = document.querySelector("#downloadOutboundRunPacketJsonButton")')],
   ["run snapshot selector exists", app.includes('const saveOutboundRunSnapshotButton = document.querySelector("#saveOutboundRunSnapshotButton")')],
   ["run snapshots download selector exists", app.includes('const downloadOutboundRunSnapshotsButton = document.querySelector("#downloadOutboundRunSnapshotsButton")')],
+  ["run snapshots filtered download selector exists", app.includes('const downloadVisibleOutboundRunSnapshotsButton = document.querySelector("#downloadVisibleOutboundRunSnapshotsButton")')],
   ["run snapshots import button selector exists", app.includes('const importOutboundRunSnapshotsButton = document.querySelector("#importOutboundRunSnapshotsButton")')],
   ["run snapshots import input selector exists", app.includes('const importOutboundRunSnapshotsInput = document.querySelector("#importOutboundRunSnapshotsInput")')],
   ["run snapshots clear selector exists", app.includes('const clearOutboundRunSnapshotsButton = document.querySelector("#clearOutboundRunSnapshotsButton")')],
@@ -79,6 +81,10 @@ const checks = [
   ["run snapshot restore keeps snapshots", app.includes("runSnapshots: snapshots")],
   ["run snapshot save exists", app.includes("function saveOutboundRunSnapshot()")],
   ["run snapshots download exists", app.includes("function downloadOutboundRunSnapshots()")],
+  ["run snapshots filtered download exists", app.includes("function downloadVisibleOutboundRunSnapshots()")],
+  ["run snapshots filtered filename exists", app.includes("regent-growth-first-run-visible-snapshots-")],
+  ["run snapshots filtered query exists", app.includes("query: outboundRunSnapshotSearchValue.trim()")],
+  ["run snapshots filtered disabled exists", app.includes("downloadVisibleOutboundRunSnapshotsButton.disabled = visibleSnapshots.length === 0")],
   ["run snapshots import parser exists", app.includes("function getImportedOutboundRunSnapshots(payload)")],
   ["run snapshots import handler exists", app.includes("async function importOutboundRunSnapshots(event)")],
   ["run snapshots import parses JSON file", app.includes("JSON.parse(await file.text())")],
@@ -96,6 +102,7 @@ const checks = [
   ["run packet JSON bound", app.includes('downloadOutboundRunPacketJsonButton.addEventListener("click", downloadOutboundRunPacketJson)')],
   ["run snapshot bound", app.includes('saveOutboundRunSnapshotButton.addEventListener("click", saveOutboundRunSnapshot)')],
   ["run snapshots download bound", app.includes('downloadOutboundRunSnapshotsButton.addEventListener("click", downloadOutboundRunSnapshots)')],
+  ["run snapshots filtered download bound", app.includes('downloadVisibleOutboundRunSnapshotsButton.addEventListener("click", downloadVisibleOutboundRunSnapshots)')],
   ["run snapshots import click bound", app.includes('importOutboundRunSnapshotsButton.addEventListener("click", () => importOutboundRunSnapshotsInput.click())')],
   ["run snapshots import change bound", app.includes('importOutboundRunSnapshotsInput.addEventListener("change", importOutboundRunSnapshots)')],
   ["run snapshots clear bound", app.includes('clearOutboundRunSnapshotsButton.addEventListener("click", clearOutboundRunSnapshots)')],
@@ -108,8 +115,8 @@ const checks = [
   ["snapshot actions CSS exists", css.includes(".outbound-run-snapshot-actions")],
   ["snapshot note CSS exists", css.includes(".outbound-run-snapshot-list p")],
   ["snapshot CSS exists", css.includes(".outbound-run-snapshot-list")],
-  ["README mentions snapshot count summary", readme.includes("first-run snapshot history/export/import/clear/compare/restore/naming/delete/notes/search/count summary")],
-  ["plan next snapshot filtered export", plan.includes("- First run snapshot filtered export")]
+  ["README mentions snapshot filtered export", readme.includes("first-run snapshot history/export/import/filtered export/clear/compare/restore/naming/delete/notes/search/count summary")],
+  ["plan next snapshot CSV export", plan.includes("- First run snapshot CSV export")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
