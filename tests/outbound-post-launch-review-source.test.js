@@ -36,7 +36,7 @@ const checks = [
   ["post-launch download bound", app.includes('downloadOutboundPostLaunchReviewButton.addEventListener("click", downloadOutboundPostLaunchReview)')],
   ["post-launch reset bound", app.includes('resetOutboundPostLaunchReviewButton.addEventListener("click", resetOutboundPostLaunchReview)')],
   ["README mentions post-launch review", readme.includes("post-launch review")],
-  ["plan next launch report", plan.includes("- Second real outbound batch readiness")]
+  ["plan next launch report", plan.includes("- Second real outbound batch execution packet")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);

@@ -417,9 +417,11 @@ const copyOutboundRunExecutionButton = document.querySelector("#copyOutboundRunE
 const copyOutboundRunDryRunButton = document.querySelector("#copyOutboundRunDryRunButton");
 const copyOutboundLaunchReportButton = document.querySelector("#copyOutboundLaunchReportButton");
 const copyOutboundFollowUpBatchPlanButton = document.querySelector("#copyOutboundFollowUpBatchPlanButton");
+const copySecondBatchReadinessButton = document.querySelector("#copySecondBatchReadinessButton");
 const downloadOutboundRunPacketButton = document.querySelector("#downloadOutboundRunPacketButton");
 const downloadOutboundLaunchReportButton = document.querySelector("#downloadOutboundLaunchReportButton");
 const downloadOutboundFollowUpBatchPlanButton = document.querySelector("#downloadOutboundFollowUpBatchPlanButton");
+const downloadSecondBatchReadinessButton = document.querySelector("#downloadSecondBatchReadinessButton");
 const downloadOutboundRunPacketJsonButton = document.querySelector("#downloadOutboundRunPacketJsonButton");
 const saveOutboundRunSnapshotButton = document.querySelector("#saveOutboundRunSnapshotButton");
 const downloadOutboundRunSnapshotsButton = document.querySelector("#downloadOutboundRunSnapshotsButton");
@@ -1942,6 +1944,70 @@ function downloadOutboundFollowUpBatchPlan() {
   const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
   downloadFile(`regent-growth-first-run-follow-up-batch-plan-${stamp}.txt`, formatOutboundFollowUpBatchPlan(), "text/plain;charset=utf-8");
   setDataStatus("Downloaded first real outbound follow-up batch plan.");
+}
+
+function getSecondBatchReadinessSummary() {
+  const readiness = getOutboundRunReadinessSummary();
+  const counts = getOutboundOutcomeCounts();
+  const openFixes = getOutboundImprovementItems().filter((item) => ["Open", "In Progress"].includes(item.status));
+  const reviewSaved = hasOutboundPostLaunchReview();
+  const launchLogged = (outboundSessionState.launchLog || []).length > 0;
+  const sentCount = counts["Email Sent"] || 0;
+  const blockedCount = (counts.Blocked || 0) + (counts["Fix Needed"] || 0);
+  const state = openFixes.length || !reviewSaved || !launchLogged
+    ? "Hold"
+    : blockedCount > sentCount
+      ? "Small Batch"
+      : "Ready";
+  const recommendedSize = state === "Ready" ? "25-50 companies" : state === "Small Batch" ? "5-10 companies" : "Do not send yet";
+
+  return {
+    state,
+    recommendedSize,
+    reviewSaved,
+    launchLogged,
+    sentCount,
+    blockedCount,
+    openFixCount: openFixes.length,
+    nextStep: readiness.nextStep,
+    blockers: [
+      ...(!launchLogged ? ["Log first-run launch decisions."] : []),
+      ...(!reviewSaved ? ["Save post-launch review notes."] : []),
+      ...openFixes.map((item) => `${item.company || "Unassigned company"}: ${item.note}`)
+    ]
+  };
+}
+
+function formatSecondBatchReadiness() {
+  const summary = getSecondBatchReadinessSummary();
+  return [
+    "Second Real Outbound Batch Readiness",
+    `Created: ${formatDateTime(new Date().toISOString())}`,
+    `State: ${summary.state}`,
+    `Recommended size: ${summary.recommendedSize}`,
+    `Emails sent in first run: ${summary.sentCount}`,
+    `Blocked or fix-needed outcomes: ${summary.blockedCount}`,
+    `Open fixes: ${summary.openFixCount}`,
+    `Launch log saved: ${summary.launchLogged ? "Yes" : "No"}`,
+    `Post-launch review saved: ${summary.reviewSaved ? "Yes" : "No"}`,
+    "",
+    "Required Before Batch Two",
+    ...(summary.blockers.length ? summary.blockers.map((blocker) => `- ${blocker}`) : ["- Save a fresh snapshot after batch two.", "- Keep source-evidence requirement on.", "- Continue manual send review."]),
+    "",
+    "Next Step",
+    summary.nextStep
+  ].join("\n");
+}
+
+async function copySecondBatchReadiness() {
+  const copiedDirectly = await copyTextWithFallback(formatSecondBatchReadiness());
+  setDataStatus(copiedDirectly ? "Copied second real outbound batch readiness." : "Selected and copied second real outbound batch readiness.");
+}
+
+function downloadSecondBatchReadiness() {
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-second-batch-readiness-${stamp}.txt`, formatSecondBatchReadiness(), "text/plain;charset=utf-8");
+  setDataStatus("Downloaded second real outbound batch readiness.");
 }
 
 function downloadOutboundRunPacket() {
@@ -10015,9 +10081,11 @@ copyOutboundRunExecutionButton.addEventListener("click", copyOutboundRunExecutio
 copyOutboundRunDryRunButton.addEventListener("click", copyOutboundRunLiveDryRun);
 copyOutboundLaunchReportButton.addEventListener("click", copyOutboundLaunchReport);
 copyOutboundFollowUpBatchPlanButton.addEventListener("click", copyOutboundFollowUpBatchPlan);
+copySecondBatchReadinessButton.addEventListener("click", copySecondBatchReadiness);
 downloadOutboundRunPacketButton.addEventListener("click", downloadOutboundRunPacket);
 downloadOutboundLaunchReportButton.addEventListener("click", downloadOutboundLaunchReport);
 downloadOutboundFollowUpBatchPlanButton.addEventListener("click", downloadOutboundFollowUpBatchPlan);
+downloadSecondBatchReadinessButton.addEventListener("click", downloadSecondBatchReadiness);
 downloadOutboundRunPacketJsonButton.addEventListener("click", downloadOutboundRunPacketJson);
 saveOutboundRunSnapshotButton.addEventListener("click", saveOutboundRunSnapshot);
 downloadOutboundRunSnapshotsButton.addEventListener("click", downloadOutboundRunSnapshots);

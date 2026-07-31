@@ -183,7 +183,7 @@ const checks = [
   ["snapshot timeline cue CSS exists", css.includes(".outbound-run-snapshot-list em")],
   ["snapshot CSS exists", css.includes(".outbound-run-snapshot-list")],
   ["README mentions live dry-run copy", readme.includes("first real run packet copy/execution checklist/live dry-run copy/download/JSON export")],
-  ["plan next manual launch log", plan.includes("- Second real outbound batch readiness")]
+  ["plan next manual launch log", plan.includes("- Second real outbound batch execution packet")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
