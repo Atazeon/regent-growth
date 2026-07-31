@@ -420,11 +420,13 @@ const copyOutboundLaunchReportButton = document.querySelector("#copyOutboundLaun
 const copyOutboundFollowUpBatchPlanButton = document.querySelector("#copyOutboundFollowUpBatchPlanButton");
 const copySecondBatchReadinessButton = document.querySelector("#copySecondBatchReadinessButton");
 const copySecondBatchExecutionPacketButton = document.querySelector("#copySecondBatchExecutionPacketButton");
+const copySecondBatchReportButton = document.querySelector("#copySecondBatchReportButton");
 const downloadOutboundRunPacketButton = document.querySelector("#downloadOutboundRunPacketButton");
 const downloadOutboundLaunchReportButton = document.querySelector("#downloadOutboundLaunchReportButton");
 const downloadOutboundFollowUpBatchPlanButton = document.querySelector("#downloadOutboundFollowUpBatchPlanButton");
 const downloadSecondBatchReadinessButton = document.querySelector("#downloadSecondBatchReadinessButton");
 const downloadSecondBatchExecutionPacketButton = document.querySelector("#downloadSecondBatchExecutionPacketButton");
+const downloadSecondBatchReportButton = document.querySelector("#downloadSecondBatchReportButton");
 const downloadOutboundRunPacketJsonButton = document.querySelector("#downloadOutboundRunPacketJsonButton");
 const saveOutboundRunSnapshotButton = document.querySelector("#saveOutboundRunSnapshotButton");
 const downloadOutboundRunSnapshotsButton = document.querySelector("#downloadOutboundRunSnapshotsButton");
@@ -2056,6 +2058,53 @@ function downloadSecondBatchExecutionPacket() {
   const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
   downloadFile(`regent-growth-second-batch-execution-packet-${stamp}.txt`, formatSecondBatchExecutionPacket(), "text/plain;charset=utf-8");
   setDataStatus("Downloaded second real outbound batch execution packet.");
+}
+
+function getSecondBatchOutcomes() {
+  return outboundSessionState.outcomes.filter((outcome) => (outcome.batch || "First Run") === "Second Batch");
+}
+
+function getSecondBatchOutcomeCounts() {
+  return getSecondBatchOutcomes().reduce((counts, outcome) => {
+    counts[outcome.type] = (counts[outcome.type] || 0) + 1;
+    return counts;
+  }, {});
+}
+
+function formatSecondBatchReport() {
+  const outcomes = getSecondBatchOutcomes();
+  const counts = getSecondBatchOutcomeCounts();
+  const readiness = getSecondBatchReadinessSummary();
+  const openFixes = getOutboundImprovementItems().filter((item) => ["Open", "In Progress"].includes(item.status));
+  return [
+    "Second Real Outbound Batch Report",
+    `Created: ${formatDateTime(new Date().toISOString())}`,
+    `Readiness after batch: ${readiness.state}`,
+    `Second-batch outcomes logged: ${outcomes.length}`,
+    "",
+    "Outcome Counts",
+    ...outboundOutcomeTypes.map((type) => `${type}: ${counts[type] || 0}`),
+    "",
+    "Second-Batch Outcomes",
+    ...(outcomes.length ? outcomes.map((outcome) => `${formatDateTime(outcome.createdAt)} | ${outcome.type} | ${outcome.company || "Unassigned company"} | ${outcome.note}`) : ["No second-batch outcomes logged yet."]),
+    "",
+    "Remaining Fixes",
+    ...(openFixes.length ? openFixes.map((item) => `- ${item.status} | ${item.company || "Unassigned company"} | ${item.type} | ${item.note}`) : ["- None"]),
+    "",
+    "Recommended Next Step",
+    readiness.state === "Ready" ? "Compare conversion against the first run and decide whether to scale the next batch." : "Resolve blockers before increasing batch size."
+  ].join("\n");
+}
+
+async function copySecondBatchReport() {
+  const copiedDirectly = await copyTextWithFallback(formatSecondBatchReport());
+  setDataStatus(copiedDirectly ? "Copied second real outbound batch report." : "Selected and copied second real outbound batch report.");
+}
+
+function downloadSecondBatchReport() {
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-second-batch-report-${stamp}.txt`, formatSecondBatchReport(), "text/plain;charset=utf-8");
+  setDataStatus("Downloaded second real outbound batch report.");
 }
 
 function downloadOutboundRunPacket() {
@@ -10132,11 +10181,13 @@ copyOutboundLaunchReportButton.addEventListener("click", copyOutboundLaunchRepor
 copyOutboundFollowUpBatchPlanButton.addEventListener("click", copyOutboundFollowUpBatchPlan);
 copySecondBatchReadinessButton.addEventListener("click", copySecondBatchReadiness);
 copySecondBatchExecutionPacketButton.addEventListener("click", copySecondBatchExecutionPacket);
+copySecondBatchReportButton.addEventListener("click", copySecondBatchReport);
 downloadOutboundRunPacketButton.addEventListener("click", downloadOutboundRunPacket);
 downloadOutboundLaunchReportButton.addEventListener("click", downloadOutboundLaunchReport);
 downloadOutboundFollowUpBatchPlanButton.addEventListener("click", downloadOutboundFollowUpBatchPlan);
 downloadSecondBatchReadinessButton.addEventListener("click", downloadSecondBatchReadiness);
 downloadSecondBatchExecutionPacketButton.addEventListener("click", downloadSecondBatchExecutionPacket);
+downloadSecondBatchReportButton.addEventListener("click", downloadSecondBatchReport);
 downloadOutboundRunPacketJsonButton.addEventListener("click", downloadOutboundRunPacketJson);
 saveOutboundRunSnapshotButton.addEventListener("click", saveOutboundRunSnapshot);
 downloadOutboundRunSnapshotsButton.addEventListener("click", downloadOutboundRunSnapshots);
