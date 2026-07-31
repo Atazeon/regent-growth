@@ -18,13 +18,13 @@ const checks = [
   ["filtered CSV uses csv helper", app.includes("row.map(csvCell).join(\",\")")],
   ["filtered CSV bound", app.includes('downloadFilteredOutboundOutcomesCsvButton.addEventListener("click", downloadFilteredOutboundOutcomeCsv)')],
   ["README mentions CSV exports", readme.includes("CSV exports")],
-  ["plan next operating QA", plan.includes("- Outbound launch hardening")]
+  ["plan next operating QA", plan.includes("- Outbound operating runbook finalization")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
 if (failures.length) {
-  console.error(`Outbound launch hardening test failed: ${failures.join(", ")}`);
+  console.error(`Outbound operating runbook finalization test failed: ${failures.join(", ")}`);
   process.exit(1);
 }
 
-console.log("Outbound launch hardening test passed.");
+console.log("Outbound operating runbook finalization test passed.");

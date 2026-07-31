@@ -431,6 +431,7 @@ const copyBatchComparisonButton = document.querySelector("#copyBatchComparisonBu
 const copyScaleDecisionButton = document.querySelector("#copyScaleDecisionButton");
 const copyOperatingQaButton = document.querySelector("#copyOperatingQaButton");
 const copyOperatingCloseoutButton = document.querySelector("#copyOperatingCloseoutButton");
+const copyLaunchHardeningButton = document.querySelector("#copyLaunchHardeningButton");
 const downloadOutboundRunPacketButton = document.querySelector("#downloadOutboundRunPacketButton");
 const downloadOutboundLaunchReportButton = document.querySelector("#downloadOutboundLaunchReportButton");
 const downloadOutboundFollowUpBatchPlanButton = document.querySelector("#downloadOutboundFollowUpBatchPlanButton");
@@ -441,6 +442,7 @@ const downloadBatchComparisonButton = document.querySelector("#downloadBatchComp
 const downloadScaleDecisionButton = document.querySelector("#downloadScaleDecisionButton");
 const downloadOperatingQaButton = document.querySelector("#downloadOperatingQaButton");
 const downloadOperatingCloseoutButton = document.querySelector("#downloadOperatingCloseoutButton");
+const downloadLaunchHardeningButton = document.querySelector("#downloadLaunchHardeningButton");
 const downloadOutboundRunPacketJsonButton = document.querySelector("#downloadOutboundRunPacketJsonButton");
 const saveOutboundRunSnapshotButton = document.querySelector("#saveOutboundRunSnapshotButton");
 const downloadOutboundRunSnapshotsButton = document.querySelector("#downloadOutboundRunSnapshotsButton");
@@ -2315,6 +2317,43 @@ function downloadOutboundOperatingCloseout() {
   const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
   downloadFile(`regent-growth-outbound-operating-closeout-${stamp}.txt`, formatOutboundOperatingCloseout(), "text/plain;charset=utf-8");
   setDataStatus("Downloaded outbound operating closeout.");
+}
+
+function formatOutboundLaunchHardening() {
+  const qaItems = getOutboundOperatingQaItems();
+  const scaleDecision = getOutboundScaleDecision();
+  return [
+    "Outbound Launch Hardening Checklist",
+    `Created: ${formatDateTime(new Date().toISOString())}`,
+    `Current scale decision: ${scaleDecision.decision}`,
+    "",
+    "Hard Gates",
+    "- Source evidence must be present before drafting.",
+    "- Human review must happen before any send handoff.",
+    "- Every outcome must have the correct batch tag.",
+    "- Filtered exports must be saved after each batch.",
+    "- Scale decision must be reviewed before increasing volume.",
+    "",
+    "Current QA",
+    ...qaItems.map((item) => `${item.ready ? "[x]" : "[ ]"} ${item.label}`),
+    "",
+    "Do Not Launch If",
+    "- Open fixes are unowned.",
+    "- Second-batch outcomes are missing.",
+    "- Post-launch review is blank.",
+    "- The operator cannot explain why the next volume is safe."
+  ].join("\n");
+}
+
+async function copyOutboundLaunchHardening() {
+  const copiedDirectly = await copyTextWithFallback(formatOutboundLaunchHardening());
+  setDataStatus(copiedDirectly ? "Copied outbound launch hardening checklist." : "Selected and copied outbound launch hardening checklist.");
+}
+
+function downloadOutboundLaunchHardening() {
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-outbound-launch-hardening-${stamp}.txt`, formatOutboundLaunchHardening(), "text/plain;charset=utf-8");
+  setDataStatus("Downloaded outbound launch hardening checklist.");
 }
 
 function downloadOutboundRunPacket() {
@@ -10462,6 +10501,7 @@ copyBatchComparisonButton.addEventListener("click", copyBatchComparison);
 copyScaleDecisionButton.addEventListener("click", copyOutboundScaleDecision);
 copyOperatingQaButton.addEventListener("click", copyOutboundOperatingQa);
 copyOperatingCloseoutButton.addEventListener("click", copyOutboundOperatingCloseout);
+copyLaunchHardeningButton.addEventListener("click", copyOutboundLaunchHardening);
 downloadOutboundRunPacketButton.addEventListener("click", downloadOutboundRunPacket);
 downloadOutboundLaunchReportButton.addEventListener("click", downloadOutboundLaunchReport);
 downloadOutboundFollowUpBatchPlanButton.addEventListener("click", downloadOutboundFollowUpBatchPlan);
@@ -10472,6 +10512,7 @@ downloadBatchComparisonButton.addEventListener("click", downloadBatchComparison)
 downloadScaleDecisionButton.addEventListener("click", downloadOutboundScaleDecision);
 downloadOperatingQaButton.addEventListener("click", downloadOutboundOperatingQa);
 downloadOperatingCloseoutButton.addEventListener("click", downloadOutboundOperatingCloseout);
+downloadLaunchHardeningButton.addEventListener("click", downloadOutboundLaunchHardening);
 downloadOutboundRunPacketJsonButton.addEventListener("click", downloadOutboundRunPacketJson);
 saveOutboundRunSnapshotButton.addEventListener("click", saveOutboundRunSnapshot);
 downloadOutboundRunSnapshotsButton.addEventListener("click", downloadOutboundRunSnapshots);

@@ -23,7 +23,7 @@ const checks = [
   ["second batch report copy bound", app.includes('copySecondBatchReportButton.addEventListener("click", copySecondBatchReport)')],
   ["second batch report download bound", app.includes('downloadSecondBatchReportButton.addEventListener("click", downloadSecondBatchReport)')],
   ["README mentions second-batch report", readme.includes("second-batch report")],
-  ["plan next comparison", plan.includes("- Outbound launch hardening")]
+  ["plan next comparison", plan.includes("- Outbound operating runbook finalization")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
