@@ -209,6 +209,11 @@
             <p id="outboundOutcomeSummary" class="empty-state">No outcomes logged yet.</p>
           </div>
           <div class="action-row" role="group" aria-label="Outbound outcome actions">
+            <select id="outboundOutcomeBatchFilter" aria-label="Filter outbound outcomes by batch">
+              <option value="all">All batches</option>
+              <option value="First Run">First Run</option>
+              <option value="Second Batch">Second Batch</option>
+            </select>
             <button id="copyOutboundOutcomesButton" class="secondary-button" type="button">Copy outcomes</button>
             <button id="downloadOutboundOutcomesButton" class="secondary-button" type="button">Download outcomes</button>
             <button id="clearOutboundOutcomesButton" class="danger-button" type="button">Clear outcomes</button>

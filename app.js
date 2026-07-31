@@ -222,6 +222,7 @@ let dailyRunStopRequested = false;
 let outboundSessionAreaFilterValue = "all";
 let outboundImprovementStatusFilterValue = "all";
 let outboundImprovementOwnerFilterValue = "all";
+let outboundOutcomeBatchFilterValue = "all";
 let outboundRunSnapshotSearchValue = "";
 let outboundRunSnapshotReadinessFilterValue = "all";
 let crmSyncInProgress = false;
@@ -384,6 +385,7 @@ const outboundOutcomeCompany = document.querySelector("#outboundOutcomeCompany")
 const outboundOutcomeNote = document.querySelector("#outboundOutcomeNote");
 const outboundOutcomeSummary = document.querySelector("#outboundOutcomeSummary");
 const outboundOutcomeList = document.querySelector("#outboundOutcomeList");
+const outboundOutcomeBatchFilter = document.querySelector("#outboundOutcomeBatchFilter");
 const outboundLaunchLogForm = document.querySelector("#outboundLaunchLogForm");
 const outboundLaunchLogStatus = document.querySelector("#outboundLaunchLogStatus");
 const outboundLaunchLogCompany = document.querySelector("#outboundLaunchLogCompany");
@@ -1046,20 +1048,22 @@ function renderOutboundImprovementQueue() {
 
 function renderOutboundOutcomes() {
   const outcomes = outboundSessionState.outcomes;
+  const visibleOutcomes = outcomes.filter((outcome) => outboundOutcomeBatchFilterValue === "all" || (outcome.batch || "First Run") === outboundOutcomeBatchFilterValue);
   const counts = getOutboundOutcomeCounts();
   const countText = outboundOutcomeTypes
     .filter((type) => counts[type])
     .map((type) => `${type}: ${counts[type]}`)
     .join(" | ");
 
+  outboundOutcomeBatchFilter.value = outboundOutcomeBatchFilterValue;
   outboundOutcomeSummary.textContent = outcomes.length
-    ? `${outcomes.length} outcome${outcomes.length === 1 ? "" : "s"} logged${countText ? ` | ${countText}` : ""}`
+    ? `${visibleOutcomes.length} of ${outcomes.length} outcome${outcomes.length === 1 ? "" : "s"} shown${countText ? ` | ${countText}` : ""}`
     : "No outcomes logged yet.";
   [copyOutboundOutcomesButton, downloadOutboundOutcomesButton, clearOutboundOutcomesButton].forEach((button) => {
     button.disabled = outcomes.length === 0;
   });
-  outboundOutcomeList.innerHTML = outcomes.length
-    ? outcomes.map((outcome) => `
+  outboundOutcomeList.innerHTML = visibleOutcomes.length
+    ? visibleOutcomes.map((outcome) => `
       <article>
         <div>
           <p class="eyebrow">${escapeHtml(outcome.type)}</p>
@@ -1071,7 +1075,7 @@ function renderOutboundOutcomes() {
         <button class="secondary-button" type="button" data-action="delete-outbound-outcome" data-id="${escapeHtml(outcome.id)}">Remove</button>
       </article>
     `).join("")
-    : `<p class="empty-state">Log outcomes while you run outbound so the next build pass is based on real usage.</p>`;
+    : `<p class="empty-state">${outcomes.length ? "No outcomes match this batch filter." : "Log outcomes while you run outbound so the next build pass is based on real usage."}</p>`;
   renderOutboundImprovementQueue();
 }
 
@@ -10253,6 +10257,10 @@ outboundSessionList.addEventListener("change", (event) => {
   updateOutboundSessionStep(checkbox.dataset.outboundSessionId, checkbox.checked);
 });
 outboundOutcomeForm.addEventListener("submit", addOutboundOutcome);
+outboundOutcomeBatchFilter.addEventListener("change", () => {
+  outboundOutcomeBatchFilterValue = outboundOutcomeBatchFilter.value;
+  renderOutboundOutcomes();
+});
 outboundOutcomeList.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-action='delete-outbound-outcome']");
   if (!button) return;
