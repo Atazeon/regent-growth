@@ -386,6 +386,8 @@ const outboundOutcomeNote = document.querySelector("#outboundOutcomeNote");
 const outboundOutcomeSummary = document.querySelector("#outboundOutcomeSummary");
 const outboundOutcomeList = document.querySelector("#outboundOutcomeList");
 const outboundOutcomeBatchFilter = document.querySelector("#outboundOutcomeBatchFilter");
+const copyFilteredOutboundOutcomesButton = document.querySelector("#copyFilteredOutboundOutcomesButton");
+const downloadFilteredOutboundOutcomesButton = document.querySelector("#downloadFilteredOutboundOutcomesButton");
 const outboundLaunchLogForm = document.querySelector("#outboundLaunchLogForm");
 const outboundLaunchLogStatus = document.querySelector("#outboundLaunchLogStatus");
 const outboundLaunchLogCompany = document.querySelector("#outboundLaunchLogCompany");
@@ -1048,7 +1050,7 @@ function renderOutboundImprovementQueue() {
 
 function renderOutboundOutcomes() {
   const outcomes = outboundSessionState.outcomes;
-  const visibleOutcomes = outcomes.filter((outcome) => outboundOutcomeBatchFilterValue === "all" || (outcome.batch || "First Run") === outboundOutcomeBatchFilterValue);
+  const visibleOutcomes = getVisibleOutboundOutcomes();
   const counts = getOutboundOutcomeCounts();
   const countText = outboundOutcomeTypes
     .filter((type) => counts[type])
@@ -1061,6 +1063,9 @@ function renderOutboundOutcomes() {
     : "No outcomes logged yet.";
   [copyOutboundOutcomesButton, downloadOutboundOutcomesButton, clearOutboundOutcomesButton].forEach((button) => {
     button.disabled = outcomes.length === 0;
+  });
+  [copyFilteredOutboundOutcomesButton, downloadFilteredOutboundOutcomesButton].forEach((button) => {
+    button.disabled = visibleOutcomes.length === 0;
   });
   outboundOutcomeList.innerHTML = visibleOutcomes.length
     ? visibleOutcomes.map((outcome) => `
@@ -1077,6 +1082,10 @@ function renderOutboundOutcomes() {
     `).join("")
     : `<p class="empty-state">${outcomes.length ? "No outcomes match this batch filter." : "Log outcomes while you run outbound so the next build pass is based on real usage."}</p>`;
   renderOutboundImprovementQueue();
+}
+
+function getVisibleOutboundOutcomes() {
+  return outboundSessionState.outcomes.filter((outcome) => outboundOutcomeBatchFilterValue === "all" || (outcome.batch || "First Run") === outboundOutcomeBatchFilterValue);
 }
 
 function renderOutboundLaunchLog() {
@@ -2513,6 +2522,24 @@ function formatOutboundOutcomeSummary() {
   ].join("\n\n");
 }
 
+function formatFilteredOutboundOutcomeSummary() {
+  const outcomes = getVisibleOutboundOutcomes();
+  if (outcomes.length === 0) return "No filtered outbound outcomes logged yet.";
+
+  const filterLabel = outboundOutcomeBatchFilterValue === "all" ? "All batches" : outboundOutcomeBatchFilterValue;
+  return [
+    "Filtered Outbound Run Outcomes",
+    `Filter: ${filterLabel}`,
+    `Logged: ${outcomes.length}`,
+    "",
+    ...outcomes.map((outcome) => [
+      `${formatDateTime(outcome.createdAt)} - ${outcome.batch || "First Run"} - ${outcome.type}`,
+      `Company: ${outcome.company || "Unassigned company"}`,
+      `Note: ${outcome.note}`
+    ].join("\n"))
+  ].join("\n\n");
+}
+
 async function copyOutboundOutcomeSummary() {
   if (outboundSessionState.outcomes.length === 0) {
     setDataStatus("No outbound outcomes to copy.", "error");
@@ -2521,6 +2548,16 @@ async function copyOutboundOutcomeSummary() {
 
   const copiedDirectly = await copyTextWithFallback(formatOutboundOutcomeSummary());
   setDataStatus(copiedDirectly ? "Copied outbound outcomes." : "Selected and copied outbound outcomes.");
+}
+
+async function copyFilteredOutboundOutcomeSummary() {
+  if (getVisibleOutboundOutcomes().length === 0) {
+    setDataStatus("No filtered outbound outcomes to copy.", "error");
+    return;
+  }
+
+  const copiedDirectly = await copyTextWithFallback(formatFilteredOutboundOutcomeSummary());
+  setDataStatus(copiedDirectly ? "Copied filtered outbound outcomes." : "Selected and copied filtered outbound outcomes.");
 }
 
 function downloadOutboundOutcomeSummary() {
@@ -2532,6 +2569,17 @@ function downloadOutboundOutcomeSummary() {
   const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
   downloadFile(`regent-growth-outbound-outcomes-${stamp}.txt`, formatOutboundOutcomeSummary(), "text/plain;charset=utf-8");
   setDataStatus("Downloaded outbound outcomes.");
+}
+
+function downloadFilteredOutboundOutcomeSummary() {
+  if (getVisibleOutboundOutcomes().length === 0) {
+    setDataStatus("No filtered outbound outcomes to download.", "error");
+    return;
+  }
+
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-filtered-outbound-outcomes-${stamp}.txt`, formatFilteredOutboundOutcomeSummary(), "text/plain;charset=utf-8");
+  setDataStatus("Downloaded filtered outbound outcomes.");
 }
 
 function clearOutboundOutcomes() {
@@ -10261,6 +10309,8 @@ outboundOutcomeBatchFilter.addEventListener("change", () => {
   outboundOutcomeBatchFilterValue = outboundOutcomeBatchFilter.value;
   renderOutboundOutcomes();
 });
+copyFilteredOutboundOutcomesButton.addEventListener("click", copyFilteredOutboundOutcomeSummary);
+downloadFilteredOutboundOutcomesButton.addEventListener("click", downloadFilteredOutboundOutcomeSummary);
 outboundOutcomeList.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-action='delete-outbound-outcome']");
   if (!button) return;

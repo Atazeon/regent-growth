@@ -13,19 +13,19 @@ const checks = [
   ["outcome batch filter second option exists", html.includes('<option value="Second Batch">Second Batch</option>')],
   ["outcome batch filter state exists", app.includes('let outboundOutcomeBatchFilterValue = "all"')],
   ["outcome batch filter selector exists", app.includes('const outboundOutcomeBatchFilter = document.querySelector("#outboundOutcomeBatchFilter")')],
-  ["outcome visible filter exists", app.includes('const visibleOutcomes = outcomes.filter((outcome) => outboundOutcomeBatchFilterValue === "all"')],
+  ["outcome visible filter exists", app.includes("function getVisibleOutboundOutcomes()") && app.includes('outboundOutcomeBatchFilterValue === "all"')],
   ["outcome filter value rendered", app.includes("outboundOutcomeBatchFilter.value = outboundOutcomeBatchFilterValue")],
   ["outcome filtered summary exists", app.includes("${visibleOutcomes.length} of ${outcomes.length} outcome")],
   ["outcome filtered empty state exists", app.includes("No outcomes match this batch filter.")],
   ["outcome filter listener exists", app.includes('outboundOutcomeBatchFilter.addEventListener("change"')],
   ["README mentions dashboard filters", readme.includes("dashboard filters")],
-  ["plan next filtered exports", plan.includes("- Outbound operating filtered exports")]
+  ["plan next filtered exports", plan.includes("- Outbound operating CSV exports")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
 if (failures.length) {
-  console.error(`Outbound operating filtered exports test failed: ${failures.join(", ")}`);
+  console.error(`Outbound operating CSV exports test failed: ${failures.join(", ")}`);
   process.exit(1);
 }
 
-console.log("Outbound operating filtered exports test passed.");
+console.log("Outbound operating CSV exports test passed.");
