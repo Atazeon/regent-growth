@@ -396,6 +396,7 @@ const focusNextOutboundStepButton = document.querySelector("#focusNextOutboundSt
 const completeVisibleOutboundStepsButton = document.querySelector("#completeVisibleOutboundStepsButton");
 const copyOutboundRunPacketButton = document.querySelector("#copyOutboundRunPacketButton");
 const copyOutboundRunExecutionButton = document.querySelector("#copyOutboundRunExecutionButton");
+const copyOutboundRunDryRunButton = document.querySelector("#copyOutboundRunDryRunButton");
 const downloadOutboundRunPacketButton = document.querySelector("#downloadOutboundRunPacketButton");
 const downloadOutboundRunPacketJsonButton = document.querySelector("#downloadOutboundRunPacketJsonButton");
 const saveOutboundRunSnapshotButton = document.querySelector("#saveOutboundRunSnapshotButton");
@@ -1172,6 +1173,52 @@ function formatOutboundRunPacket() {
   ].join("\n");
 }
 
+function getOutboundRunDryRunSteps(readiness = getOutboundRunReadinessSummary()) {
+  return [
+    "Confirm Ollama and local research server are running.",
+    "Generate or import the next small batch of qualified companies.",
+    "Research each company and require source evidence before drafting.",
+    "Review each email draft manually; do not send during the dry run.",
+    "Use mail handoff links only to inspect compose state, then close without sending.",
+    "Log outcome notes, open fixes for blockers, and save a snapshot.",
+    readiness.state === "Ready"
+      ? "If no blockers remain, choose the first real sending batch manually."
+      : `Resolve blockers before sending: ${readiness.blockers.join("; ") || readiness.nextStep}`
+  ];
+}
+
+function formatOutboundRunLiveDryRun() {
+  const readiness = getOutboundRunReadinessSummary();
+  const stats = getOutboundSessionStats().map((stat) => `${stat.label}: ${stat.value} (${stat.detail})`);
+  const openFixes = getOutboundImprovementItems().filter((item) => item.status === "Open");
+  return [
+    "First Real Outbound Live Dry Run",
+    `Created: ${formatDateTime(new Date().toISOString())}`,
+    "Mode: Dry run only - review, inspect, and log results without sending outreach.",
+    `Readiness: ${readiness.state}`,
+    `Progress: ${readiness.completedCount} / ${readiness.totalCount} (${readiness.completionPercent}%)`,
+    `Next step: ${readiness.nextStep}`,
+    "",
+    "Live Stats",
+    ...stats,
+    "",
+    "Dry-Run Steps",
+    ...getOutboundRunDryRunSteps(readiness).map((step, index) => `${index + 1}. ${step}`),
+    "",
+    "Blockers",
+    ...(readiness.blockers.length ? readiness.blockers.map((blocker) => `- ${blocker}`) : ["- None"]),
+    "",
+    "Open Fixes To Watch",
+    ...(openFixes.length ? openFixes.map((item) => `- ${item.company || "Unassigned company"} | ${item.type} | ${item.note}`) : ["- No open fixes."]),
+    "",
+    "Exit Criteria",
+    "- Every generated prospect has source evidence.",
+    "- Every reviewed email is either approved, edited, or blocked with a fix item.",
+    "- Snapshot is saved after the rehearsal.",
+    "- No real email, LinkedIn connection, or phone touch happens from the dry run."
+  ].join("\n");
+}
+
 function getOutboundRunPacketRecord() {
   const readiness = getOutboundRunReadinessSummary();
   const fixes = getOutboundImprovementItems();
@@ -1181,6 +1228,7 @@ function getOutboundRunPacketRecord() {
     readiness,
     stats: getOutboundSessionStats(),
     outcomeCounts: getOutboundOutcomeCounts(),
+    dryRunSteps: getOutboundRunDryRunSteps(readiness),
     outcomes: outboundSessionState.outcomes,
     fixes,
     openFixes: fixes.filter((item) => item.status === "Open"),
@@ -1682,6 +1730,11 @@ function formatOutboundRunExecutionChecklist() {
 async function copyOutboundRunExecutionChecklist() {
   const copiedDirectly = await copyTextWithFallback(formatOutboundRunExecutionChecklist());
   setDataStatus(copiedDirectly ? "Copied first real outbound run execution checklist." : "Selected and copied first real outbound run execution checklist.");
+}
+
+async function copyOutboundRunLiveDryRun() {
+  const copiedDirectly = await copyTextWithFallback(formatOutboundRunLiveDryRun());
+  setDataStatus(copiedDirectly ? "Copied first real outbound live dry-run packet." : "Selected and copied first real outbound live dry-run packet.");
 }
 
 function downloadOutboundRunPacket() {
@@ -9592,6 +9645,7 @@ focusNextOutboundStepButton.addEventListener("click", focusNextOutboundStep);
 completeVisibleOutboundStepsButton.addEventListener("click", completeVisibleOutboundSteps);
 copyOutboundRunPacketButton.addEventListener("click", copyOutboundRunPacket);
 copyOutboundRunExecutionButton.addEventListener("click", copyOutboundRunExecutionChecklist);
+copyOutboundRunDryRunButton.addEventListener("click", copyOutboundRunLiveDryRun);
 downloadOutboundRunPacketButton.addEventListener("click", downloadOutboundRunPacket);
 downloadOutboundRunPacketJsonButton.addEventListener("click", downloadOutboundRunPacketJson);
 saveOutboundRunSnapshotButton.addEventListener("click", saveOutboundRunSnapshot);

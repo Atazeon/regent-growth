@@ -11,6 +11,7 @@ const plan = fs.readFileSync(path.join(root, "PROJECT_PLAN.md"), "utf8");
 const checks = [
   ["run packet button exists", html.includes('id="copyOutboundRunPacketButton"')],
   ["run execution button exists", html.includes('id="copyOutboundRunExecutionButton"')],
+  ["run live dry-run button exists", html.includes('id="copyOutboundRunDryRunButton"')],
   ["run packet download button exists", html.includes('id="downloadOutboundRunPacketButton"')],
   ["run packet JSON button exists", html.includes('id="downloadOutboundRunPacketJsonButton"')],
   ["run snapshot button exists", html.includes('id="saveOutboundRunSnapshotButton"')],
@@ -40,6 +41,7 @@ const checks = [
   ["run snapshot search clear selector exists", app.includes('const clearOutboundRunSnapshotSearchButton = document.querySelector("#clearOutboundRunSnapshotSearchButton")')],
   ["run packet button selector exists", app.includes('const copyOutboundRunPacketButton = document.querySelector("#copyOutboundRunPacketButton")')],
   ["run execution button selector exists", app.includes('const copyOutboundRunExecutionButton = document.querySelector("#copyOutboundRunExecutionButton")')],
+  ["run live dry-run button selector exists", app.includes('const copyOutboundRunDryRunButton = document.querySelector("#copyOutboundRunDryRunButton")')],
   ["run packet download selector exists", app.includes('const downloadOutboundRunPacketButton = document.querySelector("#downloadOutboundRunPacketButton")')],
   ["run packet JSON selector exists", app.includes('const downloadOutboundRunPacketJsonButton = document.querySelector("#downloadOutboundRunPacketJsonButton")')],
   ["run snapshot selector exists", app.includes('const saveOutboundRunSnapshotButton = document.querySelector("#saveOutboundRunSnapshotButton")')],
@@ -65,6 +67,11 @@ const checks = [
   ["run execution checklist formatter exists", app.includes("function formatOutboundRunExecutionChecklist()")],
   ["run execution checklist handler exists", app.includes("async function copyOutboundRunExecutionChecklist()")],
   ["run execution checklist rule exists", app.includes("Run the next visible outbound step, log outcomes, save a snapshot")],
+  ["run live dry-run formatter exists", app.includes("function formatOutboundRunLiveDryRun()")],
+  ["run live dry-run steps helper exists", app.includes("function getOutboundRunDryRunSteps(")],
+  ["run live dry-run no-send rule exists", app.includes("No real email, LinkedIn connection, or phone touch happens from the dry run.")],
+  ["run live dry-run copy handler exists", app.includes("async function copyOutboundRunLiveDryRun()")],
+  ["run packet JSON includes dry-run steps", app.includes("dryRunSteps: getOutboundRunDryRunSteps(readiness)")],
   ["run snapshot state exists", app.includes("runSnapshots: []")],
   ["run snapshot render exists", app.includes("function renderOutboundRunSnapshots()")],
   ["run snapshot search state exists", app.includes('let outboundRunSnapshotSearchValue = ""')],
@@ -144,6 +151,7 @@ const checks = [
   ["run snapshot limit exists", app.includes(".slice(0, 10)")],
   ["run packet button bound", app.includes('copyOutboundRunPacketButton.addEventListener("click", copyOutboundRunPacket)')],
   ["run execution button bound", app.includes('copyOutboundRunExecutionButton.addEventListener("click", copyOutboundRunExecutionChecklist)')],
+  ["run live dry-run button bound", app.includes('copyOutboundRunDryRunButton.addEventListener("click", copyOutboundRunLiveDryRun)')],
   ["run packet download bound", app.includes('downloadOutboundRunPacketButton.addEventListener("click", downloadOutboundRunPacket)')],
   ["run packet JSON bound", app.includes('downloadOutboundRunPacketJsonButton.addEventListener("click", downloadOutboundRunPacketJson)')],
   ["run snapshot bound", app.includes('saveOutboundRunSnapshotButton.addEventListener("click", saveOutboundRunSnapshot)')],
@@ -174,8 +182,8 @@ const checks = [
   ["snapshot note CSS exists", css.includes(".outbound-run-snapshot-list p")],
   ["snapshot timeline cue CSS exists", css.includes(".outbound-run-snapshot-list em")],
   ["snapshot CSS exists", css.includes(".outbound-run-snapshot-list")],
-  ["README mentions run execution checklist", readme.includes("first real run packet copy/execution checklist/download/JSON export")],
-  ["plan next live dry run", plan.includes("- First real outbound run live dry run")]
+  ["README mentions live dry-run copy", readme.includes("first real run packet copy/execution checklist/live dry-run copy/download/JSON export")],
+  ["plan next manual launch log", plan.includes("- First real outbound run manual launch log")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
