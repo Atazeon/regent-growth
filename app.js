@@ -378,6 +378,7 @@ const outboundSessionNotesForm = document.querySelector("#outboundSessionNotesFo
 const outboundSessionNotes = document.querySelector("#outboundSessionNotes");
 const outboundOutcomeForm = document.querySelector("#outboundOutcomeForm");
 const outboundOutcomeType = document.querySelector("#outboundOutcomeType");
+const outboundOutcomeBatch = document.querySelector("#outboundOutcomeBatch");
 const outboundOutcomeCompany = document.querySelector("#outboundOutcomeCompany");
 const outboundOutcomeNote = document.querySelector("#outboundOutcomeNote");
 const outboundOutcomeSummary = document.querySelector("#outboundOutcomeSummary");
@@ -668,6 +669,7 @@ function normalizeOutboundOutcome(outcome) {
   return {
     id: outcome.id || createId(),
     type: outboundOutcomeTypes.includes(outcome.type) ? outcome.type : "Fix Needed",
+    batch: ["First Run", "Second Batch"].includes(outcome.batch) ? outcome.batch : "First Run",
     company: outcome.company || "",
     note: outcome.note || "",
     createdAt: outcome.createdAt || new Date().toISOString()
@@ -1055,6 +1057,7 @@ function renderOutboundOutcomes() {
         <div>
           <p class="eyebrow">${escapeHtml(outcome.type)}</p>
           <h4>${escapeHtml(outcome.company || "Unassigned company")}</h4>
+          <small>${escapeHtml(outcome.batch || "First Run")}</small>
           <p>${escapeHtml(outcome.note)}</p>
           <small>${escapeHtml(formatDateTime(outcome.createdAt))}</small>
         </div>
@@ -2287,6 +2290,7 @@ function resetOutboundPostLaunchReview() {
 function addOutboundOutcome(event) {
   event.preventDefault();
   const type = outboundOutcomeTypes.includes(outboundOutcomeType.value) ? outboundOutcomeType.value : "Fix Needed";
+  const batch = ["First Run", "Second Batch"].includes(outboundOutcomeBatch.value) ? outboundOutcomeBatch.value : "First Run";
   const company = outboundOutcomeCompany.value.trim();
   const note = outboundOutcomeNote.value.trim();
 
@@ -2296,7 +2300,7 @@ function addOutboundOutcome(event) {
   }
 
   outboundSessionState.outcomes = [
-    normalizeOutboundOutcome({ type, company, note, createdAt: new Date().toISOString() }),
+    normalizeOutboundOutcome({ type, batch, company, note, createdAt: new Date().toISOString() }),
     ...outboundSessionState.outcomes
   ].slice(0, 100);
   outboundOutcomeCompany.value = "";
@@ -2325,7 +2329,7 @@ function formatOutboundOutcomeSummary() {
     `Logged: ${outcomes.length}`,
     "",
     ...outcomes.map((outcome) => [
-      `${formatDateTime(outcome.createdAt)} - ${outcome.type}`,
+      `${formatDateTime(outcome.createdAt)} - ${outcome.batch || "First Run"} - ${outcome.type}`,
       `Company: ${outcome.company || "Unassigned company"}`,
       `Note: ${outcome.note}`
     ].join("\n"))
