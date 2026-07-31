@@ -17,7 +17,7 @@ const checks = [
   ["operating dashboard renders batch sent", app.includes("Batch 2 sent: ${escapeHtml(scaleDecision.secondSent)}")],
   ["operating dashboard renders open fixes", app.includes("Open fixes: ${escapeHtml(scaleDecision.openFixCount)}")],
   ["README mentions operating dashboard", readme.includes("operating dashboard")],
-  ["plan next operating dashboard filters", plan.includes("- Outbound operating closeout")]
+  ["plan next operating dashboard filters", plan.includes("- Outbound launch hardening")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);

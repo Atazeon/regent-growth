@@ -22,7 +22,7 @@ const checks = [
   ["batch comparison copy bound", app.includes('copyBatchComparisonButton.addEventListener("click", copyBatchComparison)')],
   ["batch comparison download bound", app.includes('downloadBatchComparisonButton.addEventListener("click", downloadBatchComparison)')],
   ["README mentions batch comparison", readme.includes("batch comparison")],
-  ["plan next scale decision", plan.includes("- Outbound operating closeout")]
+  ["plan next scale decision", plan.includes("- Outbound launch hardening")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);

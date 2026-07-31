@@ -430,6 +430,7 @@ const copySecondBatchReportButton = document.querySelector("#copySecondBatchRepo
 const copyBatchComparisonButton = document.querySelector("#copyBatchComparisonButton");
 const copyScaleDecisionButton = document.querySelector("#copyScaleDecisionButton");
 const copyOperatingQaButton = document.querySelector("#copyOperatingQaButton");
+const copyOperatingCloseoutButton = document.querySelector("#copyOperatingCloseoutButton");
 const downloadOutboundRunPacketButton = document.querySelector("#downloadOutboundRunPacketButton");
 const downloadOutboundLaunchReportButton = document.querySelector("#downloadOutboundLaunchReportButton");
 const downloadOutboundFollowUpBatchPlanButton = document.querySelector("#downloadOutboundFollowUpBatchPlanButton");
@@ -439,6 +440,7 @@ const downloadSecondBatchReportButton = document.querySelector("#downloadSecondB
 const downloadBatchComparisonButton = document.querySelector("#downloadBatchComparisonButton");
 const downloadScaleDecisionButton = document.querySelector("#downloadScaleDecisionButton");
 const downloadOperatingQaButton = document.querySelector("#downloadOperatingQaButton");
+const downloadOperatingCloseoutButton = document.querySelector("#downloadOperatingCloseoutButton");
 const downloadOutboundRunPacketJsonButton = document.querySelector("#downloadOutboundRunPacketJsonButton");
 const saveOutboundRunSnapshotButton = document.querySelector("#saveOutboundRunSnapshotButton");
 const downloadOutboundRunSnapshotsButton = document.querySelector("#downloadOutboundRunSnapshotsButton");
@@ -2285,6 +2287,34 @@ function downloadOutboundOperatingQa() {
   const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
   downloadFile(`regent-growth-outbound-operating-qa-${stamp}.txt`, formatOutboundOperatingQa(), "text/plain;charset=utf-8");
   setDataStatus("Downloaded outbound operating QA checklist.");
+}
+
+function formatOutboundOperatingCloseout() {
+  return [
+    "Outbound Operating Closeout",
+    `Created: ${formatDateTime(new Date().toISOString())}`,
+    "",
+    formatOutboundOperatingQa(),
+    "",
+    formatOutboundScaleDecision(),
+    "",
+    formatBatchComparison(),
+    "",
+    formatSecondBatchReport(),
+    "",
+    formatOutboundLaunchReport()
+  ].join("\n");
+}
+
+async function copyOutboundOperatingCloseout() {
+  const copiedDirectly = await copyTextWithFallback(formatOutboundOperatingCloseout());
+  setDataStatus(copiedDirectly ? "Copied outbound operating closeout." : "Selected and copied outbound operating closeout.");
+}
+
+function downloadOutboundOperatingCloseout() {
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-outbound-operating-closeout-${stamp}.txt`, formatOutboundOperatingCloseout(), "text/plain;charset=utf-8");
+  setDataStatus("Downloaded outbound operating closeout.");
 }
 
 function downloadOutboundRunPacket() {
@@ -10431,6 +10461,7 @@ copySecondBatchReportButton.addEventListener("click", copySecondBatchReport);
 copyBatchComparisonButton.addEventListener("click", copyBatchComparison);
 copyScaleDecisionButton.addEventListener("click", copyOutboundScaleDecision);
 copyOperatingQaButton.addEventListener("click", copyOutboundOperatingQa);
+copyOperatingCloseoutButton.addEventListener("click", copyOutboundOperatingCloseout);
 downloadOutboundRunPacketButton.addEventListener("click", downloadOutboundRunPacket);
 downloadOutboundLaunchReportButton.addEventListener("click", downloadOutboundLaunchReport);
 downloadOutboundFollowUpBatchPlanButton.addEventListener("click", downloadOutboundFollowUpBatchPlan);
@@ -10440,6 +10471,7 @@ downloadSecondBatchReportButton.addEventListener("click", downloadSecondBatchRep
 downloadBatchComparisonButton.addEventListener("click", downloadBatchComparison);
 downloadScaleDecisionButton.addEventListener("click", downloadOutboundScaleDecision);
 downloadOperatingQaButton.addEventListener("click", downloadOutboundOperatingQa);
+downloadOperatingCloseoutButton.addEventListener("click", downloadOutboundOperatingCloseout);
 downloadOutboundRunPacketJsonButton.addEventListener("click", downloadOutboundRunPacketJson);
 saveOutboundRunSnapshotButton.addEventListener("click", saveOutboundRunSnapshot);
 downloadOutboundRunSnapshotsButton.addEventListener("click", downloadOutboundRunSnapshots);
