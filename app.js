@@ -388,6 +388,7 @@ const outboundOutcomeList = document.querySelector("#outboundOutcomeList");
 const outboundOutcomeBatchFilter = document.querySelector("#outboundOutcomeBatchFilter");
 const copyFilteredOutboundOutcomesButton = document.querySelector("#copyFilteredOutboundOutcomesButton");
 const downloadFilteredOutboundOutcomesButton = document.querySelector("#downloadFilteredOutboundOutcomesButton");
+const downloadFilteredOutboundOutcomesCsvButton = document.querySelector("#downloadFilteredOutboundOutcomesCsvButton");
 const outboundLaunchLogForm = document.querySelector("#outboundLaunchLogForm");
 const outboundLaunchLogStatus = document.querySelector("#outboundLaunchLogStatus");
 const outboundLaunchLogCompany = document.querySelector("#outboundLaunchLogCompany");
@@ -1064,7 +1065,7 @@ function renderOutboundOutcomes() {
   [copyOutboundOutcomesButton, downloadOutboundOutcomesButton, clearOutboundOutcomesButton].forEach((button) => {
     button.disabled = outcomes.length === 0;
   });
-  [copyFilteredOutboundOutcomesButton, downloadFilteredOutboundOutcomesButton].forEach((button) => {
+  [copyFilteredOutboundOutcomesButton, downloadFilteredOutboundOutcomesButton, downloadFilteredOutboundOutcomesCsvButton].forEach((button) => {
     button.disabled = visibleOutcomes.length === 0;
   });
   outboundOutcomeList.innerHTML = visibleOutcomes.length
@@ -2580,6 +2581,26 @@ function downloadFilteredOutboundOutcomeSummary() {
   const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
   downloadFile(`regent-growth-filtered-outbound-outcomes-${stamp}.txt`, formatFilteredOutboundOutcomeSummary(), "text/plain;charset=utf-8");
   setDataStatus("Downloaded filtered outbound outcomes.");
+}
+
+function downloadFilteredOutboundOutcomeCsv() {
+  const outcomes = getVisibleOutboundOutcomes();
+  if (outcomes.length === 0) {
+    setDataStatus("No filtered outbound outcomes to download as CSV.", "error");
+    return;
+  }
+
+  const headers = ["batch", "type", "company", "note", "createdAt"];
+  const rows = outcomes.map((outcome) => [
+    outcome.batch || "First Run",
+    outcome.type,
+    outcome.company || "",
+    outcome.note || "",
+    outcome.createdAt || ""
+  ]);
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-filtered-outbound-outcomes-${stamp}.csv`, [headers, ...rows].map((row) => row.map(csvCell).join(",")).join("\n"), "text/csv;charset=utf-8");
+  setDataStatus("Downloaded filtered outbound outcomes CSV.");
 }
 
 function clearOutboundOutcomes() {
@@ -10311,6 +10332,7 @@ outboundOutcomeBatchFilter.addEventListener("change", () => {
 });
 copyFilteredOutboundOutcomesButton.addEventListener("click", copyFilteredOutboundOutcomeSummary);
 downloadFilteredOutboundOutcomesButton.addEventListener("click", downloadFilteredOutboundOutcomeSummary);
+downloadFilteredOutboundOutcomesCsvButton.addEventListener("click", downloadFilteredOutboundOutcomeCsv);
 outboundOutcomeList.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-action='delete-outbound-outcome']");
   if (!button) return;

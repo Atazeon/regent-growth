@@ -26,7 +26,7 @@ const checks = [
   ["second batch copy bound", app.includes('copySecondBatchReadinessButton.addEventListener("click", copySecondBatchReadiness)')],
   ["second batch download bound", app.includes('downloadSecondBatchReadinessButton.addEventListener("click", downloadSecondBatchReadiness)')],
   ["README mentions second-batch readiness", readme.includes("second-batch readiness")],
-  ["plan next second execution packet", plan.includes("- Outbound operating CSV exports")]
+  ["plan next second execution packet", plan.includes("- Outbound operating QA pass")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
