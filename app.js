@@ -422,6 +422,7 @@ const copySecondBatchReadinessButton = document.querySelector("#copySecondBatchR
 const copySecondBatchExecutionPacketButton = document.querySelector("#copySecondBatchExecutionPacketButton");
 const copySecondBatchReportButton = document.querySelector("#copySecondBatchReportButton");
 const copyBatchComparisonButton = document.querySelector("#copyBatchComparisonButton");
+const copyScaleDecisionButton = document.querySelector("#copyScaleDecisionButton");
 const downloadOutboundRunPacketButton = document.querySelector("#downloadOutboundRunPacketButton");
 const downloadOutboundLaunchReportButton = document.querySelector("#downloadOutboundLaunchReportButton");
 const downloadOutboundFollowUpBatchPlanButton = document.querySelector("#downloadOutboundFollowUpBatchPlanButton");
@@ -429,6 +430,7 @@ const downloadSecondBatchReadinessButton = document.querySelector("#downloadSeco
 const downloadSecondBatchExecutionPacketButton = document.querySelector("#downloadSecondBatchExecutionPacketButton");
 const downloadSecondBatchReportButton = document.querySelector("#downloadSecondBatchReportButton");
 const downloadBatchComparisonButton = document.querySelector("#downloadBatchComparisonButton");
+const downloadScaleDecisionButton = document.querySelector("#downloadScaleDecisionButton");
 const downloadOutboundRunPacketJsonButton = document.querySelector("#downloadOutboundRunPacketJsonButton");
 const saveOutboundRunSnapshotButton = document.querySelector("#saveOutboundRunSnapshotButton");
 const downloadOutboundRunSnapshotsButton = document.querySelector("#downloadOutboundRunSnapshotsButton");
@@ -2155,6 +2157,72 @@ function downloadBatchComparison() {
   const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
   downloadFile(`regent-growth-batch-comparison-${stamp}.txt`, formatBatchComparison(), "text/plain;charset=utf-8");
   setDataStatus("Downloaded first vs second outbound batch comparison.");
+}
+
+function getOutboundScaleDecision() {
+  const secondReadiness = getSecondBatchReadinessSummary();
+  const firstCounts = getOutcomeCountsForBatch("First Run");
+  const secondCounts = getOutcomeCountsForBatch("Second Batch");
+  const openFixes = getOutboundImprovementItems().filter((item) => ["Open", "In Progress"].includes(item.status));
+  const secondSent = secondCounts["Email Sent"] || 0;
+  const secondReplies = secondCounts["Reply Received"] || 0;
+  const secondMeetings = secondCounts["Meeting Booked"] || 0;
+  const firstBlocked = (firstCounts.Blocked || 0) + (firstCounts["Fix Needed"] || 0);
+  const secondBlocked = (secondCounts.Blocked || 0) + (secondCounts["Fix Needed"] || 0);
+  const decision = openFixes.length || secondReadiness.state === "Hold"
+    ? "Hold"
+    : secondBlocked > firstBlocked
+      ? "Run Small Batch"
+      : secondReplies + secondMeetings > 0 || secondSent >= 10
+        ? "Scale Carefully"
+        : "Run Small Batch";
+
+  return {
+    decision,
+    openFixCount: openFixes.length,
+    secondSent,
+    secondReplies,
+    secondMeetings,
+    firstBlocked,
+    secondBlocked,
+    recommendedVolume: decision === "Scale Carefully" ? "50 companies" : decision === "Run Small Batch" ? "10-25 companies" : "0 companies until blockers are resolved"
+  };
+}
+
+function formatOutboundScaleDecision() {
+  const decision = getOutboundScaleDecision();
+  return [
+    "Outbound Scale Decision Packet",
+    `Created: ${formatDateTime(new Date().toISOString())}`,
+    `Decision: ${decision.decision}`,
+    `Recommended next volume: ${decision.recommendedVolume}`,
+    "",
+    "Evidence",
+    `Second-batch emails sent: ${decision.secondSent}`,
+    `Second-batch replies: ${decision.secondReplies}`,
+    `Second-batch meetings: ${decision.secondMeetings}`,
+    `First-run blocked/fix outcomes: ${decision.firstBlocked}`,
+    `Second-batch blocked/fix outcomes: ${decision.secondBlocked}`,
+    `Open fixes: ${decision.openFixCount}`,
+    "",
+    "Operating Rule",
+    decision.decision === "Scale Carefully"
+      ? "Increase volume only with manual review, source evidence, and outcome logging still enabled."
+      : decision.decision === "Run Small Batch"
+        ? "Keep the next batch constrained until reply quality and blocker rates improve."
+        : "Resolve open fixes before sending another outbound batch."
+  ].join("\n");
+}
+
+async function copyOutboundScaleDecision() {
+  const copiedDirectly = await copyTextWithFallback(formatOutboundScaleDecision());
+  setDataStatus(copiedDirectly ? "Copied outbound scale decision packet." : "Selected and copied outbound scale decision packet.");
+}
+
+function downloadOutboundScaleDecision() {
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-outbound-scale-decision-${stamp}.txt`, formatOutboundScaleDecision(), "text/plain;charset=utf-8");
+  setDataStatus("Downloaded outbound scale decision packet.");
 }
 
 function downloadOutboundRunPacket() {
@@ -10233,6 +10301,7 @@ copySecondBatchReadinessButton.addEventListener("click", copySecondBatchReadines
 copySecondBatchExecutionPacketButton.addEventListener("click", copySecondBatchExecutionPacket);
 copySecondBatchReportButton.addEventListener("click", copySecondBatchReport);
 copyBatchComparisonButton.addEventListener("click", copyBatchComparison);
+copyScaleDecisionButton.addEventListener("click", copyOutboundScaleDecision);
 downloadOutboundRunPacketButton.addEventListener("click", downloadOutboundRunPacket);
 downloadOutboundLaunchReportButton.addEventListener("click", downloadOutboundLaunchReport);
 downloadOutboundFollowUpBatchPlanButton.addEventListener("click", downloadOutboundFollowUpBatchPlan);
@@ -10240,6 +10309,7 @@ downloadSecondBatchReadinessButton.addEventListener("click", downloadSecondBatch
 downloadSecondBatchExecutionPacketButton.addEventListener("click", downloadSecondBatchExecutionPacket);
 downloadSecondBatchReportButton.addEventListener("click", downloadSecondBatchReport);
 downloadBatchComparisonButton.addEventListener("click", downloadBatchComparison);
+downloadScaleDecisionButton.addEventListener("click", downloadOutboundScaleDecision);
 downloadOutboundRunPacketJsonButton.addEventListener("click", downloadOutboundRunPacketJson);
 saveOutboundRunSnapshotButton.addEventListener("click", saveOutboundRunSnapshot);
 downloadOutboundRunSnapshotsButton.addEventListener("click", downloadOutboundRunSnapshots);
