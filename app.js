@@ -421,12 +421,14 @@ const copyOutboundFollowUpBatchPlanButton = document.querySelector("#copyOutboun
 const copySecondBatchReadinessButton = document.querySelector("#copySecondBatchReadinessButton");
 const copySecondBatchExecutionPacketButton = document.querySelector("#copySecondBatchExecutionPacketButton");
 const copySecondBatchReportButton = document.querySelector("#copySecondBatchReportButton");
+const copyBatchComparisonButton = document.querySelector("#copyBatchComparisonButton");
 const downloadOutboundRunPacketButton = document.querySelector("#downloadOutboundRunPacketButton");
 const downloadOutboundLaunchReportButton = document.querySelector("#downloadOutboundLaunchReportButton");
 const downloadOutboundFollowUpBatchPlanButton = document.querySelector("#downloadOutboundFollowUpBatchPlanButton");
 const downloadSecondBatchReadinessButton = document.querySelector("#downloadSecondBatchReadinessButton");
 const downloadSecondBatchExecutionPacketButton = document.querySelector("#downloadSecondBatchExecutionPacketButton");
 const downloadSecondBatchReportButton = document.querySelector("#downloadSecondBatchReportButton");
+const downloadBatchComparisonButton = document.querySelector("#downloadBatchComparisonButton");
 const downloadOutboundRunPacketJsonButton = document.querySelector("#downloadOutboundRunPacketJsonButton");
 const saveOutboundRunSnapshotButton = document.querySelector("#saveOutboundRunSnapshotButton");
 const downloadOutboundRunSnapshotsButton = document.querySelector("#downloadOutboundRunSnapshotsButton");
@@ -2105,6 +2107,54 @@ function downloadSecondBatchReport() {
   const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
   downloadFile(`regent-growth-second-batch-report-${stamp}.txt`, formatSecondBatchReport(), "text/plain;charset=utf-8");
   setDataStatus("Downloaded second real outbound batch report.");
+}
+
+function getOutcomeCountsForBatch(batch) {
+  return outboundSessionState.outcomes
+    .filter((outcome) => (outcome.batch || "First Run") === batch)
+    .reduce((counts, outcome) => {
+      counts[outcome.type] = (counts[outcome.type] || 0) + 1;
+      return counts;
+    }, {});
+}
+
+function formatBatchComparison() {
+  const firstCounts = getOutcomeCountsForBatch("First Run");
+  const secondCounts = getOutcomeCountsForBatch("Second Batch");
+  const comparisonRows = outboundOutcomeTypes.map((type) => {
+    const first = firstCounts[type] || 0;
+    const second = secondCounts[type] || 0;
+    return `${type}: first ${first} | second ${second} | delta ${formatSignedDelta(second - first)}`;
+  });
+  const firstTotal = outboundSessionState.outcomes.filter((outcome) => (outcome.batch || "First Run") === "First Run").length;
+  const secondTotal = getSecondBatchOutcomes().length;
+  return [
+    "First vs Second Outbound Batch Comparison",
+    `Created: ${formatDateTime(new Date().toISOString())}`,
+    `First-run outcomes: ${firstTotal}`,
+    `Second-batch outcomes: ${secondTotal}`,
+    "",
+    "Outcome Deltas",
+    ...comparisonRows,
+    "",
+    "Read",
+    secondTotal === 0
+      ? "No second-batch outcomes have been logged yet."
+      : secondTotal > firstTotal
+        ? "Second batch has more logged activity than the first run."
+        : "Second batch is still equal to or smaller than the first run."
+  ].join("\n");
+}
+
+async function copyBatchComparison() {
+  const copiedDirectly = await copyTextWithFallback(formatBatchComparison());
+  setDataStatus(copiedDirectly ? "Copied first vs second outbound batch comparison." : "Selected and copied first vs second outbound batch comparison.");
+}
+
+function downloadBatchComparison() {
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-batch-comparison-${stamp}.txt`, formatBatchComparison(), "text/plain;charset=utf-8");
+  setDataStatus("Downloaded first vs second outbound batch comparison.");
 }
 
 function downloadOutboundRunPacket() {
@@ -10182,12 +10232,14 @@ copyOutboundFollowUpBatchPlanButton.addEventListener("click", copyOutboundFollow
 copySecondBatchReadinessButton.addEventListener("click", copySecondBatchReadiness);
 copySecondBatchExecutionPacketButton.addEventListener("click", copySecondBatchExecutionPacket);
 copySecondBatchReportButton.addEventListener("click", copySecondBatchReport);
+copyBatchComparisonButton.addEventListener("click", copyBatchComparison);
 downloadOutboundRunPacketButton.addEventListener("click", downloadOutboundRunPacket);
 downloadOutboundLaunchReportButton.addEventListener("click", downloadOutboundLaunchReport);
 downloadOutboundFollowUpBatchPlanButton.addEventListener("click", downloadOutboundFollowUpBatchPlan);
 downloadSecondBatchReadinessButton.addEventListener("click", downloadSecondBatchReadiness);
 downloadSecondBatchExecutionPacketButton.addEventListener("click", downloadSecondBatchExecutionPacket);
 downloadSecondBatchReportButton.addEventListener("click", downloadSecondBatchReport);
+downloadBatchComparisonButton.addEventListener("click", downloadBatchComparison);
 downloadOutboundRunPacketJsonButton.addEventListener("click", downloadOutboundRunPacketJson);
 saveOutboundRunSnapshotButton.addEventListener("click", saveOutboundRunSnapshot);
 downloadOutboundRunSnapshotsButton.addEventListener("click", downloadOutboundRunSnapshots);

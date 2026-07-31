@@ -18,7 +18,7 @@ const checks = [
   ["outcome batch rendered exists", app.includes('escapeHtml(outcome.batch || "First Run")')],
   ["outcome batch exported exists", app.includes('${formatDateTime(outcome.createdAt)} - ${outcome.batch || "First Run"} - ${outcome.type}')],
   ["README mentions second-batch outcome tracking", readme.includes("second-batch outcome tracking")],
-  ["plan next second batch report", plan.includes("- First vs second outbound batch comparison")]
+  ["plan next second batch report", plan.includes("- Outbound scale decision packet")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);

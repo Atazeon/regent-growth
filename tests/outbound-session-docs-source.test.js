@@ -8,7 +8,7 @@ const plan = fs.readFileSync(path.join(root, "PROJECT_PLAN.md"), "utf8");
 const checks = [
   ["README mentions first session tracker", readme.includes("Tracks a first real outbound session with 25")],
   ["plan mentions saved tracker", plan.includes("saved 25-step first outbound session tracker")],
-  ["plan advanced next milestone", plan.includes("- First vs second outbound batch comparison")]
+  ["plan advanced next milestone", plan.includes("- Outbound scale decision packet")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
