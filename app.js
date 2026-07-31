@@ -418,10 +418,12 @@ const copyOutboundRunDryRunButton = document.querySelector("#copyOutboundRunDryR
 const copyOutboundLaunchReportButton = document.querySelector("#copyOutboundLaunchReportButton");
 const copyOutboundFollowUpBatchPlanButton = document.querySelector("#copyOutboundFollowUpBatchPlanButton");
 const copySecondBatchReadinessButton = document.querySelector("#copySecondBatchReadinessButton");
+const copySecondBatchExecutionPacketButton = document.querySelector("#copySecondBatchExecutionPacketButton");
 const downloadOutboundRunPacketButton = document.querySelector("#downloadOutboundRunPacketButton");
 const downloadOutboundLaunchReportButton = document.querySelector("#downloadOutboundLaunchReportButton");
 const downloadOutboundFollowUpBatchPlanButton = document.querySelector("#downloadOutboundFollowUpBatchPlanButton");
 const downloadSecondBatchReadinessButton = document.querySelector("#downloadSecondBatchReadinessButton");
+const downloadSecondBatchExecutionPacketButton = document.querySelector("#downloadSecondBatchExecutionPacketButton");
 const downloadOutboundRunPacketJsonButton = document.querySelector("#downloadOutboundRunPacketJsonButton");
 const saveOutboundRunSnapshotButton = document.querySelector("#saveOutboundRunSnapshotButton");
 const downloadOutboundRunSnapshotsButton = document.querySelector("#downloadOutboundRunSnapshotsButton");
@@ -2008,6 +2010,49 @@ function downloadSecondBatchReadiness() {
   const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
   downloadFile(`regent-growth-second-batch-readiness-${stamp}.txt`, formatSecondBatchReadiness(), "text/plain;charset=utf-8");
   setDataStatus("Downloaded second real outbound batch readiness.");
+}
+
+function formatSecondBatchExecutionPacket() {
+  const summary = getSecondBatchReadinessSummary();
+  return [
+    "Second Real Outbound Batch Execution Packet",
+    `Created: ${formatDateTime(new Date().toISOString())}`,
+    `State: ${summary.state}`,
+    `Batch size: ${summary.recommendedSize}`,
+    "",
+    "Preflight",
+    "- Confirm Ollama is running.",
+    "- Confirm local research server is running.",
+    "- Keep source evidence required before drafting.",
+    "- Review all generated emails before handoff.",
+    "",
+    "Run Steps",
+    "1. Generate or import the next batch using the recommended size.",
+    "2. Research each company and reject weak evidence.",
+    "3. Draft emails only for evidence-backed accounts.",
+    "4. Review drafts manually before opening handoff links.",
+    "5. Log launch decisions, outcomes, and fix items during the batch.",
+    "6. Save a snapshot and export the launch report after the batch.",
+    "",
+    "Readiness Blockers",
+    ...(summary.blockers.length ? summary.blockers.map((blocker) => `- ${blocker}`) : ["- None"]),
+    "",
+    "Stop Rules",
+    "- Stop if source evidence is missing.",
+    "- Stop if more blockers appear than sends.",
+    "- Stop if email copy needs manual rewrite for most accounts."
+  ].join("\n");
+}
+
+async function copySecondBatchExecutionPacket() {
+  const copiedDirectly = await copyTextWithFallback(formatSecondBatchExecutionPacket());
+  setDataStatus(copiedDirectly ? "Copied second real outbound batch execution packet." : "Selected and copied second real outbound batch execution packet.");
+}
+
+function downloadSecondBatchExecutionPacket() {
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-second-batch-execution-packet-${stamp}.txt`, formatSecondBatchExecutionPacket(), "text/plain;charset=utf-8");
+  setDataStatus("Downloaded second real outbound batch execution packet.");
 }
 
 function downloadOutboundRunPacket() {
@@ -10082,10 +10127,12 @@ copyOutboundRunDryRunButton.addEventListener("click", copyOutboundRunLiveDryRun)
 copyOutboundLaunchReportButton.addEventListener("click", copyOutboundLaunchReport);
 copyOutboundFollowUpBatchPlanButton.addEventListener("click", copyOutboundFollowUpBatchPlan);
 copySecondBatchReadinessButton.addEventListener("click", copySecondBatchReadiness);
+copySecondBatchExecutionPacketButton.addEventListener("click", copySecondBatchExecutionPacket);
 downloadOutboundRunPacketButton.addEventListener("click", downloadOutboundRunPacket);
 downloadOutboundLaunchReportButton.addEventListener("click", downloadOutboundLaunchReport);
 downloadOutboundFollowUpBatchPlanButton.addEventListener("click", downloadOutboundFollowUpBatchPlan);
 downloadSecondBatchReadinessButton.addEventListener("click", downloadSecondBatchReadiness);
+downloadSecondBatchExecutionPacketButton.addEventListener("click", downloadSecondBatchExecutionPacket);
 downloadOutboundRunPacketJsonButton.addEventListener("click", downloadOutboundRunPacketJson);
 saveOutboundRunSnapshotButton.addEventListener("click", saveOutboundRunSnapshot);
 downloadOutboundRunSnapshotsButton.addEventListener("click", downloadOutboundRunSnapshots);
