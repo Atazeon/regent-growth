@@ -101,6 +101,39 @@
         </div>
         <div id="outboundRunSnapshotList" class="outbound-run-snapshot-list" aria-label="First run snapshot history"></div>
         <div id="outboundSessionNextAction" class="outbound-session-next-action" aria-live="polite"></div>
+        <form id="outboundLaunchLogForm" class="outbound-outcome-form">
+          <label>
+            Launch status
+            <select id="outboundLaunchLogStatus" name="launchLogStatus">
+              <option value="Dry Run">Dry Run</option>
+              <option value="Approved To Send">Approved To Send</option>
+              <option value="Sent">Sent</option>
+              <option value="Blocked">Blocked</option>
+              <option value="Review Needed">Review Needed</option>
+            </select>
+          </label>
+          <label>
+            Company
+            <input id="outboundLaunchLogCompany" name="launchLogCompany" placeholder="Company or batch name">
+          </label>
+          <label class="full-span">
+            Decision note
+            <textarea id="outboundLaunchLogNote" name="launchLogNote" placeholder="Decision, send count, blocker, or next action."></textarea>
+          </label>
+          <button type="submit">Log launch</button>
+        </form>
+        <div class="outbound-outcome-heading">
+          <div>
+            <h3>Manual Launch Log</h3>
+            <p id="outboundLaunchLogSummary" class="empty-state">No launch decisions logged yet.</p>
+          </div>
+          <div class="action-row" role="group" aria-label="Manual launch log actions">
+            <button id="copyOutboundLaunchLogButton" class="secondary-button" type="button">Copy launch log</button>
+            <button id="downloadOutboundLaunchLogButton" class="secondary-button" type="button">Download launch log</button>
+            <button id="clearOutboundLaunchLogButton" class="danger-button" type="button">Clear launch log</button>
+          </div>
+        </div>
+        <div id="outboundLaunchLogList" class="outbound-outcome-list" aria-label="Manual first-run launch log"></div>
         <form id="outboundOutcomeForm" class="outbound-outcome-form">
           <label>
             Outcome
