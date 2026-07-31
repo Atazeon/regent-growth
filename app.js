@@ -415,7 +415,9 @@ const completeVisibleOutboundStepsButton = document.querySelector("#completeVisi
 const copyOutboundRunPacketButton = document.querySelector("#copyOutboundRunPacketButton");
 const copyOutboundRunExecutionButton = document.querySelector("#copyOutboundRunExecutionButton");
 const copyOutboundRunDryRunButton = document.querySelector("#copyOutboundRunDryRunButton");
+const copyOutboundLaunchReportButton = document.querySelector("#copyOutboundLaunchReportButton");
 const downloadOutboundRunPacketButton = document.querySelector("#downloadOutboundRunPacketButton");
+const downloadOutboundLaunchReportButton = document.querySelector("#downloadOutboundLaunchReportButton");
 const downloadOutboundRunPacketJsonButton = document.querySelector("#downloadOutboundRunPacketJsonButton");
 const saveOutboundRunSnapshotButton = document.querySelector("#saveOutboundRunSnapshotButton");
 const downloadOutboundRunSnapshotsButton = document.querySelector("#downloadOutboundRunSnapshotsButton");
@@ -1841,6 +1843,57 @@ async function copyOutboundRunExecutionChecklist() {
 async function copyOutboundRunLiveDryRun() {
   const copiedDirectly = await copyTextWithFallback(formatOutboundRunLiveDryRun());
   setDataStatus(copiedDirectly ? "Copied first real outbound live dry-run packet." : "Selected and copied first real outbound live dry-run packet.");
+}
+
+function formatOutboundLaunchReport() {
+  const readiness = getOutboundRunReadinessSummary();
+  const stats = getOutboundSessionStats().map((stat) => `${stat.label}: ${stat.value} (${stat.detail})`);
+  const launchLog = formatOutboundLaunchLog();
+  const postLaunchReview = formatOutboundPostLaunchReview();
+  const outcomes = formatOutboundOutcomeSummary();
+  const fixes = getOutboundImprovementItems();
+  const openFixes = fixes.filter((item) => ["Open", "In Progress"].includes(item.status));
+  const closedFixes = fixes.filter((item) => ["Resolved", "Archived"].includes(item.status));
+
+  return [
+    "First Real Outbound Launch Report",
+    `Created: ${formatDateTime(new Date().toISOString())}`,
+    `Readiness: ${readiness.state}`,
+    `Progress: ${readiness.completedCount} / ${readiness.totalCount} (${readiness.completionPercent}%)`,
+    `Next step: ${readiness.nextStep}`,
+    "",
+    "Live Stats",
+    ...stats,
+    "",
+    "Manual Launch Log",
+    launchLog,
+    "",
+    "Post-Launch Review",
+    postLaunchReview,
+    "",
+    "Outcomes",
+    outcomes,
+    "",
+    "Open And In-Progress Fixes",
+    ...(openFixes.length ? openFixes.map((item) => `- ${item.status} | ${item.company || "Unassigned company"} | ${item.type} | ${item.note}`) : ["- None"]),
+    "",
+    "Closed Fixes",
+    ...(closedFixes.length ? closedFixes.map((item) => `- ${item.status} | ${item.company || "Unassigned company"} | ${item.type} | ${item.executionNote || item.note}`) : ["- None"]),
+    "",
+    "Blockers",
+    ...(readiness.blockers.length ? readiness.blockers.map((blocker) => `- ${blocker}`) : ["- None"])
+  ].join("\n");
+}
+
+async function copyOutboundLaunchReport() {
+  const copiedDirectly = await copyTextWithFallback(formatOutboundLaunchReport());
+  setDataStatus(copiedDirectly ? "Copied first real outbound launch report." : "Selected and copied first real outbound launch report.");
+}
+
+function downloadOutboundLaunchReport() {
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-first-run-launch-report-${stamp}.txt`, formatOutboundLaunchReport(), "text/plain;charset=utf-8");
+  setDataStatus("Downloaded first real outbound launch report.");
 }
 
 function downloadOutboundRunPacket() {
@@ -9912,7 +9965,9 @@ completeVisibleOutboundStepsButton.addEventListener("click", completeVisibleOutb
 copyOutboundRunPacketButton.addEventListener("click", copyOutboundRunPacket);
 copyOutboundRunExecutionButton.addEventListener("click", copyOutboundRunExecutionChecklist);
 copyOutboundRunDryRunButton.addEventListener("click", copyOutboundRunLiveDryRun);
+copyOutboundLaunchReportButton.addEventListener("click", copyOutboundLaunchReport);
 downloadOutboundRunPacketButton.addEventListener("click", downloadOutboundRunPacket);
+downloadOutboundLaunchReportButton.addEventListener("click", downloadOutboundLaunchReport);
 downloadOutboundRunPacketJsonButton.addEventListener("click", downloadOutboundRunPacketJson);
 saveOutboundRunSnapshotButton.addEventListener("click", saveOutboundRunSnapshot);
 downloadOutboundRunSnapshotsButton.addEventListener("click", downloadOutboundRunSnapshots);
