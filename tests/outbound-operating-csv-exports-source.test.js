@@ -18,13 +18,13 @@ const checks = [
   ["filtered CSV uses csv helper", app.includes("row.map(csvCell).join(\",\")")],
   ["filtered CSV bound", app.includes('downloadFilteredOutboundOutcomesCsvButton.addEventListener("click", downloadFilteredOutboundOutcomeCsv)')],
   ["README mentions CSV exports", readme.includes("CSV exports")],
-  ["plan next operating QA", plan.includes("- Outbound operating QA pass")]
+  ["plan next operating QA", plan.includes("- Outbound operating closeout")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
 if (failures.length) {
-  console.error(`Outbound operating QA pass test failed: ${failures.join(", ")}`);
+  console.error(`Outbound operating closeout test failed: ${failures.join(", ")}`);
   process.exit(1);
 }
 
-console.log("Outbound operating QA pass test passed.");
+console.log("Outbound operating closeout test passed.");

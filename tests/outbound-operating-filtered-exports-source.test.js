@@ -22,13 +22,13 @@ const checks = [
   ["filtered outcomes copy bound", app.includes('copyFilteredOutboundOutcomesButton.addEventListener("click", copyFilteredOutboundOutcomeSummary)')],
   ["filtered outcomes download bound", app.includes('downloadFilteredOutboundOutcomesButton.addEventListener("click", downloadFilteredOutboundOutcomeSummary)')],
   ["README mentions filtered exports", readme.includes("filtered exports")],
-  ["plan next operating CSV exports", plan.includes("- Outbound operating QA pass")]
+  ["plan next operating CSV exports", plan.includes("- Outbound operating closeout")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
 if (failures.length) {
-  console.error(`Outbound operating QA pass test failed: ${failures.join(", ")}`);
+  console.error(`Outbound operating closeout test failed: ${failures.join(", ")}`);
   process.exit(1);
 }
 
-console.log("Outbound operating QA pass test passed.");
+console.log("Outbound operating closeout test passed.");

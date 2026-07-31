@@ -429,6 +429,7 @@ const copySecondBatchExecutionPacketButton = document.querySelector("#copySecond
 const copySecondBatchReportButton = document.querySelector("#copySecondBatchReportButton");
 const copyBatchComparisonButton = document.querySelector("#copyBatchComparisonButton");
 const copyScaleDecisionButton = document.querySelector("#copyScaleDecisionButton");
+const copyOperatingQaButton = document.querySelector("#copyOperatingQaButton");
 const downloadOutboundRunPacketButton = document.querySelector("#downloadOutboundRunPacketButton");
 const downloadOutboundLaunchReportButton = document.querySelector("#downloadOutboundLaunchReportButton");
 const downloadOutboundFollowUpBatchPlanButton = document.querySelector("#downloadOutboundFollowUpBatchPlanButton");
@@ -437,6 +438,7 @@ const downloadSecondBatchExecutionPacketButton = document.querySelector("#downlo
 const downloadSecondBatchReportButton = document.querySelector("#downloadSecondBatchReportButton");
 const downloadBatchComparisonButton = document.querySelector("#downloadBatchComparisonButton");
 const downloadScaleDecisionButton = document.querySelector("#downloadScaleDecisionButton");
+const downloadOperatingQaButton = document.querySelector("#downloadOperatingQaButton");
 const downloadOutboundRunPacketJsonButton = document.querySelector("#downloadOutboundRunPacketJsonButton");
 const saveOutboundRunSnapshotButton = document.querySelector("#saveOutboundRunSnapshotButton");
 const downloadOutboundRunSnapshotsButton = document.querySelector("#downloadOutboundRunSnapshotsButton");
@@ -2243,6 +2245,46 @@ function downloadOutboundScaleDecision() {
   const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
   downloadFile(`regent-growth-outbound-scale-decision-${stamp}.txt`, formatOutboundScaleDecision(), "text/plain;charset=utf-8");
   setDataStatus("Downloaded outbound scale decision packet.");
+}
+
+function getOutboundOperatingQaItems() {
+  const readiness = getOutboundRunReadinessSummary();
+  const scaleDecision = getOutboundScaleDecision();
+  return [
+    { label: "Run packet exported", ready: readiness.completedCount > 0 },
+    { label: "Launch log has entries", ready: (outboundSessionState.launchLog || []).length > 0 },
+    { label: "Post-launch review saved", ready: hasOutboundPostLaunchReview() },
+    { label: "Second-batch outcomes tracked", ready: getSecondBatchOutcomes().length > 0 },
+    { label: "Filtered outcome exports available", ready: true },
+    { label: "Scale decision computed", ready: Boolean(scaleDecision.decision) },
+    { label: "Open fixes reviewed", ready: scaleDecision.openFixCount === 0 || scaleDecision.decision !== "Scale Carefully" }
+  ];
+}
+
+function formatOutboundOperatingQa() {
+  const items = getOutboundOperatingQaItems();
+  const readyCount = items.filter((item) => item.ready).length;
+  return [
+    "Outbound Operating QA Checklist",
+    `Created: ${formatDateTime(new Date().toISOString())}`,
+    `Ready checks: ${readyCount} / ${items.length}`,
+    "",
+    ...items.map((item) => `${item.ready ? "[x]" : "[ ]"} ${item.label}`),
+    "",
+    "Rule",
+    "Do not scale outbound volume until QA checks pass or blocked checks have explicit owner notes."
+  ].join("\n");
+}
+
+async function copyOutboundOperatingQa() {
+  const copiedDirectly = await copyTextWithFallback(formatOutboundOperatingQa());
+  setDataStatus(copiedDirectly ? "Copied outbound operating QA checklist." : "Selected and copied outbound operating QA checklist.");
+}
+
+function downloadOutboundOperatingQa() {
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-outbound-operating-qa-${stamp}.txt`, formatOutboundOperatingQa(), "text/plain;charset=utf-8");
+  setDataStatus("Downloaded outbound operating QA checklist.");
 }
 
 function downloadOutboundRunPacket() {
@@ -10388,6 +10430,7 @@ copySecondBatchExecutionPacketButton.addEventListener("click", copySecondBatchEx
 copySecondBatchReportButton.addEventListener("click", copySecondBatchReport);
 copyBatchComparisonButton.addEventListener("click", copyBatchComparison);
 copyScaleDecisionButton.addEventListener("click", copyOutboundScaleDecision);
+copyOperatingQaButton.addEventListener("click", copyOutboundOperatingQa);
 downloadOutboundRunPacketButton.addEventListener("click", downloadOutboundRunPacket);
 downloadOutboundLaunchReportButton.addEventListener("click", downloadOutboundLaunchReport);
 downloadOutboundFollowUpBatchPlanButton.addEventListener("click", downloadOutboundFollowUpBatchPlan);
@@ -10396,6 +10439,7 @@ downloadSecondBatchExecutionPacketButton.addEventListener("click", downloadSecon
 downloadSecondBatchReportButton.addEventListener("click", downloadSecondBatchReport);
 downloadBatchComparisonButton.addEventListener("click", downloadBatchComparison);
 downloadScaleDecisionButton.addEventListener("click", downloadOutboundScaleDecision);
+downloadOperatingQaButton.addEventListener("click", downloadOutboundOperatingQa);
 downloadOutboundRunPacketJsonButton.addEventListener("click", downloadOutboundRunPacketJson);
 saveOutboundRunSnapshotButton.addEventListener("click", saveOutboundRunSnapshot);
 downloadOutboundRunSnapshotsButton.addEventListener("click", downloadOutboundRunSnapshots);
