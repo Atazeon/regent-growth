@@ -24,7 +24,7 @@ const checks = [
   ["launch report copy bound", app.includes('copyOutboundLaunchReportButton.addEventListener("click", copyOutboundLaunchReport)')],
   ["launch report download bound", app.includes('downloadOutboundLaunchReportButton.addEventListener("click", downloadOutboundLaunchReport)')],
   ["README mentions launch report", readme.includes("launch report")],
-  ["plan next follow-up batch", plan.includes("- First real outbound run follow-up batch plan")]
+  ["plan next follow-up batch", plan.includes("- Second real outbound batch readiness")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);

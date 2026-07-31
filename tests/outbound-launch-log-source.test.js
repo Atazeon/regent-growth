@@ -39,7 +39,7 @@ const checks = [
   ["launch log download bound", app.includes('downloadOutboundLaunchLogButton.addEventListener("click", downloadOutboundLaunchLog)')],
   ["launch log clear bound", app.includes('clearOutboundLaunchLogButton.addEventListener("click", clearOutboundLaunchLog)')],
   ["README mentions manual launch log", readme.includes("manual launch log")],
-  ["plan next post-launch review", plan.includes("- First real outbound run follow-up batch plan")]
+  ["plan next post-launch review", plan.includes("- Second real outbound batch readiness")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);

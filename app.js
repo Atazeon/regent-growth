@@ -416,8 +416,10 @@ const copyOutboundRunPacketButton = document.querySelector("#copyOutboundRunPack
 const copyOutboundRunExecutionButton = document.querySelector("#copyOutboundRunExecutionButton");
 const copyOutboundRunDryRunButton = document.querySelector("#copyOutboundRunDryRunButton");
 const copyOutboundLaunchReportButton = document.querySelector("#copyOutboundLaunchReportButton");
+const copyOutboundFollowUpBatchPlanButton = document.querySelector("#copyOutboundFollowUpBatchPlanButton");
 const downloadOutboundRunPacketButton = document.querySelector("#downloadOutboundRunPacketButton");
 const downloadOutboundLaunchReportButton = document.querySelector("#downloadOutboundLaunchReportButton");
+const downloadOutboundFollowUpBatchPlanButton = document.querySelector("#downloadOutboundFollowUpBatchPlanButton");
 const downloadOutboundRunPacketJsonButton = document.querySelector("#downloadOutboundRunPacketJsonButton");
 const saveOutboundRunSnapshotButton = document.querySelector("#saveOutboundRunSnapshotButton");
 const downloadOutboundRunSnapshotsButton = document.querySelector("#downloadOutboundRunSnapshotsButton");
@@ -1894,6 +1896,52 @@ function downloadOutboundLaunchReport() {
   const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
   downloadFile(`regent-growth-first-run-launch-report-${stamp}.txt`, formatOutboundLaunchReport(), "text/plain;charset=utf-8");
   setDataStatus("Downloaded first real outbound launch report.");
+}
+
+function formatOutboundFollowUpBatchPlan() {
+  const readiness = getOutboundRunReadinessSummary();
+  const counts = getOutboundOutcomeCounts();
+  const openFixes = getOutboundImprovementItems().filter((item) => ["Open", "In Progress"].includes(item.status));
+  const review = normalizeOutboundPostLaunchReview(outboundSessionState.postLaunchReview || {});
+  const blockers = readiness.blockers.length ? readiness.blockers : openFixes.map((item) => `${item.company || "Unassigned company"}: ${item.note}`);
+  return [
+    "First Real Outbound Follow-Up Batch Plan",
+    `Created: ${formatDateTime(new Date().toISOString())}`,
+    `Readiness: ${readiness.state}`,
+    `Recommended batch size: ${readiness.state === "Ready" && openFixes.length === 0 ? "25-50 companies" : "5-10 companies until blockers are resolved"}`,
+    "",
+    "Outcome Baseline",
+    `Prospects added: ${counts["Prospect Added"] || 0}`,
+    `Emails sent: ${counts["Email Sent"] || 0}`,
+    `Replies received: ${counts["Reply Received"] || 0}`,
+    `Meetings booked: ${counts["Meeting Booked"] || 0}`,
+    `Blocked/Fix needed: ${(counts.Blocked || 0) + (counts["Fix Needed"] || 0)}`,
+    "",
+    "Review Inputs",
+    `Wins: ${review.wins || "Not recorded."}`,
+    `Issues: ${review.issues || "Not recorded."}`,
+    `Next steps: ${review.nextSteps || readiness.nextStep}`,
+    "",
+    "Before Next Batch",
+    ...(blockers.length ? blockers.map((blocker) => `- ${blocker}`) : ["- Save a fresh snapshot.", "- Export launch report.", "- Confirm source evidence is required before drafting."]),
+    "",
+    "Next Batch Rules",
+    "- Keep manual review before sending.",
+    "- Require source evidence for every generated prospect.",
+    "- Log launch decisions and outcomes during the batch.",
+    "- Save a snapshot after the batch and compare it to the previous run."
+  ].join("\n");
+}
+
+async function copyOutboundFollowUpBatchPlan() {
+  const copiedDirectly = await copyTextWithFallback(formatOutboundFollowUpBatchPlan());
+  setDataStatus(copiedDirectly ? "Copied first real outbound follow-up batch plan." : "Selected and copied first real outbound follow-up batch plan.");
+}
+
+function downloadOutboundFollowUpBatchPlan() {
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-first-run-follow-up-batch-plan-${stamp}.txt`, formatOutboundFollowUpBatchPlan(), "text/plain;charset=utf-8");
+  setDataStatus("Downloaded first real outbound follow-up batch plan.");
 }
 
 function downloadOutboundRunPacket() {
@@ -9966,8 +10014,10 @@ copyOutboundRunPacketButton.addEventListener("click", copyOutboundRunPacket);
 copyOutboundRunExecutionButton.addEventListener("click", copyOutboundRunExecutionChecklist);
 copyOutboundRunDryRunButton.addEventListener("click", copyOutboundRunLiveDryRun);
 copyOutboundLaunchReportButton.addEventListener("click", copyOutboundLaunchReport);
+copyOutboundFollowUpBatchPlanButton.addEventListener("click", copyOutboundFollowUpBatchPlan);
 downloadOutboundRunPacketButton.addEventListener("click", downloadOutboundRunPacket);
 downloadOutboundLaunchReportButton.addEventListener("click", downloadOutboundLaunchReport);
+downloadOutboundFollowUpBatchPlanButton.addEventListener("click", downloadOutboundFollowUpBatchPlan);
 downloadOutboundRunPacketJsonButton.addEventListener("click", downloadOutboundRunPacketJson);
 saveOutboundRunSnapshotButton.addEventListener("click", saveOutboundRunSnapshot);
 downloadOutboundRunSnapshotsButton.addEventListener("click", downloadOutboundRunSnapshots);

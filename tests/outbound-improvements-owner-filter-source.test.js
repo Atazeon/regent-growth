@@ -15,7 +15,7 @@ const checks = [
   ["owner options render", app.includes("outboundImprovementOwnerFilter.innerHTML")],
   ["owner listener exists", app.includes('outboundImprovementOwnerFilter.addEventListener("change"')],
   ["README mentions owner filter", readme.includes("owner filter")],
-  ["plan next owner export", plan.includes("- First real outbound run follow-up batch plan")]
+  ["plan next owner export", plan.includes("- Second real outbound batch readiness")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
