@@ -96,7 +96,7 @@ git diff --check
 
 ## Maintenance
 
-- Use [docs/RUNBOOK.md](docs/RUNBOOK.md) for startup, smoke checks, validation, and troubleshooting.
+- Use [docs/RUNBOOK.md](docs/RUNBOOK.md) for startup, smoke checks, outbound operating sequence, validation, and troubleshooting.
 - Use [docs/USER_FEEDBACK.md](docs/USER_FEEDBACK.md) after real outbound sessions to capture product feedback.
 - Use [docs/POST_LAUNCH_USABILITY.md](docs/POST_LAUNCH_USABILITY.md) for the first real-user usability pass.
 - Keep runtime data, shared backups, and secrets out of Git.

@@ -23,7 +23,7 @@ const checks = [
   ["operating QA copy bound", app.includes('copyOperatingQaButton.addEventListener("click", copyOutboundOperatingQa)')],
   ["operating QA download bound", app.includes('downloadOperatingQaButton.addEventListener("click", downloadOutboundOperatingQa)')],
   ["README mentions QA pass", readme.includes("QA pass")],
-  ["plan next closeout", plan.includes("- Outbound operating runbook finalization")]
+  ["plan next closeout", plan.includes("- Production email and calendar integrations")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);

@@ -41,6 +41,22 @@ http://127.0.0.1:5193/index.html
 - Review failed CRM syncs before retrying or parking them.
 - Export backups before restoring shared team data.
 
+## Outbound Operating Sequence
+
+Use this sequence before increasing outbound volume:
+
+1. Copy the live dry-run packet and confirm no real send happens during rehearsal.
+1. Save a first-run snapshot before and after the run.
+1. Log launch decisions in the manual launch log.
+1. Log outcomes with the correct batch tag: `First Run` or `Second Batch`.
+1. Save the post-launch review after the first real run.
+1. Copy the launch report and follow-up batch plan before batch two.
+1. Use second-batch readiness and the second-batch execution packet before the next send.
+1. Filter outcomes by batch, then export filtered text and CSV files.
+1. Copy the batch comparison and scale decision before increasing volume.
+1. Run the operating QA checklist and export the operating closeout.
+1. Use the launch hardening checklist as the final no-send/no-scale guard.
+
 ## Validation
 
 ```powershell

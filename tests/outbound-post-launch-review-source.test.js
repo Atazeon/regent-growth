@@ -36,7 +36,7 @@ const checks = [
   ["post-launch download bound", app.includes('downloadOutboundPostLaunchReviewButton.addEventListener("click", downloadOutboundPostLaunchReview)')],
   ["post-launch reset bound", app.includes('resetOutboundPostLaunchReviewButton.addEventListener("click", resetOutboundPostLaunchReview)')],
   ["README mentions post-launch review", readme.includes("post-launch review")],
-  ["plan next launch report", plan.includes("- Outbound operating runbook finalization")]
+  ["plan next launch report", plan.includes("- Production email and calendar integrations")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);

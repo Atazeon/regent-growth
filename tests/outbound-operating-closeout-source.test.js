@@ -24,13 +24,13 @@ const checks = [
   ["operating closeout copy bound", app.includes('copyOperatingCloseoutButton.addEventListener("click", copyOutboundOperatingCloseout)')],
   ["operating closeout download bound", app.includes('downloadOperatingCloseoutButton.addEventListener("click", downloadOutboundOperatingCloseout)')],
   ["README mentions operating closeout", readme.includes("operating closeout")],
-  ["plan next launch hardening", plan.includes("- Outbound operating runbook finalization")]
+  ["plan next launch hardening", plan.includes("- Production email and calendar integrations")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
 if (failures.length) {
-  console.error(`Outbound operating runbook finalization test failed: ${failures.join(", ")}`);
+  console.error(`Production email and calendar integrations test failed: ${failures.join(", ")}`);
   process.exit(1);
 }
 
-console.log("Outbound operating runbook finalization test passed.");
+console.log("Production email and calendar integrations test passed.");

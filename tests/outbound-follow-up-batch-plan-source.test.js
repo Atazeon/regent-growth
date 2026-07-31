@@ -24,7 +24,7 @@ const checks = [
   ["follow-up plan copy bound", app.includes('copyOutboundFollowUpBatchPlanButton.addEventListener("click", copyOutboundFollowUpBatchPlan)')],
   ["follow-up plan download bound", app.includes('downloadOutboundFollowUpBatchPlanButton.addEventListener("click", downloadOutboundFollowUpBatchPlan)')],
   ["README mentions follow-up plan", readme.includes("follow-up batch plan")],
-  ["plan next second batch readiness", plan.includes("- Outbound operating runbook finalization")]
+  ["plan next second batch readiness", plan.includes("- Production email and calendar integrations")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
