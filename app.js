@@ -391,6 +391,15 @@ const outboundLaunchLogList = document.querySelector("#outboundLaunchLogList");
 const copyOutboundLaunchLogButton = document.querySelector("#copyOutboundLaunchLogButton");
 const downloadOutboundLaunchLogButton = document.querySelector("#downloadOutboundLaunchLogButton");
 const clearOutboundLaunchLogButton = document.querySelector("#clearOutboundLaunchLogButton");
+const outboundPostLaunchReviewForm = document.querySelector("#outboundPostLaunchReviewForm");
+const outboundPostLaunchSummary = document.querySelector("#outboundPostLaunchSummary");
+const outboundPostLaunchWins = document.querySelector("#outboundPostLaunchWins");
+const outboundPostLaunchIssues = document.querySelector("#outboundPostLaunchIssues");
+const outboundPostLaunchNextSteps = document.querySelector("#outboundPostLaunchNextSteps");
+const outboundPostLaunchReviewStatus = document.querySelector("#outboundPostLaunchReviewStatus");
+const copyOutboundPostLaunchReviewButton = document.querySelector("#copyOutboundPostLaunchReviewButton");
+const downloadOutboundPostLaunchReviewButton = document.querySelector("#downloadOutboundPostLaunchReviewButton");
+const resetOutboundPostLaunchReviewButton = document.querySelector("#resetOutboundPostLaunchReviewButton");
 const outboundImprovementSummary = document.querySelector("#outboundImprovementSummary");
 const outboundImprovementDueSummary = document.querySelector("#outboundImprovementDueSummary");
 const outboundImprovementOwnerSummary = document.querySelector("#outboundImprovementOwnerSummary");
@@ -510,6 +519,7 @@ function loadOutboundSessionState() {
     completedAt: "",
     notes: "",
     launchLog: [],
+    postLaunchReview: {},
     outcomes: [],
     improvements: {},
     archiveCloseoutExportedAt: "",
@@ -530,6 +540,7 @@ function loadOutboundSessionState() {
       completedAt: parsedState.completedAt || "",
       notes: parsedState.notes || "",
       launchLog: Array.isArray(parsedState.launchLog) ? parsedState.launchLog.map(normalizeOutboundLaunchLog).filter((entry) => entry.status && entry.note) : [],
+      postLaunchReview: normalizeOutboundPostLaunchReview(parsedState.postLaunchReview || {}),
       outcomes: Array.isArray(parsedState.outcomes) ? parsedState.outcomes.map(normalizeOutboundOutcome).filter((outcome) => outcome.type && outcome.note) : [],
       improvements: typeof parsedState.improvements === "object" && parsedState.improvements ? parsedState.improvements : {},
       archiveCloseoutExportedAt: parsedState.archiveCloseoutExportedAt || "",
@@ -548,6 +559,16 @@ function normalizeOutboundLaunchLog(entry) {
     company: entry.company || "",
     note: entry.note || "",
     createdAt: entry.createdAt || new Date().toISOString()
+  };
+}
+
+function normalizeOutboundPostLaunchReview(review) {
+  return {
+    summary: review.summary || "",
+    wins: review.wins || "",
+    issues: review.issues || "",
+    nextSteps: review.nextSteps || "",
+    updatedAt: review.updatedAt || ""
   };
 }
 
@@ -1059,6 +1080,25 @@ function renderOutboundLaunchLog() {
     : `<p class="empty-state">Log dry-run approvals, send decisions, blockers, and post-send notes here.</p>`;
 }
 
+function hasOutboundPostLaunchReview(review = outboundSessionState.postLaunchReview || {}) {
+  return Boolean(review.summary || review.wins || review.issues || review.nextSteps);
+}
+
+function renderOutboundPostLaunchReview() {
+  const review = normalizeOutboundPostLaunchReview(outboundSessionState.postLaunchReview || {});
+  outboundPostLaunchSummary.value = review.summary;
+  outboundPostLaunchWins.value = review.wins;
+  outboundPostLaunchIssues.value = review.issues;
+  outboundPostLaunchNextSteps.value = review.nextSteps;
+  const saved = hasOutboundPostLaunchReview(review);
+  outboundPostLaunchReviewStatus.textContent = saved
+    ? `Post-launch review saved${review.updatedAt ? ` ${formatDateTime(review.updatedAt)}` : ""}.`
+    : "No post-launch review saved yet.";
+  [copyOutboundPostLaunchReviewButton, downloadOutboundPostLaunchReviewButton, resetOutboundPostLaunchReviewButton].forEach((button) => {
+    button.disabled = !saved;
+  });
+}
+
 function renderOutboundSession() {
   const completedCount = getOutboundSessionCompletedCount();
   const completionPercent = Math.round((completedCount / outboundSessionItems.length) * 100);
@@ -1110,6 +1150,7 @@ function renderOutboundSession() {
   `;
   renderOutboundRunSnapshots();
   renderOutboundLaunchLog();
+  renderOutboundPostLaunchReview();
 
   outboundSessionList.innerHTML = visibleItems.map((item) => {
     const index = outboundSessionItems.findIndex((sessionItem) => sessionItem.id === item.id);
@@ -1139,6 +1180,7 @@ function getOutboundSessionSummaryRecord() {
     completionPercent,
     notes: outboundSessionState.notes,
     launchLog: outboundSessionState.launchLog || [],
+    postLaunchReview: normalizeOutboundPostLaunchReview(outboundSessionState.postLaunchReview || {}),
     outcomes: outboundSessionState.outcomes,
     outcomeCounts: getOutboundOutcomeCounts(),
     stats: getOutboundSessionStats(),
@@ -1157,6 +1199,7 @@ function formatOutboundSessionSummary() {
   const stats = record.stats.map((stat) => `${stat.label}: ${stat.value} (${stat.detail})`);
   const launchLines = record.launchLog.map((entry) => `${formatDateTime(entry.createdAt)} | ${entry.status} | ${entry.company || "Unassigned batch"} | ${entry.note}`);
   const outcomeLines = record.outcomes.map((outcome) => `${formatDateTime(outcome.createdAt)} | ${outcome.type} | ${outcome.company || "Unassigned company"} | ${outcome.note}`);
+  const postLaunchReview = formatOutboundPostLaunchReview(record.postLaunchReview);
 
   return [
     "Outbound Session Tracker",
@@ -1170,6 +1213,9 @@ function formatOutboundSessionSummary() {
     "",
     "Manual Launch Log",
     ...(launchLines.length ? launchLines : ["No launch decisions logged yet."]),
+    "",
+    "Post-Launch Review",
+    postLaunchReview,
     "",
     "Outcomes",
     ...(outcomeLines.length ? outcomeLines : ["No outcomes logged yet."]),
@@ -1280,6 +1326,7 @@ function getOutboundRunPacketRecord() {
     outcomeCounts: getOutboundOutcomeCounts(),
     dryRunSteps: getOutboundRunDryRunSteps(readiness),
     launchLog: outboundSessionState.launchLog || [],
+    postLaunchReview: normalizeOutboundPostLaunchReview(outboundSessionState.postLaunchReview || {}),
     outcomes: outboundSessionState.outcomes,
     fixes,
     openFixes: fixes.filter((item) => item.status === "Open"),
@@ -1571,6 +1618,7 @@ function getImportedOutboundRunSnapshots(payload) {
       savedAt: snapshot.savedAt || snapshot.exportedAt || new Date().toISOString(),
       exportedAt: snapshot.exportedAt || snapshot.savedAt || new Date().toISOString(),
       launchLog: Array.isArray(snapshot.launchLog) ? snapshot.launchLog.map(normalizeOutboundLaunchLog).filter((entry) => entry.status && entry.note) : [],
+      postLaunchReview: normalizeOutboundPostLaunchReview(snapshot.postLaunchReview || snapshot.session?.postLaunchReview || {}),
       outcomes: Array.isArray(snapshot.outcomes) ? snapshot.outcomes : [],
       fixes: Array.isArray(snapshot.fixes) ? snapshot.fixes : []
     }));
@@ -1625,6 +1673,7 @@ function restoreOutboundRunSnapshot(id) {
       : Array.isArray(snapshot.session?.launchLog)
         ? snapshot.session.launchLog.map(normalizeOutboundLaunchLog).filter((entry) => entry.status && entry.note)
         : [],
+    postLaunchReview: normalizeOutboundPostLaunchReview(snapshot.postLaunchReview || snapshot.session?.postLaunchReview || {}),
     outcomes: Array.isArray(snapshot.outcomes) ? snapshot.outcomes : [],
     improvements: getOutboundSnapshotImprovementMap(snapshot),
     archiveCloseoutExportedAt: snapshot.readiness?.archiveCloseoutExported ? outboundSessionState.archiveCloseoutExportedAt || snapshot.savedAt || snapshot.exportedAt || new Date().toISOString() : "",
@@ -1825,6 +1874,7 @@ function resetOutboundSessionState() {
     completedAt: "",
     notes: "",
     launchLog: [],
+    postLaunchReview: {},
     outcomes: [],
     improvements: {},
     archiveCloseoutExportedAt: "",
@@ -1945,6 +1995,81 @@ function clearOutboundLaunchLog() {
   saveOutboundSessionState();
   renderOutboundSession();
   setDataStatus("Cleared first real outbound launch log.");
+}
+
+function saveOutboundPostLaunchReview(event) {
+  event.preventDefault();
+  const review = normalizeOutboundPostLaunchReview({
+    summary: outboundPostLaunchSummary.value.trim(),
+    wins: outboundPostLaunchWins.value.trim(),
+    issues: outboundPostLaunchIssues.value.trim(),
+    nextSteps: outboundPostLaunchNextSteps.value.trim(),
+    updatedAt: new Date().toISOString()
+  });
+  if (!hasOutboundPostLaunchReview(review)) {
+    setDataStatus("Add at least one post-launch review note before saving.", "error");
+    return;
+  }
+
+  outboundSessionState.postLaunchReview = review;
+  saveOutboundSessionState();
+  renderOutboundSession();
+  setDataStatus("Saved first real outbound post-launch review.");
+}
+
+function formatOutboundPostLaunchReview(review = outboundSessionState.postLaunchReview || {}) {
+  const normalized = normalizeOutboundPostLaunchReview(review);
+  if (!hasOutboundPostLaunchReview(normalized)) return "No post-launch review saved yet.";
+
+  return [
+    "First Real Outbound Post-Launch Review",
+    normalized.updatedAt ? `Updated: ${formatDateTime(normalized.updatedAt)}` : "",
+    "",
+    "Run Summary",
+    normalized.summary || "Not recorded.",
+    "",
+    "Wins",
+    normalized.wins || "Not recorded.",
+    "",
+    "Issues",
+    normalized.issues || "Not recorded.",
+    "",
+    "Next Steps",
+    normalized.nextSteps || "Not recorded."
+  ].filter((line) => line !== "").join("\n");
+}
+
+async function copyOutboundPostLaunchReview() {
+  if (!hasOutboundPostLaunchReview()) {
+    setDataStatus("No first real outbound post-launch review to copy.", "error");
+    return;
+  }
+
+  const copiedDirectly = await copyTextWithFallback(formatOutboundPostLaunchReview());
+  setDataStatus(copiedDirectly ? "Copied first real outbound post-launch review." : "Selected and copied first real outbound post-launch review.");
+}
+
+function downloadOutboundPostLaunchReview() {
+  if (!hasOutboundPostLaunchReview()) {
+    setDataStatus("No first real outbound post-launch review to download.", "error");
+    return;
+  }
+
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-first-run-post-launch-review-${stamp}.txt`, formatOutboundPostLaunchReview(), "text/plain;charset=utf-8");
+  setDataStatus("Downloaded first real outbound post-launch review.");
+}
+
+function resetOutboundPostLaunchReview() {
+  if (!hasOutboundPostLaunchReview()) {
+    setDataStatus("No first real outbound post-launch review to reset.", "error");
+    return;
+  }
+  if (!confirm("Reset the first real outbound post-launch review?")) return;
+  outboundSessionState.postLaunchReview = {};
+  saveOutboundSessionState();
+  renderOutboundSession();
+  setDataStatus("Reset first real outbound post-launch review.");
 }
 
 function addOutboundOutcome(event) {
@@ -9810,6 +9935,10 @@ outboundLaunchLogList.addEventListener("click", (event) => {
 copyOutboundLaunchLogButton.addEventListener("click", copyOutboundLaunchLog);
 downloadOutboundLaunchLogButton.addEventListener("click", downloadOutboundLaunchLog);
 clearOutboundLaunchLogButton.addEventListener("click", clearOutboundLaunchLog);
+outboundPostLaunchReviewForm.addEventListener("submit", saveOutboundPostLaunchReview);
+copyOutboundPostLaunchReviewButton.addEventListener("click", copyOutboundPostLaunchReview);
+downloadOutboundPostLaunchReviewButton.addEventListener("click", downloadOutboundPostLaunchReview);
+resetOutboundPostLaunchReviewButton.addEventListener("click", resetOutboundPostLaunchReview);
 copyOutboundSessionButton.addEventListener("click", copyOutboundSessionSummary);
 downloadOutboundSessionButton.addEventListener("click", downloadOutboundSessionSummary);
 resetOutboundSessionButton.addEventListener("click", resetOutboundSessionState);

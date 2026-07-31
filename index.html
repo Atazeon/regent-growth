@@ -134,6 +134,31 @@
           </div>
         </div>
         <div id="outboundLaunchLogList" class="outbound-outcome-list" aria-label="Manual first-run launch log"></div>
+        <form id="outboundPostLaunchReviewForm" class="outbound-outcome-form">
+          <label class="full-span">
+            Run summary
+            <textarea id="outboundPostLaunchSummary" name="postLaunchSummary" placeholder="What happened in the first real run."></textarea>
+          </label>
+          <label class="full-span">
+            Wins
+            <textarea id="outboundPostLaunchWins" name="postLaunchWins" placeholder="What worked and should be kept."></textarea>
+          </label>
+          <label class="full-span">
+            Issues
+            <textarea id="outboundPostLaunchIssues" name="postLaunchIssues" placeholder="What failed, blocked the run, or needs product work."></textarea>
+          </label>
+          <label class="full-span">
+            Next steps
+            <textarea id="outboundPostLaunchNextSteps" name="postLaunchNextSteps" placeholder="What to fix or test before the next run."></textarea>
+          </label>
+          <div class="action-row full-span" role="group" aria-label="Post-launch review actions">
+            <button type="submit">Save review</button>
+            <button id="copyOutboundPostLaunchReviewButton" class="secondary-button" type="button">Copy review</button>
+            <button id="downloadOutboundPostLaunchReviewButton" class="secondary-button" type="button">Download review</button>
+            <button id="resetOutboundPostLaunchReviewButton" class="danger-button" type="button">Reset review</button>
+          </div>
+        </form>
+        <p id="outboundPostLaunchReviewStatus" class="empty-state">No post-launch review saved yet.</p>
         <form id="outboundOutcomeForm" class="outbound-outcome-form">
           <label>
             Outcome

@@ -15,7 +15,7 @@ const checks = [
   ["csv uses csvCell", app.includes("].map(csvCell).join(\",\")")],
   ["csv button bound", app.includes('downloadFilteredOutboundImprovementsCsvButton.addEventListener("click", downloadFilteredOutboundImprovementCsv)')],
   ["README mentions CSV export", readme.includes("CSV export")],
-  ["plan next snapshot clear", plan.includes("- First real outbound run post-launch review")]
+  ["plan next snapshot clear", plan.includes("- First real outbound run launch report")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
