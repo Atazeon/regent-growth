@@ -370,6 +370,7 @@ const dataStatus = document.querySelector("#dataStatus");
 const outboundSessionProgress = document.querySelector("#outboundSessionProgress");
 const outboundSessionStats = document.querySelector("#outboundSessionStats");
 const outboundRunReadiness = document.querySelector("#outboundRunReadiness");
+const outboundOperatingDashboard = document.querySelector("#outboundOperatingDashboard");
 const outboundRunSnapshotList = document.querySelector("#outboundRunSnapshotList");
 const outboundSessionAreaFilter = document.querySelector("#outboundSessionAreaFilter");
 const outboundSessionNextAction = document.querySelector("#outboundSessionNextAction");
@@ -1164,6 +1165,11 @@ function renderOutboundSession() {
   outboundRunReadiness.innerHTML = `
     <strong>${escapeHtml(runReadiness.state)}</strong>
     <span>${escapeHtml(runReadiness.completedCount)} / ${escapeHtml(runReadiness.totalCount)} steps | ${escapeHtml(runReadiness.outcomeCount)} outcomes | Open fixes: ${escapeHtml(runReadiness.openFixCount)} | Archived fixes: ${escapeHtml(runReadiness.archivedFixCount)} | ${escapeHtml(runReadiness.archiveCloseoutExported ? "Archived closeout exported" : "Archive closeout pending")}</span>
+  `;
+  const scaleDecision = getOutboundScaleDecision();
+  outboundOperatingDashboard.innerHTML = `
+    <strong>${escapeHtml(scaleDecision.decision)}</strong>
+    <span>Next volume: ${escapeHtml(scaleDecision.recommendedVolume)} | Batch 2 sent: ${escapeHtml(scaleDecision.secondSent)} | Replies: ${escapeHtml(scaleDecision.secondReplies)} | Meetings: ${escapeHtml(scaleDecision.secondMeetings)} | Open fixes: ${escapeHtml(scaleDecision.openFixCount)}</span>
   `;
   renderOutboundRunSnapshots();
   renderOutboundLaunchLog();
