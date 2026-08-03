@@ -78,6 +78,23 @@ function getAdapterGuardrails(adapter = getProviderAdapter()) {
   };
 }
 
+function createProviderSendAdapter(adapter = getProviderAdapter()) {
+  return {
+    provider: adapter.name,
+    canSend: adapter.canSend,
+    async sendReviewedPacket() {
+      return {
+        accepted: false,
+        sent: false,
+        booked: false,
+        provider: adapter.name,
+        providerMessageId: "",
+        issues: [`Provider adapter ${adapter.name} is not send-capable yet.`]
+      };
+    }
+  };
+}
+
 function getMiddlewareStatus() {
   const adapter = getProviderAdapter();
   const guardrails = getAdapterGuardrails(adapter);
@@ -386,6 +403,7 @@ if (require.main === module) {
 module.exports = {
   getProviderAdapter,
   getAdapterGuardrails,
+  createProviderSendAdapter,
   getMiddlewareStatus,
   getAdapterReadinessReport,
   getAdapterReadinessExport,
