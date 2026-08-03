@@ -69,6 +69,43 @@ function getProductionIntegrationStatus() {
   };
 }
 
+function validateReviewedSendPacket(packet = {}) {
+  const issues = [];
+
+  if (packet.schemaVersion !== "regent-growth.reviewed-send.v1") issues.push("Unsupported reviewed send packet schema.");
+  if (packet.automationAllowed !== false) issues.push("automationAllowed must be false for dry run.");
+  if (packet.safety?.humanReviewRequired !== true) issues.push("Human review must be required.");
+  if (packet.safety?.automaticSendDisabled !== true) issues.push("Automatic send must be disabled.");
+  if (!packet.message?.to) issues.push("Recipient email is required.");
+  if (!packet.message?.subject) issues.push("Subject is required.");
+  if (!packet.message?.body) issues.push("Body is required.");
+  if (!packet.provider?.senderEmail) issues.push("Sender email is required.");
+
+  return {
+    valid: issues.length === 0,
+    issues
+  };
+}
+
+function dryRunReviewedSendPacket(packet = {}) {
+  const validation = validateReviewedSendPacket(packet);
+  return {
+    accepted: validation.valid,
+    sent: false,
+    booked: false,
+    dryRun: true,
+    checkedAt: new Date().toISOString(),
+    message: validation.valid
+      ? "Reviewed send packet accepted for dry run. No email was sent and no calendar booking was created."
+      : "Reviewed send packet dry run blocked.",
+    issues: validation.issues,
+    provider: packet.provider?.label || packet.provider?.selectedProvider || "",
+    company: packet.prospect?.company || "",
+    recipient: packet.message?.to || "",
+    subject: packet.message?.subject || ""
+  };
+}
+
 function readSharedProspects() {
   try {
     const raw = fs.readFileSync(sharedProspectsPath, "utf8");
@@ -956,6 +993,17 @@ const server = http.createServer(async (request, response) => {
       sendJson(response, 200, results);
     } catch (error) {
       sendJson(response, 400, { message: error.name === "AbortError" ? "Search API timed out." : error.message });
+    }
+    return;
+  }
+
+  if (request.method === "POST" && requestUrl.pathname === "/api/production-send-dry-run") {
+    try {
+      const body = await readJsonBody(request);
+      const result = dryRunReviewedSendPacket(body.packet || body);
+      sendJson(response, result.accepted ? 200 : 400, result);
+    } catch (error) {
+      sendJson(response, 400, { message: error.message, sent: false, dryRun: true });
     }
     return;
   }

@@ -14,6 +14,7 @@ const sourceSearchStatusEndpoint = "/api/search-status";
 const crmStatusEndpoint = "/api/crm-status";
 const crmSyncEndpoint = "/api/crm-sync";
 const productionIntegrationStatusEndpoint = "/api/production-integration-status";
+const productionSendDryRunEndpoint = "/api/production-send-dry-run";
 const teamProspectsEndpoint = "/api/team-prospects";
 const teamBackupsEndpoint = "/api/team-backups";
 const teamBackupEndpoint = "/api/team-backup";
@@ -370,6 +371,7 @@ const downloadProductionIntegrationSetupButton = document.querySelector("#downlo
 const copyProductionIntegrationPacketButton = document.querySelector("#copyProductionIntegrationPacketButton");
 const downloadProductionIntegrationPacketButton = document.querySelector("#downloadProductionIntegrationPacketButton");
 const reviewedSendPacketPreview = document.querySelector("#reviewedSendPacketPreview");
+const dryRunReviewedSendPacketButton = document.querySelector("#dryRunReviewedSendPacketButton");
 const copyReviewedSendPacketButton = document.querySelector("#copyReviewedSendPacketButton");
 const downloadReviewedSendPacketButton = document.querySelector("#downloadReviewedSendPacketButton");
 const reviewedSendAuditList = document.querySelector("#reviewedSendAuditList");
@@ -8002,6 +8004,34 @@ function downloadReviewedProductionSendPacket() {
   setDataStatus("Downloaded reviewed production send packet JSON.");
 }
 
+async function dryRunReviewedProductionSendPacket() {
+  const packet = getReviewedProductionSendPacket();
+  setDataStatus("Running reviewed send packet dry run...", "working");
+
+  try {
+    const response = await fetch(productionSendDryRunEndpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ packet })
+    });
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(result.message || result.issues?.join(" ") || `Reviewed send dry run returned ${response.status}.`);
+    }
+
+    recordReviewedSendPacketAudit("Dry-ran reviewed send packet");
+    setDataStatus(`${result.message} Sent: ${result.sent ? "yes" : "no"}. Booked: ${result.booked ? "yes" : "no"}.`);
+  } catch (error) {
+    setDataStatus(isLocalFile()
+      ? getLocalResearchServerGuidance("Reviewed send dry run")
+      : error.message,
+    "error");
+  }
+}
+
 function renderEmailSendStatus(prospect = getSelectedProspect()) {
   const readiness = getEmailSendReadiness(prospect);
 
@@ -10866,6 +10896,7 @@ copyProductionIntegrationSetupButton.addEventListener("click", copyProductionInt
 downloadProductionIntegrationSetupButton.addEventListener("click", downloadProductionIntegrationSetupPacket);
 copyProductionIntegrationPacketButton.addEventListener("click", copyProductionIntegrationPacket);
 downloadProductionIntegrationPacketButton.addEventListener("click", downloadProductionIntegrationPacket);
+dryRunReviewedSendPacketButton.addEventListener("click", dryRunReviewedProductionSendPacket);
 copyReviewedSendPacketButton.addEventListener("click", copyReviewedProductionSendPacket);
 downloadReviewedSendPacketButton.addEventListener("click", downloadReviewedProductionSendPacket);
 downloadReviewedSendAuditButton.addEventListener("click", downloadReviewedSendPacketAuditLog);
