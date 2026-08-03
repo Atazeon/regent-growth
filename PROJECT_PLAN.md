@@ -58,10 +58,11 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 - Production middleware audit trail
 - Production middleware audit export
 - Production middleware replay fixture
+- Production middleware replay export
 
 ### Later
 
-- Production middleware replay export
+- Production middleware provider adapter checklist
 
 ## Data Model Draft
 

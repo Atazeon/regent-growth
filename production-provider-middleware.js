@@ -144,6 +144,16 @@ function replayMiddlewareFixture(payload = {}) {
   };
 }
 
+function getMiddlewareReplayExport(payload = {}) {
+  const replay = replayMiddlewareFixture(payload);
+  return {
+    schemaVersion: "regent-growth.middleware-replay.v1",
+    generatedAt: new Date().toISOString(),
+    bodyContentStored: false,
+    replay
+  };
+}
+
 function createMiddlewareAuditEntry(payload = {}, result = {}, requestMeta = {}) {
   const packet = payload.packet || {};
   const releaseGate = payload.releaseGate || {};
@@ -293,6 +303,27 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "POST" && requestUrl.pathname === "/replay/export") {
+    try {
+      const body = await readJsonBody(request);
+      sendJson(response, 200, getMiddlewareReplayExport(body));
+    } catch (error) {
+      sendJson(response, 400, {
+        schemaVersion: "regent-growth.middleware-replay.v1",
+        generatedAt: new Date().toISOString(),
+        bodyContentStored: false,
+        replay: {
+          replay: true,
+          sent: false,
+          booked: false,
+          recorded: false,
+          issues: [error.message]
+        }
+      });
+    }
+    return;
+  }
+
   response.writeHead(404);
   response.end("Not found");
 });
@@ -313,6 +344,7 @@ module.exports = {
   createMiddlewareAuditEntry,
   recordMiddlewareAuditEntry,
   replayMiddlewareFixture,
+  getMiddlewareReplayExport,
   validateMiddlewareRequest,
   createMiddlewareResponse
 };
