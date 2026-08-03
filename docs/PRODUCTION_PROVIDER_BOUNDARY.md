@@ -2,6 +2,8 @@
 
 This document defines what Regent Growth supports today and what must be added before real production email or calendar automation is allowed.
 
+For a concise current-state summary, see `docs/PRODUCTION_INTEGRATION_STATUS.md`.
+
 ## Implemented Now
 
 - Local production provider setup form.
