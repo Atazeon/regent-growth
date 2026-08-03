@@ -1,0 +1,51 @@
+{
+  "packet": {
+    "schemaVersion": "regent-growth.reviewed-send.v1",
+    "createdAt": "2026-08-03T00:00:00.000Z",
+    "readyForReviewedHandoff": true,
+    "automationAllowed": false,
+    "safety": {
+      "humanReviewRequired": true,
+      "automaticSendDisabled": true,
+      "automaticBookingDisabled": true,
+      "complianceReviewRequired": true
+    },
+    "provider": {
+      "selectedProvider": "gmail",
+      "label": "Gmail API planned",
+      "senderEmail": "sender@example.com",
+      "serverConfigured": true,
+      "emailEndpointConfigured": true,
+      "calendarEndpointConfigured": false
+    },
+    "prospect": {
+      "company": "Example Prospect",
+      "website": "https://example.com",
+      "industry": "Professional services",
+      "decisionMaker": "Founder",
+      "stage": "Email Drafted",
+      "leadScore": 82
+    },
+    "message": {
+      "to": "founder@example.com",
+      "subject": "Quick idea from Regent Growth",
+      "body": "Reviewed email body."
+    },
+    "calendar": {
+      "bookingLink": "https://cal.example/regent-growth",
+      "meetingDate": "",
+      "nextTouch": "2026-08-04"
+    },
+    "readinessChecks": [
+      {
+        "label": "Prospect selected",
+        "ready": true,
+        "required": true
+      }
+    ]
+  },
+  "releaseGate": {
+    "ready": true,
+    "checkedAt": "2026-08-03T00:00:00.000Z"
+  }
+}

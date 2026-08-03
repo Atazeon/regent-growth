@@ -1,0 +1,24 @@
+{
+  "packet": {
+    "schemaVersion": "regent-growth.reviewed-send.v1",
+    "automationAllowed": true,
+    "safety": {
+      "humanReviewRequired": false,
+      "automaticSendDisabled": false,
+      "automaticBookingDisabled": true,
+      "complianceReviewRequired": false
+    },
+    "provider": {
+      "selectedProvider": "gmail",
+      "senderEmail": ""
+    },
+    "message": {
+      "to": "",
+      "subject": "",
+      "body": ""
+    }
+  },
+  "releaseGate": {
+    "ready": false
+  }
+}

@@ -77,3 +77,8 @@ Authorization: Bearer <server-side-token>
   "issues": ["Human review is required."]
 }
 ```
+
+## Fixtures
+
+- Valid reviewed send packet: `tests/fixtures/production-reviewed-send-valid.json`
+- Invalid automation-enabled packet: `tests/fixtures/production-reviewed-send-invalid-automation.json`
