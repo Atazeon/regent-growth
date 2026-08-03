@@ -3,6 +3,8 @@ const http = require("http");
 const port = Number(process.env.PORT || 5195);
 const providerName = process.env.REGENT_EMAIL_PROVIDER || "stub";
 const maxBodyBytes = 1024 * 1024;
+const maxAuditEntries = 100;
+const middlewareAuditTrail = [];
 
 const providerAdapters = {
   stub: {
@@ -92,6 +94,44 @@ function getMiddlewareStatus() {
   };
 }
 
+function getMiddlewareAuditTrail() {
+  return middlewareAuditTrail.slice();
+}
+
+function createMiddlewareAuditEntry(payload = {}, result = {}, requestMeta = {}) {
+  const packet = payload.packet || {};
+  const releaseGate = payload.releaseGate || {};
+  const issues = Array.isArray(result.issues) ? result.issues : [];
+
+  return {
+    id: `middleware-audit-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    action: "reviewed-send",
+    provider: result.provider || packet.provider?.selectedProvider || "stub",
+    accepted: result.accepted === true,
+    sent: false,
+    booked: false,
+    skeleton: true,
+    issueCount: issues.length,
+    issues,
+    schemaVersion: packet.schemaVersion || "",
+    senderEmail: packet.provider?.senderEmail || "",
+    recipientEmail: packet.message?.to || "",
+    subjectPresent: Boolean(packet.message?.subject),
+    bodyStored: false,
+    releaseGateReady: releaseGate.ready === true,
+    method: requestMeta.method || "",
+    path: requestMeta.path || "",
+    checkedAt: result.checkedAt || new Date().toISOString()
+  };
+}
+
+function recordMiddlewareAuditEntry(payload = {}, result = {}, requestMeta = {}) {
+  const entry = createMiddlewareAuditEntry(payload, result, requestMeta);
+  middlewareAuditTrail.unshift(entry);
+  middlewareAuditTrail.splice(maxAuditEntries);
+  return entry;
+}
+
 function validateMiddlewareRequest(payload = {}) {
   const packet = payload.packet || {};
   const releaseGate = payload.releaseGate || {};
@@ -149,19 +189,39 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "GET" && requestUrl.pathname === "/audit") {
+    sendJson(response, 200, {
+      ok: true,
+      maxEntries: maxAuditEntries,
+      entries: getMiddlewareAuditTrail()
+    });
+    return;
+  }
+
   if (request.method === "POST" && requestUrl.pathname === "/reviewed-send") {
     try {
       const body = await readJsonBody(request);
       const result = createMiddlewareResponse(body);
+      const audit = recordMiddlewareAuditEntry(body, result, {
+        method: request.method,
+        path: requestUrl.pathname
+      });
+      result.auditId = audit.id;
       sendJson(response, result.accepted ? 200 : 400, result);
     } catch (error) {
-      sendJson(response, 400, {
+      const result = {
         accepted: false,
         sent: false,
         booked: false,
         skeleton: true,
         issues: [error.message]
+      };
+      const audit = recordMiddlewareAuditEntry({}, result, {
+        method: request.method,
+        path: requestUrl.pathname
       });
+      result.auditId = audit.id;
+      sendJson(response, 400, result);
     }
     return;
   }
@@ -180,6 +240,9 @@ module.exports = {
   getProviderAdapter,
   getAdapterGuardrails,
   getMiddlewareStatus,
+  getMiddlewareAuditTrail,
+  createMiddlewareAuditEntry,
+  recordMiddlewareAuditEntry,
   validateMiddlewareRequest,
   createMiddlewareResponse
 };
