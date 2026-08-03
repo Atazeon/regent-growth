@@ -381,6 +381,8 @@ const downloadReviewedSendAuditButton = document.querySelector("#downloadReviewe
 const clearReviewedSendAuditButton = document.querySelector("#clearReviewedSendAuditButton");
 const productionDryRunHistoryList = document.querySelector("#productionDryRunHistoryList");
 const downloadProductionDryRunHistoryButton = document.querySelector("#downloadProductionDryRunHistoryButton");
+const copyReviewedSendRetryPacketButton = document.querySelector("#copyReviewedSendRetryPacketButton");
+const downloadReviewedSendRetryPacketButton = document.querySelector("#downloadReviewedSendRetryPacketButton");
 const clearProductionDryRunHistoryButton = document.querySelector("#clearProductionDryRunHistoryButton");
 const exportWarmCsvButton = document.querySelector("#exportWarmCsvButton");
 const exportWarmJsonButton = document.querySelector("#exportWarmJsonButton");
@@ -8084,6 +8086,45 @@ function clearProductionDryRunHistory() {
   setDataStatus("Cleared production send dry-run history.");
 }
 
+function getLatestBlockedProductionDryRun() {
+  return productionDryRunHistory.find((entry) => !entry.accepted) || null;
+}
+
+function getReviewedSendRetryPacket() {
+  const blockedRun = getLatestBlockedProductionDryRun();
+  const currentPacket = getReviewedProductionSendPacket();
+  return {
+    schemaVersion: "regent-growth.reviewed-send-retry.v1",
+    createdAt: new Date().toISOString(),
+    hasBlockedDryRun: Boolean(blockedRun),
+    blockedDryRun: blockedRun,
+    suggestedFixes: blockedRun?.issues?.length
+      ? blockedRun.issues
+      : ["Run a production send dry-run and fix any returned issues before retrying."],
+    currentReviewedSendPacket: currentPacket,
+    safety: {
+      retryOnly: true,
+      automaticSendDisabled: true,
+      dryRunRequiredBeforeSend: true
+    }
+  };
+}
+
+function formatReviewedSendRetryPacket() {
+  return JSON.stringify(getReviewedSendRetryPacket(), null, 2);
+}
+
+async function copyReviewedSendRetryPacket() {
+  const copiedDirectly = await copyTextWithFallback(formatReviewedSendRetryPacket());
+  setDataStatus(copiedDirectly ? "Copied reviewed send retry packet." : "Selected and copied reviewed send retry packet.");
+}
+
+function downloadReviewedSendRetryPacket() {
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-reviewed-send-retry-${stamp}.json`, formatReviewedSendRetryPacket(), "application/json;charset=utf-8");
+  setDataStatus("Downloaded reviewed send retry packet.");
+}
+
 async function copyReviewedProductionSendPacket() {
   const copiedDirectly = await copyTextWithFallback(formatReviewedProductionSendPacket());
   recordReviewedSendPacketAudit("Copied reviewed send packet");
@@ -10996,6 +11037,8 @@ downloadReviewedSendPacketButton.addEventListener("click", downloadReviewedProdu
 downloadReviewedSendAuditButton.addEventListener("click", downloadReviewedSendPacketAuditLog);
 clearReviewedSendAuditButton.addEventListener("click", clearReviewedSendPacketAuditLog);
 downloadProductionDryRunHistoryButton.addEventListener("click", downloadProductionDryRunHistory);
+copyReviewedSendRetryPacketButton.addEventListener("click", copyReviewedSendRetryPacket);
+downloadReviewedSendRetryPacketButton.addEventListener("click", downloadReviewedSendRetryPacket);
 clearProductionDryRunHistoryButton.addEventListener("click", clearProductionDryRunHistory);
 copyEmailDraftButton.addEventListener("click", copyEmailDraft);
 exportEmailDraftButton.addEventListener("click", exportEmailDraft);

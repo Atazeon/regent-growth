@@ -37,10 +37,11 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 - Reviewed send packet audit log
 - Reviewed provider dry-run endpoint
 - Production send dry-run result history
+- Reviewed send retry packet export
 
 ### Later
 
-- Reviewed send retry packet export
+- Production send compliance checklist
 
 ## Data Model Draft
 
