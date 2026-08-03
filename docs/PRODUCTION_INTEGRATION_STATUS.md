@@ -23,4 +23,4 @@ Production integration is ready for local dry-run and handoff validation, not re
 
 ## Next Engineering Step
 
-Build provider middleware against `docs/PRODUCTION_MIDDLEWARE_CONTRACT.md`, using `production-provider-stub.js` and the fixture tests before connecting any real account.
+Build provider middleware against `docs/PRODUCTION_MIDDLEWARE_CONTRACT.md`, following `docs/PRODUCTION_MIDDLEWARE_PLAN.md`, using `production-provider-stub.js` and the fixture tests before connecting any real account.

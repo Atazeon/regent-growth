@@ -31,6 +31,7 @@ For a concise current-state summary, see `docs/PRODUCTION_INTEGRATION_STATUS.md`
 
 1. Complete the production send compliance checklist.
 1. Keep the reviewed send packet schema as the only accepted input.
+1. Follow `docs/PRODUCTION_MIDDLEWARE_PLAN.md` for phased implementation.
 1. Add provider middleware that performs OAuth and sends server-side only.
 1. Implement the middleware contract in `docs/PRODUCTION_MIDDLEWARE_CONTRACT.md`.
 1. Add unsubscribe and suppression-list handling before any cold outreach.
