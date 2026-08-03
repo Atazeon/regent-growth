@@ -94,6 +94,34 @@ function getMiddlewareStatus() {
   };
 }
 
+function getAdapterReadinessReport() {
+  const adapters = Object.values(providerAdapters).map((adapter) => {
+    const guardrails = getAdapterGuardrails(adapter);
+    return {
+      provider: adapter.name,
+      canSend: adapter.canSend,
+      readyForImplementation: guardrails.readyForImplementation,
+      requiredEnv: guardrails.requiredEnv,
+      missingEnv: guardrails.missingEnv,
+      requiredSetup: guardrails.requiredSetup,
+      blockedReasons: [
+        ...(adapter.canSend ? [] : ["Adapter is skeleton-only."]),
+        ...guardrails.missingEnv.map((name) => `Missing ${name}.`)
+      ]
+    };
+  });
+
+  return {
+    schemaVersion: "regent-growth.adapter-readiness.v1",
+    checkedAt: new Date().toISOString(),
+    sentEnabled: false,
+    bookedEnabled: false,
+    adapters,
+    readyProviders: adapters.filter((adapter) => adapter.readyForImplementation).map((adapter) => adapter.provider),
+    blockedProviders: adapters.filter((adapter) => !adapter.readyForImplementation).map((adapter) => adapter.provider)
+  };
+}
+
 function getMiddlewareAuditTrail() {
   return middlewareAuditTrail.slice();
 }
@@ -245,6 +273,11 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "GET" && requestUrl.pathname === "/adapter-readiness") {
+    sendJson(response, 200, getAdapterReadinessReport());
+    return;
+  }
+
   if (request.method === "GET" && requestUrl.pathname === "/audit") {
     sendJson(response, 200, {
       ok: true,
@@ -338,6 +371,7 @@ module.exports = {
   getProviderAdapter,
   getAdapterGuardrails,
   getMiddlewareStatus,
+  getAdapterReadinessReport,
   getMiddlewareAuditTrail,
   getMiddlewareAuditSummary,
   getMiddlewareAuditExport,
