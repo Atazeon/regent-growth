@@ -17,6 +17,9 @@ const checks = [
   ["runbook documents provider stub dry run", runbook.includes("## Provider Stub Dry Run")],
   ["runbook documents stub file", runbook.includes("production-provider-stub.js")],
   ["runbook documents stub endpoint", runbook.includes("http://127.0.0.1:5194/reviewed-send")],
+  ["runbook documents middleware skeleton", runbook.includes("## Middleware Skeleton")],
+  ["runbook documents middleware file", runbook.includes("production-provider-middleware.js")],
+  ["runbook documents middleware endpoint", runbook.includes("http://127.0.0.1:5195/reviewed-send")],
   ["runbook documents validation", runbook.includes("tests\\run-source-tests.js")],
   ["runbook has troubleshooting", runbook.includes("## Troubleshooting")]
 ];

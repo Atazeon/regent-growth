@@ -101,6 +101,25 @@ $env:REGENT_EMAIL_API_KEY=""
 1. In the app, save provider setup, click `Check provider`, then use `Dry-run send`.
 1. Confirm dry-run history records `Sent: no` and `Booked: no`.
 
+## Middleware Skeleton
+
+Use the middleware skeleton when preparing provider adapters. It validates the same contract but still returns `sent: false`.
+
+```powershell
+$env:REGENT_EMAIL_PROVIDER="gmail"
+& "C:\Users\ibrah\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe" production-provider-middleware.js
+```
+
+Point the app server at the skeleton when testing the provider setup path:
+
+```powershell
+$env:REGENT_EMAIL_PROVIDER="gmail"
+$env:REGENT_EMAIL_API_URL="http://127.0.0.1:5195/reviewed-send"
+& "C:\Users\ibrah\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe" local-research-server.js
+```
+
+The skeleton is not a real sender. It exists to test adapter selection, contract validation, and release-gate handling before adding OAuth or provider API calls.
+
 ## Validation
 
 ```powershell
