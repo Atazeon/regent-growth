@@ -10,6 +10,10 @@ const checks = [
   ["runbook documents server command", runbook.includes("local-research-server.js")],
   ["runbook documents local URL", runbook.includes("http://127.0.0.1:5193/index.html")],
   ["runbook has smoke check", runbook.includes("## Smoke Check")],
+  ["runbook documents production provider setup", runbook.includes("## Production Provider Setup")],
+  ["runbook documents email provider env", runbook.includes("REGENT_EMAIL_PROVIDER")],
+  ["runbook documents provider check", runbook.includes("Check provider")],
+  ["runbook keeps automatic send disabled", runbook.includes("real automatic sending and booking stay disabled")],
   ["runbook documents validation", runbook.includes("tests\\run-source-tests.js")],
   ["runbook has troubleshooting", runbook.includes("## Troubleshooting")]
 ];

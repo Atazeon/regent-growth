@@ -57,6 +57,27 @@ Use this sequence before increasing outbound volume:
 1. Run the operating QA checklist and export the operating closeout.
 1. Use the launch hardening checklist as the final no-send/no-scale guard.
 
+## Production Provider Setup
+
+Use this section before connecting real email or calendar providers:
+
+1. Save the in-app production provider setup with the intended provider, sender email, default booking link, and review gate enabled.
+1. Start the local server with provider environment variables when testing configuration:
+
+```powershell
+$env:REGENT_EMAIL_PROVIDER="gmail"
+$env:REGENT_EMAIL_API_URL="https://your-reviewed-send-middleware.example/email"
+$env:REGENT_EMAIL_API_KEY="your_email_api_key"
+$env:REGENT_EMAIL_API_KEY_HEADER="Authorization"
+$env:REGENT_CALENDAR_API_URL="https://your-reviewed-booking-middleware.example/calendar"
+$env:REGENT_CALENDAR_API_KEY="your_calendar_api_key"
+& "C:\Users\ibrah\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe" local-research-server.js
+```
+
+1. Click `Check provider` in the app and confirm the local server reports provider configuration.
+1. Copy or download the provider setup packet before changing any production credentials.
+1. Keep reviewed handoff enabled. The local server reports production configuration only; real automatic sending and booking stay disabled until explicit send and booking endpoints are implemented, tested, and reviewed.
+
 ## Validation
 
 ```powershell
@@ -71,5 +92,6 @@ git diff --check
 - If AI calls fail, make sure Ollama is running and `qwen3:8b` is installed.
 - If source search fails, set `REGENT_SEARCH_API_URL` and restart the local server.
 - If CRM sync fails, set `REGENT_CRM_API_URL` and restart the local server.
+- If provider setup fails, set `REGENT_EMAIL_PROVIDER` and `REGENT_EMAIL_API_URL`, then restart the local server.
 - If team sync or backup actions fail, start the app through `local-research-server.js` instead of opening `index.html` directly.
 - If a run is slow, lower the Daily AI limit or use `qwen2.5:0.5b` for a faster rough pass.
