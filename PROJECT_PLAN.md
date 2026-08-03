@@ -41,10 +41,11 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 - Production send compliance checklist
 - Production send release gate summary
 - Production provider implementation boundary docs
+- Production provider middleware contract
 
 ### Later
 
-- Production provider middleware contract
+- Production middleware fixture tests
 
 ## Data Model Draft
 

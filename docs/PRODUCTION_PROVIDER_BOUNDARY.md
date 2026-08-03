@@ -30,6 +30,7 @@ This document defines what Regent Growth supports today and what must be added b
 1. Complete the production send compliance checklist.
 1. Keep the reviewed send packet schema as the only accepted input.
 1. Add provider middleware that performs OAuth and sends server-side only.
+1. Implement the middleware contract in `docs/PRODUCTION_MIDDLEWARE_CONTRACT.md`.
 1. Add unsubscribe and suppression-list handling before any cold outreach.
 1. Add rate limits and throttling before batch sending.
 1. Add provider-specific test accounts and fixture-based integration tests.
