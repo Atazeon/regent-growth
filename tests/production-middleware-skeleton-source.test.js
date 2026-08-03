@@ -7,18 +7,20 @@ const planDoc = fs.readFileSync(path.join(root, "docs", "PRODUCTION_MIDDLEWARE_P
 const projectPlan = fs.readFileSync(path.join(root, "PROJECT_PLAN.md"), "utf8");
 const valid = require("./fixtures/production-reviewed-send-valid.json");
 const invalid = require("./fixtures/production-reviewed-send-invalid-automation.json");
-const { getProviderAdapter, validateMiddlewareRequest, createMiddlewareResponse } = require("../production-provider-middleware");
+const { getProviderAdapter, getMiddlewareStatus, validateMiddlewareRequest, createMiddlewareResponse } = require("../production-provider-middleware");
 
 const validValidation = validateMiddlewareRequest(valid);
 const invalidValidation = validateMiddlewareRequest(invalid);
 const validResponse = createMiddlewareResponse(valid);
 const invalidResponse = createMiddlewareResponse(invalid);
+const status = getMiddlewareStatus();
 
 const checks = [
   ["middleware file creates server", source.includes("http.createServer")],
   ["middleware has provider adapters", source.includes("const providerAdapters = {")],
   ["middleware adapters cannot send", source.includes("canSend: false")],
   ["middleware exports adapter getter", typeof getProviderAdapter === "function"],
+  ["middleware exports status helper", typeof getMiddlewareStatus === "function"],
   ["middleware exports validator", typeof validateMiddlewareRequest === "function"],
   ["middleware exports response helper", typeof createMiddlewareResponse === "function"],
   ["gmail adapter exists", getProviderAdapter("gmail").name === "gmail"],
@@ -32,6 +34,11 @@ const checks = [
   ["invalid skeleton response rejected", invalidResponse.accepted === false],
   ["middleware has reviewed send route", source.includes('requestUrl.pathname === "/reviewed-send"')],
   ["middleware has health route", source.includes('requestUrl.pathname === "/health"')],
+  ["middleware has status route", source.includes('requestUrl.pathname === "/status"')],
+  ["status says skeleton", status.skeleton === true],
+  ["status disables send", status.sentEnabled === false],
+  ["status disables booking", status.bookedEnabled === false],
+  ["status includes schema", status.requiredSchema === "regent-growth.reviewed-send.v1"],
   ["plan doc mentions skeleton file", planDoc.includes("production-provider-middleware.js")],
   ["project plan next skeleton exists", projectPlan.includes("- Production middleware skeleton")]
 ];

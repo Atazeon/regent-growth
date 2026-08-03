@@ -120,6 +120,12 @@ $env:REGENT_EMAIL_API_URL="http://127.0.0.1:5195/reviewed-send"
 
 The skeleton is not a real sender. It exists to test adapter selection, contract validation, and release-gate handling before adding OAuth or provider API calls.
 
+Check skeleton status at:
+
+```text
+http://127.0.0.1:5195/status
+```
+
 ## Validation
 
 ```powershell

@@ -56,6 +56,20 @@ function getProviderAdapter(name = providerName) {
   return providerAdapters[String(name || "").toLowerCase()] || providerAdapters.stub;
 }
 
+function getMiddlewareStatus() {
+  const adapter = getProviderAdapter();
+  return {
+    ok: true,
+    skeleton: true,
+    provider: adapter.name,
+    canSend: adapter.canSend,
+    sentEnabled: false,
+    bookedEnabled: false,
+    requiredSchema: "regent-growth.reviewed-send.v1",
+    checkedAt: new Date().toISOString()
+  };
+}
+
 function validateMiddlewareRequest(payload = {}) {
   const packet = payload.packet || {};
   const releaseGate = payload.releaseGate || {};
@@ -104,12 +118,12 @@ const server = http.createServer(async (request, response) => {
   const requestUrl = new URL(request.url, `http://127.0.0.1:${port}`);
 
   if (request.method === "GET" && requestUrl.pathname === "/health") {
-    sendJson(response, 200, {
-      ok: true,
-      skeleton: true,
-      provider: getProviderAdapter().name,
-      canSend: getProviderAdapter().canSend
-    });
+    sendJson(response, 200, getMiddlewareStatus());
+    return;
+  }
+
+  if (request.method === "GET" && requestUrl.pathname === "/status") {
+    sendJson(response, 200, getMiddlewareStatus());
     return;
   }
 
@@ -142,6 +156,7 @@ if (require.main === module) {
 
 module.exports = {
   getProviderAdapter,
+  getMiddlewareStatus,
   validateMiddlewareRequest,
   createMiddlewareResponse
 };
