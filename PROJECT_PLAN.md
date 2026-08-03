@@ -32,10 +32,11 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 ### Completed Recently
 
 - Production integration provider setup
+- Reviewed production send packet schema
 
 ### Later
 
-- Reviewed production send packet schema
+- Reviewed send packet validation preview
 
 ## Data Model Draft
 

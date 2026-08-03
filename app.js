@@ -367,6 +367,8 @@ const copyProductionIntegrationSetupButton = document.querySelector("#copyProduc
 const downloadProductionIntegrationSetupButton = document.querySelector("#downloadProductionIntegrationSetupButton");
 const copyProductionIntegrationPacketButton = document.querySelector("#copyProductionIntegrationPacketButton");
 const downloadProductionIntegrationPacketButton = document.querySelector("#downloadProductionIntegrationPacketButton");
+const copyReviewedSendPacketButton = document.querySelector("#copyReviewedSendPacketButton");
+const downloadReviewedSendPacketButton = document.querySelector("#downloadReviewedSendPacketButton");
 const exportWarmCsvButton = document.querySelector("#exportWarmCsvButton");
 const exportWarmJsonButton = document.querySelector("#exportWarmJsonButton");
 const checkCrmSetupButton = document.querySelector("#checkCrmSetupButton");
@@ -7799,6 +7801,70 @@ function downloadProductionIntegrationPacket() {
   setDataStatus("Downloaded production integration readiness packet.");
 }
 
+function getReviewedProductionSendPacket(prospect = getSelectedProspect()) {
+  const emailReadiness = getEmailSendReadiness(prospect);
+  const integrationReadiness = getProductionIntegrationReadiness(prospect);
+  const createdAt = new Date().toISOString();
+  return {
+    schemaVersion: "regent-growth.reviewed-send.v1",
+    createdAt,
+    readyForReviewedHandoff: integrationReadiness.ready,
+    automationAllowed: false,
+    safety: {
+      humanReviewRequired: true,
+      automaticSendDisabled: true,
+      automaticBookingDisabled: true,
+      complianceReviewRequired: true
+    },
+    provider: {
+      selectedProvider: productionIntegrationSetup.provider,
+      label: integrationReadiness.providerLabel,
+      senderEmail: productionIntegrationSetup.senderEmail,
+      serverConfigured: productionIntegrationServerStatus?.configured === true,
+      emailEndpointConfigured: Boolean(productionIntegrationServerStatus?.emailEndpoint),
+      calendarEndpointConfigured: Boolean(productionIntegrationServerStatus?.calendarEndpoint)
+    },
+    prospect: prospect ? {
+      company: prospect.company || "",
+      website: prospect.website || "",
+      industry: prospect.industry || "",
+      decisionMaker: prospect.decisionMaker || "",
+      stage: prospect.stage || "",
+      leadScore: calculateLeadScore(prospect)
+    } : null,
+    message: {
+      to: emailReadiness.recipient,
+      subject: emailReadiness.subject,
+      body: emailReadiness.body
+    },
+    calendar: {
+      bookingLink: integrationReadiness.bookingLink || "",
+      meetingDate: prospect?.meetingDate || "",
+      nextTouch: prospect?.nextTouch || ""
+    },
+    readinessChecks: integrationReadiness.checks.map((check) => ({
+      label: check.label,
+      ready: check.ready,
+      required: check.required
+    }))
+  };
+}
+
+function formatReviewedProductionSendPacket(prospect = getSelectedProspect()) {
+  return JSON.stringify(getReviewedProductionSendPacket(prospect), null, 2);
+}
+
+async function copyReviewedProductionSendPacket() {
+  const copiedDirectly = await copyTextWithFallback(formatReviewedProductionSendPacket());
+  setDataStatus(copiedDirectly ? "Copied reviewed production send packet JSON." : "Selected and copied reviewed production send packet JSON.");
+}
+
+function downloadReviewedProductionSendPacket() {
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-reviewed-send-packet-${stamp}.json`, formatReviewedProductionSendPacket(), "application/json;charset=utf-8");
+  setDataStatus("Downloaded reviewed production send packet JSON.");
+}
+
 function renderEmailSendStatus(prospect = getSelectedProspect()) {
   const readiness = getEmailSendReadiness(prospect);
 
@@ -10662,6 +10728,8 @@ copyProductionIntegrationSetupButton.addEventListener("click", copyProductionInt
 downloadProductionIntegrationSetupButton.addEventListener("click", downloadProductionIntegrationSetupPacket);
 copyProductionIntegrationPacketButton.addEventListener("click", copyProductionIntegrationPacket);
 downloadProductionIntegrationPacketButton.addEventListener("click", downloadProductionIntegrationPacket);
+copyReviewedSendPacketButton.addEventListener("click", copyReviewedProductionSendPacket);
+downloadReviewedSendPacketButton.addEventListener("click", downloadReviewedProductionSendPacket);
 copyEmailDraftButton.addEventListener("click", copyEmailDraft);
 exportEmailDraftButton.addEventListener("click", exportEmailDraft);
 exportEmailJsonButton.addEventListener("click", exportEmailJson);
