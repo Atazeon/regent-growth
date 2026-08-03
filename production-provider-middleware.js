@@ -122,6 +122,17 @@ function getAdapterReadinessReport() {
   };
 }
 
+function getAdapterReadinessExport() {
+  return {
+    schemaVersion: "regent-growth.adapter-readiness-export.v1",
+    generatedAt: new Date().toISOString(),
+    checklist: "docs/PRODUCTION_PROVIDER_ADAPTER_CHECKLIST.md",
+    machineChecklist: "docs/PRODUCTION_PROVIDER_ADAPTER_CHECKLIST.json",
+    readinessDocs: "docs/PRODUCTION_READINESS_REPORT.md",
+    report: getAdapterReadinessReport()
+  };
+}
+
 function getMiddlewareAuditTrail() {
   return middlewareAuditTrail.slice();
 }
@@ -278,6 +289,11 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "GET" && requestUrl.pathname === "/adapter-readiness/export") {
+    sendJson(response, 200, getAdapterReadinessExport());
+    return;
+  }
+
   if (request.method === "GET" && requestUrl.pathname === "/audit") {
     sendJson(response, 200, {
       ok: true,
@@ -372,6 +388,7 @@ module.exports = {
   getAdapterGuardrails,
   getMiddlewareStatus,
   getAdapterReadinessReport,
+  getAdapterReadinessExport,
   getMiddlewareAuditTrail,
   getMiddlewareAuditSummary,
   getMiddlewareAuditExport,
