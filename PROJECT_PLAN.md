@@ -64,10 +64,11 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 - Production middleware adapter readiness report
 - Production middleware readiness report docs
 - Production middleware readiness report export
+- Production middleware final provider setup review
 
 ### Later
 
-- Production middleware final provider setup review
+- First test-mailbox provider adapter implementation
 
 ## Data Model Draft
 
