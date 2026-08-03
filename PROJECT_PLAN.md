@@ -40,10 +40,11 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 - Reviewed send retry packet export
 - Production send compliance checklist
 - Production send release gate summary
+- Production provider implementation boundary docs
 
 ### Later
 
-- Production provider implementation boundary docs
+- Production provider middleware contract
 
 ## Data Model Draft
 

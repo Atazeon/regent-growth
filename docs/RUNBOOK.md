@@ -77,6 +77,7 @@ $env:REGENT_CALENDAR_API_KEY="your_calendar_api_key"
 1. Click `Check provider` in the app and confirm the local server reports provider configuration.
 1. Copy or download the provider setup packet before changing any production credentials.
 1. Keep reviewed handoff enabled. The local server reports production configuration only; real automatic sending and booking stay disabled until explicit send and booking endpoints are implemented, tested, and reviewed.
+1. Review `docs/PRODUCTION_PROVIDER_BOUNDARY.md` before building real send or booking functionality.
 
 ## Validation
 
