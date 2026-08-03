@@ -866,6 +866,39 @@ $env:REGENT_SEARCH_API_KEY="your_api_key"
           <div id="emailSendSummary" class="email-send-summary" aria-live="polite">
             Select a prospect with a contact email and write a draft before sending.
           </div>
+          <form id="productionIntegrationSetupForm" class="production-integration-setup">
+            <div class="setup-grid">
+              <label>
+                Email provider
+                <select id="productionEmailProviderSelect">
+                  <option value="manual">Manual handoff only</option>
+                  <option value="gmail">Gmail API planned</option>
+                  <option value="outlook">Outlook API planned</option>
+                  <option value="custom">Custom email API planned</option>
+                </select>
+              </label>
+              <label>
+                Sender email
+                <input id="productionSenderEmailInput" type="email" placeholder="you@regentgrowth.example">
+              </label>
+              <label>
+                Default booking link
+                <input id="productionBookingLinkInput" type="url" placeholder="https://cal.com/your-link">
+              </label>
+              <label class="checkbox-row">
+                <input id="productionReviewGateInput" type="checkbox" checked>
+                Require review before production send
+              </label>
+            </div>
+            <div class="email-handoff">
+              <button id="saveProductionIntegrationSetupButton" class="secondary-button" type="submit" title="Save production integration provider setup" aria-label="Save production integration provider setup">Save setup</button>
+              <button id="copyProductionIntegrationSetupButton" class="secondary-button" type="button" title="Copy production provider setup packet" aria-label="Copy production provider setup packet">Copy setup</button>
+              <button id="downloadProductionIntegrationSetupButton" class="secondary-button" type="button" title="Download production provider setup packet" aria-label="Download production provider setup packet">Download setup</button>
+            </div>
+          </form>
+          <div id="productionIntegrationSetupStatus" class="email-send-summary" aria-live="polite">
+            Production provider setup is local-only until API credentials are configured.
+          </div>
           <div id="productionIntegrationReadiness" class="email-send-summary" aria-live="polite">
             Production integration readiness will appear after selecting a prospect.
           </div>

@@ -5,6 +5,7 @@ const dailyRunHistoryStorageKey = "regent-growth-daily-run-history";
 const crmChecklistStorageKey = "regent-growth-crm-checklist";
 const outboundSessionStorageKey = "regent-growth-outbound-session";
 const crmPresetStorageKey = "regent-growth-crm-preset";
+const productionIntegrationSetupStorageKey = "regent-growth-production-integration-setup";
 const ollamaEndpoint = "http://127.0.0.1:11434/api/generate";
 const sourceFetchEndpoint = "/api/fetch-source";
 const sourceSearchEndpoint = "/api/search-sources";
@@ -96,6 +97,31 @@ Rules:
 - Make it personalized to the buying trigger.
 - Offer help getting more qualified meetings.
 - End with a simple question.`
+};
+const defaultProductionIntegrationSetup = {
+  provider: "manual",
+  senderEmail: "",
+  bookingLink: "",
+  requireReview: true,
+  savedAt: ""
+};
+const productionEmailProviderPresets = {
+  manual: {
+    label: "Manual handoff only",
+    description: "Use Gmail, Outlook, or mail-app compose links. No API sending is enabled."
+  },
+  gmail: {
+    label: "Gmail API planned",
+    description: "Prepare for Gmail API OAuth and reviewed draft send permissions."
+  },
+  outlook: {
+    label: "Outlook API planned",
+    description: "Prepare for Microsoft Graph mail and calendar permissions."
+  },
+  custom: {
+    label: "Custom email API planned",
+    description: "Prepare for a server-side provider that accepts reviewed send packets."
+  }
 };
 const sampleProspects = [
   {
@@ -207,6 +233,7 @@ let promptTemplates = loadPromptTemplates();
 let discoveryQueue = loadDiscoveryQueue();
 let dailyRunHistory = loadDailyRunHistory();
 let outboundSessionState = loadOutboundSessionState();
+let productionIntegrationSetup = loadProductionIntegrationSetup();
 let editingIndex = null;
 let selectedProspectIndex = 0;
 let crmFailedQueuePage = 0;
@@ -327,6 +354,14 @@ const copyEmailJsonButton = document.querySelector("#copyEmailJsonButton");
 const markEmailSentButton = document.querySelector("#markEmailSentButton");
 const emailSendSummary = document.querySelector("#emailSendSummary");
 const productionIntegrationReadiness = document.querySelector("#productionIntegrationReadiness");
+const productionIntegrationSetupForm = document.querySelector("#productionIntegrationSetupForm");
+const productionEmailProviderSelect = document.querySelector("#productionEmailProviderSelect");
+const productionSenderEmailInput = document.querySelector("#productionSenderEmailInput");
+const productionBookingLinkInput = document.querySelector("#productionBookingLinkInput");
+const productionReviewGateInput = document.querySelector("#productionReviewGateInput");
+const productionIntegrationSetupStatus = document.querySelector("#productionIntegrationSetupStatus");
+const copyProductionIntegrationSetupButton = document.querySelector("#copyProductionIntegrationSetupButton");
+const downloadProductionIntegrationSetupButton = document.querySelector("#downloadProductionIntegrationSetupButton");
 const copyProductionIntegrationPacketButton = document.querySelector("#copyProductionIntegrationPacketButton");
 const downloadProductionIntegrationPacketButton = document.querySelector("#downloadProductionIntegrationPacketButton");
 const exportWarmCsvButton = document.querySelector("#exportWarmCsvButton");
@@ -509,6 +544,31 @@ function loadPromptTemplates() {
     };
   } catch {
     return structuredClone(defaultPromptTemplates);
+  }
+}
+
+function normalizeProductionIntegrationSetup(setup = {}) {
+  const provider = productionEmailProviderPresets[setup.provider] ? setup.provider : defaultProductionIntegrationSetup.provider;
+  return {
+    provider,
+    senderEmail: String(setup.senderEmail || "").trim(),
+    bookingLink: String(setup.bookingLink || "").trim(),
+    requireReview: setup.requireReview !== false,
+    savedAt: String(setup.savedAt || "")
+  };
+}
+
+function loadProductionIntegrationSetup() {
+  const savedSetup = localStorage.getItem(productionIntegrationSetupStorageKey);
+
+  if (!savedSetup) {
+    return structuredClone(defaultProductionIntegrationSetup);
+  }
+
+  try {
+    return normalizeProductionIntegrationSetup(JSON.parse(savedSetup));
+  } catch {
+    return structuredClone(defaultProductionIntegrationSetup);
   }
 }
 
@@ -830,6 +890,11 @@ function renderSelectedOutreachReadiness(prospect) {
 
 function saveProspects() {
   localStorage.setItem(storageKey, JSON.stringify(prospects));
+}
+
+function saveProductionIntegrationSetupState() {
+  productionIntegrationSetup.savedAt = new Date().toISOString();
+  localStorage.setItem(productionIntegrationSetupStorageKey, JSON.stringify(productionIntegrationSetup));
 }
 
 function saveDailyRunHistory() {
@@ -7523,6 +7588,90 @@ function isValidEmailAddress(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }
 
+function getProductionEmailProviderLabel(provider = productionIntegrationSetup.provider) {
+  return productionEmailProviderPresets[provider]?.label || productionEmailProviderPresets.manual.label;
+}
+
+function getProductionBookingLink(prospect = getSelectedProspect()) {
+  return prospect?.bookingLink?.trim() || productionIntegrationSetup.bookingLink;
+}
+
+function getProductionIntegrationSetupReadiness() {
+  const providerLabel = getProductionEmailProviderLabel();
+  const senderReady = Boolean(productionIntegrationSetup.senderEmail) && isValidEmailAddress(productionIntegrationSetup.senderEmail);
+  const reviewReady = productionIntegrationSetup.requireReview === true;
+  return {
+    ready: senderReady && reviewReady,
+    providerLabel,
+    senderReady,
+    reviewReady,
+    saved: Boolean(productionIntegrationSetup.savedAt),
+    description: productionEmailProviderPresets[productionIntegrationSetup.provider]?.description || productionEmailProviderPresets.manual.description
+  };
+}
+
+function syncProductionIntegrationSetupForm() {
+  productionEmailProviderSelect.value = productionIntegrationSetup.provider;
+  productionSenderEmailInput.value = productionIntegrationSetup.senderEmail;
+  productionBookingLinkInput.value = productionIntegrationSetup.bookingLink;
+  productionReviewGateInput.checked = productionIntegrationSetup.requireReview;
+}
+
+function renderProductionIntegrationSetupStatus() {
+  const readiness = getProductionIntegrationSetupReadiness();
+  productionIntegrationSetupStatus.dataset.state = readiness.ready ? "ready" : "warning";
+  productionIntegrationSetupStatus.innerHTML = `
+    <strong>${escapeHtml(readiness.ready ? "Provider setup ready for reviewed handoff" : "Provider setup incomplete")}</strong>
+    <p>${escapeHtml(`${readiness.providerLabel}: ${readiness.description} Sender ${readiness.senderReady ? "ready" : "missing or invalid"}. Review gate ${readiness.reviewReady ? "on" : "off"}.`)}</p>
+  `;
+}
+
+function saveProductionIntegrationSetup(event) {
+  event.preventDefault();
+  productionIntegrationSetup = normalizeProductionIntegrationSetup({
+    provider: productionEmailProviderSelect.value,
+    senderEmail: productionSenderEmailInput.value,
+    bookingLink: productionBookingLinkInput.value,
+    requireReview: productionReviewGateInput.checked,
+    savedAt: productionIntegrationSetup.savedAt
+  });
+  saveProductionIntegrationSetupState();
+  renderProductionIntegrationSetupStatus();
+  renderProductionIntegrationReadiness();
+  setDataStatus(`Saved production provider setup for ${getProductionEmailProviderLabel()}.`);
+}
+
+function formatProductionIntegrationSetupPacket() {
+  const readiness = getProductionIntegrationSetupReadiness();
+  return [
+    "Production Integration Provider Setup",
+    `Created: ${formatDateTime(new Date().toISOString())}`,
+    `Provider: ${readiness.providerLabel}`,
+    `Sender email: ${productionIntegrationSetup.senderEmail || "Missing"}`,
+    `Default booking link: ${productionIntegrationSetup.bookingLink || "Not set"}`,
+    `Require review before send: ${productionIntegrationSetup.requireReview ? "Yes" : "No"}`,
+    `Saved at: ${formatDateTime(productionIntegrationSetup.savedAt)}`,
+    `Ready: ${readiness.ready ? "Yes" : "No"}`,
+    "",
+    "Provider Notes",
+    readiness.description,
+    "",
+    "Production Rule",
+    "Do not enable automatic send, follow-up, or booking until OAuth/API credentials, scopes, unsubscribe handling, sender identity, and compliance review are configured."
+  ].join("\n");
+}
+
+async function copyProductionIntegrationSetupPacket() {
+  const copiedDirectly = await copyTextWithFallback(formatProductionIntegrationSetupPacket());
+  setDataStatus(copiedDirectly ? "Copied production provider setup packet." : "Selected and copied production provider setup packet.");
+}
+
+function downloadProductionIntegrationSetupPacket() {
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-production-provider-setup-${stamp}.txt`, formatProductionIntegrationSetupPacket(), "text/plain;charset=utf-8");
+  setDataStatus("Downloaded production provider setup packet.");
+}
+
 function getEmailSendReadiness(prospect = getSelectedProspect()) {
   const draft = emailDraft.value.trim();
   const { subject, body } = getDraftParts(draft);
@@ -7547,19 +7696,26 @@ function getEmailSendReadiness(prospect = getSelectedProspect()) {
 
 function getProductionIntegrationReadiness(prospect = getSelectedProspect()) {
   const emailReadiness = getEmailSendReadiness(prospect);
+  const setupReadiness = getProductionIntegrationSetupReadiness();
+  const bookingLink = getProductionBookingLink(prospect);
   const checks = [
     { label: "Prospect selected", ready: Boolean(prospect), required: true },
     { label: "Valid contact email", ready: Boolean(emailReadiness.recipient) && isValidEmailAddress(emailReadiness.recipient), required: true },
     { label: "Reviewed email draft", ready: Boolean(emailReadiness.subject && emailReadiness.body), required: true },
+    { label: "Production provider selected", ready: Boolean(productionIntegrationSetup.provider), required: true },
+    { label: "Valid sender email", ready: setupReadiness.senderReady, required: true },
+    { label: "Human review gate enabled", ready: setupReadiness.reviewReady, required: true },
     { label: "Gmail handoff available", ready: Boolean(openGmailButton), required: false },
     { label: "Outlook handoff available", ready: Boolean(openOutlookButton), required: false },
     { label: "Mail app handoff available", ready: Boolean(openMailClientButton), required: false },
-    { label: "Calendar booking link", ready: Boolean(prospect?.bookingLink?.trim()), required: false },
+    { label: "Calendar booking link", ready: Boolean(bookingLink), required: false },
     { label: "Meeting date or next touch", ready: Boolean(prospect?.meetingDate || prospect?.nextTouch), required: false }
   ];
   return {
     ready: checks.filter((check) => check.required).every((check) => check.ready),
-    checks
+    checks,
+    providerLabel: setupReadiness.providerLabel,
+    bookingLink
   };
 }
 
@@ -7578,10 +7734,15 @@ function formatProductionIntegrationPacket(prospect = getSelectedProspect()) {
     "Production Email And Calendar Integration Readiness",
     `Created: ${formatDateTime(new Date().toISOString())}`,
     `Ready: ${readiness.ready ? "Yes" : "No"}`,
+    `Provider: ${readiness.providerLabel}`,
+    `Sender email: ${productionIntegrationSetup.senderEmail || "Missing"}`,
     `Company: ${prospect?.company || "No prospect selected"}`,
     `Email: ${prospect ? getEmailRecipient(prospect) || "Missing" : "Missing"}`,
-    `Booking link: ${prospect?.bookingLink || "Not set"}`,
+    `Booking link: ${readiness.bookingLink || "Not set"}`,
     `Meeting date: ${formatDate(prospect?.meetingDate)}`,
+    "",
+    "Provider Setup",
+    formatProductionIntegrationSetupPacket(),
     "",
     "Checks",
     ...readiness.checks.map((check) => `${check.ready ? "[x]" : "[ ]"} ${check.label}${check.required ? " (required)" : ""}`),
@@ -10459,6 +10620,9 @@ emailDraft.addEventListener("input", () => renderEmailSendStatus());
 openMailClientButton.addEventListener("click", () => openEmailHandoff("mailto"));
 openGmailButton.addEventListener("click", () => openEmailHandoff("gmail"));
 openOutlookButton.addEventListener("click", () => openEmailHandoff("outlook"));
+productionIntegrationSetupForm.addEventListener("submit", saveProductionIntegrationSetup);
+copyProductionIntegrationSetupButton.addEventListener("click", copyProductionIntegrationSetupPacket);
+downloadProductionIntegrationSetupButton.addEventListener("click", downloadProductionIntegrationSetupPacket);
 copyProductionIntegrationPacketButton.addEventListener("click", copyProductionIntegrationPacket);
 downloadProductionIntegrationPacketButton.addEventListener("click", downloadProductionIntegrationPacket);
 copyEmailDraftButton.addEventListener("click", copyEmailDraft);
@@ -10623,6 +10787,8 @@ downloadOutboundImprovementsButton.addEventListener("click", downloadOutboundImp
 
 bindCrmChecklistState();
 renderPromptTemplates();
+syncProductionIntegrationSetupForm();
+renderProductionIntegrationSetupStatus();
 renderOutboundSession();
 restoreCrmPresetPreference();
 renderCrmProviderPreset();
