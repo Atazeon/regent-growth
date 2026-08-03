@@ -900,6 +900,20 @@ $env:REGENT_SEARCH_API_KEY="your_api_key"
           <div id="productionIntegrationSetupStatus" class="email-send-summary" aria-live="polite">
             Production provider setup is local-only until API credentials are configured.
           </div>
+          <div class="send-packet-audit">
+            <div class="audit-heading">
+              <strong>Production send compliance checklist</strong>
+              <div class="email-handoff">
+                <button id="copyProductionComplianceButton" class="secondary-button" type="button" title="Copy production send compliance checklist" aria-label="Copy production send compliance checklist">Copy compliance</button>
+                <button id="downloadProductionComplianceButton" class="secondary-button" type="button" title="Download production send compliance checklist" aria-label="Download production send compliance checklist">Download compliance</button>
+                <button id="resetProductionComplianceButton" class="secondary-button" type="button" title="Reset production send compliance checklist" aria-label="Reset production send compliance checklist">Reset compliance</button>
+              </div>
+            </div>
+            <div id="productionComplianceProgress" class="email-send-summary" aria-live="polite">
+              Compliance checklist not loaded yet.
+            </div>
+            <div id="productionComplianceChecklist" class="checklist compact-checklist"></div>
+          </div>
           <div id="productionIntegrationReadiness" class="email-send-summary" aria-live="polite">
             Production integration readiness will appear after selecting a prospect.
           </div>

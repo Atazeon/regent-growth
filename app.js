@@ -8,6 +8,7 @@ const crmPresetStorageKey = "regent-growth-crm-preset";
 const productionIntegrationSetupStorageKey = "regent-growth-production-integration-setup";
 const reviewedSendPacketAuditStorageKey = "regent-growth-reviewed-send-packet-audit";
 const productionDryRunHistoryStorageKey = "regent-growth-production-dry-run-history";
+const productionComplianceStorageKey = "regent-growth-production-compliance";
 const ollamaEndpoint = "http://127.0.0.1:11434/api/generate";
 const sourceFetchEndpoint = "/api/fetch-source";
 const sourceSearchEndpoint = "/api/search-sources";
@@ -109,6 +110,16 @@ const defaultProductionIntegrationSetup = {
   requireReview: true,
   savedAt: ""
 };
+const productionComplianceItems = [
+  { id: "sender-domain", label: "Sender domain and mailbox are verified" },
+  { id: "unsubscribe", label: "Unsubscribe or opt-out process is ready" },
+  { id: "human-review", label: "Human review remains required before every production send" },
+  { id: "source-evidence", label: "Prospect source evidence is saved before outreach" },
+  { id: "rate-limit", label: "Daily send limit and throttling policy are documented" },
+  { id: "provider-credentials", label: "Provider credentials are configured outside the browser" },
+  { id: "calendar-review", label: "Calendar booking actions require reviewed confirmation" },
+  { id: "legal-review", label: "Compliance/legal review is complete for the target market" }
+];
 const productionEmailProviderPresets = {
   manual: {
     label: "Manual handoff only",
@@ -240,6 +251,7 @@ let outboundSessionState = loadOutboundSessionState();
 let productionIntegrationSetup = loadProductionIntegrationSetup();
 let reviewedSendPacketAuditLog = loadReviewedSendPacketAuditLog();
 let productionDryRunHistory = loadProductionDryRunHistory();
+let productionComplianceState = loadProductionComplianceState();
 let productionIntegrationServerStatus = null;
 let editingIndex = null;
 let selectedProspectIndex = 0;
@@ -367,6 +379,11 @@ const productionSenderEmailInput = document.querySelector("#productionSenderEmai
 const productionBookingLinkInput = document.querySelector("#productionBookingLinkInput");
 const productionReviewGateInput = document.querySelector("#productionReviewGateInput");
 const productionIntegrationSetupStatus = document.querySelector("#productionIntegrationSetupStatus");
+const productionComplianceProgress = document.querySelector("#productionComplianceProgress");
+const productionComplianceChecklist = document.querySelector("#productionComplianceChecklist");
+const copyProductionComplianceButton = document.querySelector("#copyProductionComplianceButton");
+const downloadProductionComplianceButton = document.querySelector("#downloadProductionComplianceButton");
+const resetProductionComplianceButton = document.querySelector("#resetProductionComplianceButton");
 const checkProductionIntegrationSetupButton = document.querySelector("#checkProductionIntegrationSetupButton");
 const copyProductionIntegrationSetupButton = document.querySelector("#copyProductionIntegrationSetupButton");
 const downloadProductionIntegrationSetupButton = document.querySelector("#downloadProductionIntegrationSetupButton");
@@ -647,6 +664,24 @@ function loadProductionDryRunHistory() {
     return Array.isArray(parsedHistory) ? parsedHistory.map(normalizeProductionDryRunHistoryEntry).slice(0, 50) : [];
   } catch {
     return [];
+  }
+}
+
+function loadProductionComplianceState() {
+  const savedState = localStorage.getItem(productionComplianceStorageKey);
+
+  if (!savedState) {
+    return {};
+  }
+
+  try {
+    const parsedState = JSON.parse(savedState);
+    return productionComplianceItems.reduce((state, item) => {
+      state[item.id] = parsedState[item.id] === true;
+      return state;
+    }, {});
+  } catch {
+    return {};
   }
 }
 
@@ -981,6 +1016,10 @@ function saveReviewedSendPacketAuditLog() {
 
 function saveProductionDryRunHistory() {
   localStorage.setItem(productionDryRunHistoryStorageKey, JSON.stringify(productionDryRunHistory.slice(0, 50)));
+}
+
+function saveProductionComplianceState() {
+  localStorage.setItem(productionComplianceStorageKey, JSON.stringify(productionComplianceState));
 }
 
 function saveDailyRunHistory() {
@@ -7796,6 +7835,68 @@ function downloadProductionIntegrationSetupPacket() {
   setDataStatus("Downloaded production provider setup packet.");
 }
 
+function getProductionComplianceSummary() {
+  const completed = productionComplianceItems.filter((item) => productionComplianceState[item.id]).length;
+  return {
+    completed,
+    total: productionComplianceItems.length,
+    ready: completed === productionComplianceItems.length
+  };
+}
+
+function renderProductionComplianceChecklist() {
+  const summary = getProductionComplianceSummary();
+  productionComplianceProgress.dataset.state = summary.ready ? "ready" : "warning";
+  productionComplianceProgress.innerHTML = `
+    <strong>${escapeHtml(summary.ready ? "Compliance checklist complete" : "Compliance checklist incomplete")}</strong>
+    <p>${escapeHtml(`${summary.completed}/${summary.total} completed. Real send automation remains blocked until every item is complete and reviewed.`)}</p>
+  `;
+  productionComplianceChecklist.innerHTML = productionComplianceItems.map((item) => `
+    <label>
+      <input type="checkbox" data-production-compliance-id="${escapeHtml(item.id)}" ${productionComplianceState[item.id] ? "checked" : ""}>
+      ${escapeHtml(item.label)}
+    </label>
+  `).join("");
+}
+
+function formatProductionComplianceChecklist() {
+  const summary = getProductionComplianceSummary();
+  return [
+    "Production Send Compliance Checklist",
+    `Created: ${formatDateTime(new Date().toISOString())}`,
+    `Ready: ${summary.ready ? "Yes" : "No"}`,
+    `Completed: ${summary.completed}/${summary.total}`,
+    "",
+    ...productionComplianceItems.map((item) => `${productionComplianceState[item.id] ? "[x]" : "[ ]"} ${item.label}`),
+    "",
+    "Rule",
+    "Do not enable real send automation until every compliance item is complete, reviewed, and documented."
+  ].join("\n");
+}
+
+async function copyProductionComplianceChecklist() {
+  const copiedDirectly = await copyTextWithFallback(formatProductionComplianceChecklist());
+  setDataStatus(copiedDirectly ? "Copied production send compliance checklist." : "Selected and copied production send compliance checklist.");
+}
+
+function downloadProductionComplianceChecklist() {
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-production-compliance-${stamp}.txt`, formatProductionComplianceChecklist(), "text/plain;charset=utf-8");
+  setDataStatus("Downloaded production send compliance checklist.");
+}
+
+function resetProductionComplianceChecklist() {
+  if (!confirm("Reset production send compliance checklist?")) {
+    setDataStatus("Production send compliance reset canceled.");
+    return;
+  }
+
+  productionComplianceState = {};
+  saveProductionComplianceState();
+  renderProductionComplianceChecklist();
+  setDataStatus("Reset production send compliance checklist.");
+}
+
 function getEmailSendReadiness(prospect = getSelectedProspect()) {
   const draft = emailDraft.value.trim();
   const { subject, body } = getDraftParts(draft);
@@ -11040,6 +11141,17 @@ downloadProductionDryRunHistoryButton.addEventListener("click", downloadProducti
 copyReviewedSendRetryPacketButton.addEventListener("click", copyReviewedSendRetryPacket);
 downloadReviewedSendRetryPacketButton.addEventListener("click", downloadReviewedSendRetryPacket);
 clearProductionDryRunHistoryButton.addEventListener("click", clearProductionDryRunHistory);
+productionComplianceChecklist.addEventListener("change", (event) => {
+  const field = event.target.closest("input[data-production-compliance-id]");
+  if (!field) return;
+
+  productionComplianceState[field.dataset.productionComplianceId] = field.checked;
+  saveProductionComplianceState();
+  renderProductionComplianceChecklist();
+});
+copyProductionComplianceButton.addEventListener("click", copyProductionComplianceChecklist);
+downloadProductionComplianceButton.addEventListener("click", downloadProductionComplianceChecklist);
+resetProductionComplianceButton.addEventListener("click", resetProductionComplianceChecklist);
 copyEmailDraftButton.addEventListener("click", copyEmailDraft);
 exportEmailDraftButton.addEventListener("click", exportEmailDraft);
 exportEmailJsonButton.addEventListener("click", exportEmailJson);
@@ -11204,6 +11316,7 @@ bindCrmChecklistState();
 renderPromptTemplates();
 syncProductionIntegrationSetupForm();
 renderProductionIntegrationSetupStatus();
+renderProductionComplianceChecklist();
 renderReviewedSendPacketAuditLog();
 renderProductionDryRunHistory();
 renderOutboundSession();
