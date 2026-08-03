@@ -387,6 +387,8 @@ const resetProductionComplianceButton = document.querySelector("#resetProduction
 const productionReleaseGateSummary = document.querySelector("#productionReleaseGateSummary");
 const copyProductionReleaseGateButton = document.querySelector("#copyProductionReleaseGateButton");
 const downloadProductionReleaseGateButton = document.querySelector("#downloadProductionReleaseGateButton");
+const copyProductionIntegrationCloseoutButton = document.querySelector("#copyProductionIntegrationCloseoutButton");
+const downloadProductionIntegrationCloseoutButton = document.querySelector("#downloadProductionIntegrationCloseoutButton");
 const checkProductionIntegrationSetupButton = document.querySelector("#checkProductionIntegrationSetupButton");
 const copyProductionIntegrationSetupButton = document.querySelector("#copyProductionIntegrationSetupButton");
 const downloadProductionIntegrationSetupButton = document.querySelector("#downloadProductionIntegrationSetupButton");
@@ -8175,6 +8177,44 @@ function downloadProductionReleaseGateSummary() {
   setDataStatus("Downloaded production send release gate summary.");
 }
 
+function formatProductionIntegrationCloseoutPacket(prospect = getSelectedProspect()) {
+  const providerStatus = getProductionProviderStatusRecord();
+  const releaseGate = getProductionReleaseGateSummary(prospect);
+  const latestDryRun = productionDryRunHistory[0] || null;
+  return [
+    "Production Integration Closeout Packet",
+    `Created: ${formatDateTime(new Date().toISOString())}`,
+    `Company: ${prospect?.company || "No prospect selected"}`,
+    `Provider: ${providerStatus.providerLabel}`,
+    `Setup ready: ${providerStatus.setupReady ? "Yes" : "No"}`,
+    `Stub mode: ${providerStatus.stubMode ? "Yes" : "No"}`,
+    `Release gate ready: ${releaseGate.ready ? "Yes" : "No"}`,
+    `Compliance: ${providerStatus.compliance.completed}/${providerStatus.compliance.total}`,
+    `Latest dry run: ${latestDryRun ? `${latestDryRun.accepted ? "Accepted" : "Blocked"} | sent ${latestDryRun.sent ? "yes" : "no"} | booked ${latestDryRun.booked ? "yes" : "no"}` : "None"}`,
+    "",
+    "Release Gate",
+    ...releaseGate.checks.map((check) => `${check.ready ? "[x]" : "[ ]"} ${check.label}`),
+    "",
+    "Boundary Docs",
+    "- docs/PRODUCTION_PROVIDER_BOUNDARY.md",
+    "- docs/PRODUCTION_MIDDLEWARE_CONTRACT.md",
+    "",
+    "Rule",
+    "Closeout confirms readiness artifacts only. Real sending remains disabled until provider middleware is implemented and reviewed."
+  ].join("\n");
+}
+
+async function copyProductionIntegrationCloseoutPacket() {
+  const copiedDirectly = await copyTextWithFallback(formatProductionIntegrationCloseoutPacket());
+  setDataStatus(copiedDirectly ? "Copied production integration closeout packet." : "Selected and copied production integration closeout packet.");
+}
+
+function downloadProductionIntegrationCloseoutPacket() {
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-production-integration-closeout-${stamp}.txt`, formatProductionIntegrationCloseoutPacket(), "text/plain;charset=utf-8");
+  setDataStatus("Downloaded production integration closeout packet.");
+}
+
 function renderReviewedSendPacketAuditLog() {
   if (reviewedSendPacketAuditLog.length === 0) {
     reviewedSendAuditList.innerHTML = "<p>No reviewed send packets copied or downloaded yet.</p>";
@@ -11261,6 +11301,8 @@ downloadProductionComplianceButton.addEventListener("click", downloadProductionC
 resetProductionComplianceButton.addEventListener("click", resetProductionComplianceChecklist);
 copyProductionReleaseGateButton.addEventListener("click", copyProductionReleaseGateSummary);
 downloadProductionReleaseGateButton.addEventListener("click", downloadProductionReleaseGateSummary);
+copyProductionIntegrationCloseoutButton.addEventListener("click", copyProductionIntegrationCloseoutPacket);
+downloadProductionIntegrationCloseoutButton.addEventListener("click", downloadProductionIntegrationCloseoutPacket);
 copyEmailDraftButton.addEventListener("click", copyEmailDraft);
 exportEmailDraftButton.addEventListener("click", exportEmailDraft);
 exportEmailJsonButton.addEventListener("click", exportEmailJson);
