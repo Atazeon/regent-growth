@@ -32,7 +32,7 @@ const checks = [
   ["filtered closeout bound", app.includes('copyFilteredCloseoutOutboundImprovementsButton.addEventListener("click", copyFilteredOutboundImprovementCloseout)')],
   ["filtered closeout download bound", app.includes('downloadFilteredCloseoutOutboundImprovementsButton.addEventListener("click", downloadFilteredOutboundImprovementCloseout)')],
   ["README mentions filtered closeout download", readme.includes("filtered closeout copy/download")],
-  ["plan next snapshot clear", plan.includes("- Production email and calendar integrations")]
+  ["plan next snapshot clear", plan.includes("- Production integration provider setup")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);

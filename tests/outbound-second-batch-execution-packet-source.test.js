@@ -23,7 +23,7 @@ const checks = [
   ["second batch packet copy bound", app.includes('copySecondBatchExecutionPacketButton.addEventListener("click", copySecondBatchExecutionPacket)')],
   ["second batch packet download bound", app.includes('downloadSecondBatchExecutionPacketButton.addEventListener("click", downloadSecondBatchExecutionPacket)')],
   ["README mentions second-batch packet", readme.includes("second-batch execution packet")],
-  ["plan next second batch outcome tracking", plan.includes("- Production email and calendar integrations")]
+  ["plan next second batch outcome tracking", plan.includes("- Production integration provider setup")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);

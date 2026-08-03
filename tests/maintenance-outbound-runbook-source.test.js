@@ -16,7 +16,7 @@ const checks = [
   ["runbook mentions filtered text and CSV", runbook.includes("filtered text and CSV")],
   ["runbook mentions scale decision", runbook.includes("scale decision")],
   ["runbook mentions launch hardening", runbook.includes("launch hardening checklist")],
-  ["plan next production integrations", plan.includes("- Production email and calendar integrations")]
+  ["plan next production integrations", plan.includes("- Production integration provider setup")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);

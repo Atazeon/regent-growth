@@ -24,7 +24,7 @@ const checks = [
   ["scale decision copy bound", app.includes('copyScaleDecisionButton.addEventListener("click", copyOutboundScaleDecision)')],
   ["scale decision download bound", app.includes('downloadScaleDecisionButton.addEventListener("click", downloadOutboundScaleDecision)')],
   ["README mentions scale decision", readme.includes("scale decision")],
-  ["plan next operating dashboard", plan.includes("- Production email and calendar integrations")]
+  ["plan next operating dashboard", plan.includes("- Production integration provider setup")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);

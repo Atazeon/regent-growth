@@ -326,6 +326,9 @@ const exportEmailJsonButton = document.querySelector("#exportEmailJsonButton");
 const copyEmailJsonButton = document.querySelector("#copyEmailJsonButton");
 const markEmailSentButton = document.querySelector("#markEmailSentButton");
 const emailSendSummary = document.querySelector("#emailSendSummary");
+const productionIntegrationReadiness = document.querySelector("#productionIntegrationReadiness");
+const copyProductionIntegrationPacketButton = document.querySelector("#copyProductionIntegrationPacketButton");
+const downloadProductionIntegrationPacketButton = document.querySelector("#downloadProductionIntegrationPacketButton");
 const exportWarmCsvButton = document.querySelector("#exportWarmCsvButton");
 const exportWarmJsonButton = document.querySelector("#exportWarmJsonButton");
 const checkCrmSetupButton = document.querySelector("#checkCrmSetupButton");
@@ -7542,6 +7545,63 @@ function getEmailSendReadiness(prospect = getSelectedProspect()) {
   };
 }
 
+function getProductionIntegrationReadiness(prospect = getSelectedProspect()) {
+  const emailReadiness = getEmailSendReadiness(prospect);
+  const checks = [
+    { label: "Prospect selected", ready: Boolean(prospect), required: true },
+    { label: "Valid contact email", ready: Boolean(emailReadiness.recipient) && isValidEmailAddress(emailReadiness.recipient), required: true },
+    { label: "Reviewed email draft", ready: Boolean(emailReadiness.subject && emailReadiness.body), required: true },
+    { label: "Gmail handoff available", ready: Boolean(openGmailButton), required: false },
+    { label: "Outlook handoff available", ready: Boolean(openOutlookButton), required: false },
+    { label: "Mail app handoff available", ready: Boolean(openMailClientButton), required: false },
+    { label: "Calendar booking link", ready: Boolean(prospect?.bookingLink?.trim()), required: false },
+    { label: "Meeting date or next touch", ready: Boolean(prospect?.meetingDate || prospect?.nextTouch), required: false }
+  ];
+  return {
+    ready: checks.filter((check) => check.required).every((check) => check.ready),
+    checks
+  };
+}
+
+function renderProductionIntegrationReadiness(prospect = getSelectedProspect()) {
+  const readiness = getProductionIntegrationReadiness(prospect);
+  productionIntegrationReadiness.dataset.state = readiness.ready ? "ready" : "warning";
+  productionIntegrationReadiness.innerHTML = `
+    <strong>${escapeHtml(readiness.ready ? "Integration handoff ready" : "Integration setup needed")}</strong>
+    <p>${escapeHtml(readiness.checks.map((check) => `${check.ready ? "Ready" : "Missing"} ${check.label}`).join(" | "))}</p>
+  `;
+}
+
+function formatProductionIntegrationPacket(prospect = getSelectedProspect()) {
+  const readiness = getProductionIntegrationReadiness(prospect);
+  return [
+    "Production Email And Calendar Integration Readiness",
+    `Created: ${formatDateTime(new Date().toISOString())}`,
+    `Ready: ${readiness.ready ? "Yes" : "No"}`,
+    `Company: ${prospect?.company || "No prospect selected"}`,
+    `Email: ${prospect ? getEmailRecipient(prospect) || "Missing" : "Missing"}`,
+    `Booking link: ${prospect?.bookingLink || "Not set"}`,
+    `Meeting date: ${formatDate(prospect?.meetingDate)}`,
+    "",
+    "Checks",
+    ...readiness.checks.map((check) => `${check.ready ? "[x]" : "[ ]"} ${check.label}${check.required ? " (required)" : ""}`),
+    "",
+    "Rule",
+    "Use handoff links for reviewed sending only; do not automate production sending or calendar booking until credentials, permissions, and compliance are explicitly configured."
+  ].join("\n");
+}
+
+async function copyProductionIntegrationPacket() {
+  const copiedDirectly = await copyTextWithFallback(formatProductionIntegrationPacket());
+  setDataStatus(copiedDirectly ? "Copied production integration readiness packet." : "Selected and copied production integration readiness packet.");
+}
+
+function downloadProductionIntegrationPacket() {
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-production-integration-readiness-${stamp}.txt`, formatProductionIntegrationPacket(), "text/plain;charset=utf-8");
+  setDataStatus("Downloaded production integration readiness packet.");
+}
+
 function renderEmailSendStatus(prospect = getSelectedProspect()) {
   const readiness = getEmailSendReadiness(prospect);
 
@@ -7555,6 +7615,7 @@ function renderEmailSendStatus(prospect = getSelectedProspect()) {
       <strong>Sending needs setup</strong>
       <p>${escapeHtml(readiness.issues.join(" "))}</p>
     `;
+  renderProductionIntegrationReadiness(prospect);
 }
 
 function saveCurrentEmailDraft() {
@@ -10398,6 +10459,8 @@ emailDraft.addEventListener("input", () => renderEmailSendStatus());
 openMailClientButton.addEventListener("click", () => openEmailHandoff("mailto"));
 openGmailButton.addEventListener("click", () => openEmailHandoff("gmail"));
 openOutlookButton.addEventListener("click", () => openEmailHandoff("outlook"));
+copyProductionIntegrationPacketButton.addEventListener("click", copyProductionIntegrationPacket);
+downloadProductionIntegrationPacketButton.addEventListener("click", downloadProductionIntegrationPacket);
 copyEmailDraftButton.addEventListener("click", copyEmailDraft);
 exportEmailDraftButton.addEventListener("click", exportEmailDraft);
 exportEmailJsonButton.addEventListener("click", exportEmailJson);

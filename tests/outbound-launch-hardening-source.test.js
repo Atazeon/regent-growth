@@ -22,13 +22,13 @@ const checks = [
   ["launch hardening copy bound", app.includes('copyLaunchHardeningButton.addEventListener("click", copyOutboundLaunchHardening)')],
   ["launch hardening download bound", app.includes('downloadLaunchHardeningButton.addEventListener("click", downloadOutboundLaunchHardening)')],
   ["README mentions launch hardening", readme.includes("launch hardening")],
-  ["plan next final runbook", plan.includes("- Production email and calendar integrations")]
+  ["plan next final runbook", plan.includes("- Production integration provider setup")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
 if (failures.length) {
-  console.error(`Production email and calendar integrations test failed: ${failures.join(", ")}`);
+  console.error(`Production integration provider setup test failed: ${failures.join(", ")}`);
   process.exit(1);
 }
 
-console.log("Production email and calendar integrations test passed.");
+console.log("Production integration provider setup test passed.");

@@ -18,13 +18,13 @@ const checks = [
   ["filtered CSV uses csv helper", app.includes("row.map(csvCell).join(\",\")")],
   ["filtered CSV bound", app.includes('downloadFilteredOutboundOutcomesCsvButton.addEventListener("click", downloadFilteredOutboundOutcomeCsv)')],
   ["README mentions CSV exports", readme.includes("CSV exports")],
-  ["plan next operating QA", plan.includes("- Production email and calendar integrations")]
+  ["plan next operating QA", plan.includes("- Production integration provider setup")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([label]) => label);
 if (failures.length) {
-  console.error(`Production email and calendar integrations test failed: ${failures.join(", ")}`);
+  console.error(`Production integration provider setup test failed: ${failures.join(", ")}`);
   process.exit(1);
 }
 
-console.log("Production email and calendar integrations test passed.");
+console.log("Production integration provider setup test passed.");
