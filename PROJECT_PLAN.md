@@ -34,10 +34,11 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 - Production integration provider setup
 - Reviewed production send packet schema
 - Reviewed send packet validation preview
+- Reviewed send packet audit log
 
 ### Later
 
-- Reviewed send packet audit log
+- Reviewed provider dry-run endpoint
 
 ## Data Model Draft
 

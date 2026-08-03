@@ -906,6 +906,18 @@ $env:REGENT_SEARCH_API_KEY="your_api_key"
           <div id="reviewedSendPacketPreview" class="email-send-summary" aria-live="polite">
             Reviewed send packet preview will appear after selecting a prospect.
           </div>
+          <div class="send-packet-audit">
+            <div class="audit-heading">
+              <strong>Reviewed send packet audit</strong>
+              <div class="email-handoff">
+                <button id="downloadReviewedSendAuditButton" class="secondary-button" type="button" title="Download reviewed send packet audit log" aria-label="Download reviewed send packet audit log">Download audit</button>
+                <button id="clearReviewedSendAuditButton" class="secondary-button" type="button" title="Clear reviewed send packet audit log" aria-label="Clear reviewed send packet audit log">Clear audit</button>
+              </div>
+            </div>
+            <div id="reviewedSendAuditList" class="audit-list" aria-live="polite">
+              No reviewed send packets copied or downloaded yet.
+            </div>
+          </div>
           <div class="email-handoff">
             <button id="copyProductionIntegrationPacketButton" class="secondary-button" type="button" title="Copy production email and calendar integration readiness" aria-label="Copy production email and calendar integration readiness">Copy integration packet</button>
             <button id="downloadProductionIntegrationPacketButton" class="secondary-button" type="button" title="Download production email and calendar integration readiness" aria-label="Download production email and calendar integration readiness">Download integration packet</button>

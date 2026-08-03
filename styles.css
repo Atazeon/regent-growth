@@ -1909,6 +1909,47 @@ button:disabled {
   color: #8a5a00;
 }
 
+.send-packet-audit {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 12px;
+}
+
+.audit-heading {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.audit-list {
+  display: grid;
+  gap: 8px;
+}
+
+.audit-list article {
+  background: #f9fafc;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.audit-list article[data-state="ready"] {
+  border-color: #247247;
+}
+
+.audit-list article[data-state="warning"] {
+  border-color: #8a5a00;
+}
+
+.audit-list p {
+  color: var(--muted);
+  margin: 4px 0 0;
+}
+
 .handoff-tools {
   display: grid;
   grid-template-columns: minmax(220px, 0.8fr) 1.2fr;

@@ -6,6 +6,7 @@ const crmChecklistStorageKey = "regent-growth-crm-checklist";
 const outboundSessionStorageKey = "regent-growth-outbound-session";
 const crmPresetStorageKey = "regent-growth-crm-preset";
 const productionIntegrationSetupStorageKey = "regent-growth-production-integration-setup";
+const reviewedSendPacketAuditStorageKey = "regent-growth-reviewed-send-packet-audit";
 const ollamaEndpoint = "http://127.0.0.1:11434/api/generate";
 const sourceFetchEndpoint = "/api/fetch-source";
 const sourceSearchEndpoint = "/api/search-sources";
@@ -235,6 +236,7 @@ let discoveryQueue = loadDiscoveryQueue();
 let dailyRunHistory = loadDailyRunHistory();
 let outboundSessionState = loadOutboundSessionState();
 let productionIntegrationSetup = loadProductionIntegrationSetup();
+let reviewedSendPacketAuditLog = loadReviewedSendPacketAuditLog();
 let productionIntegrationServerStatus = null;
 let editingIndex = null;
 let selectedProspectIndex = 0;
@@ -370,6 +372,9 @@ const downloadProductionIntegrationPacketButton = document.querySelector("#downl
 const reviewedSendPacketPreview = document.querySelector("#reviewedSendPacketPreview");
 const copyReviewedSendPacketButton = document.querySelector("#copyReviewedSendPacketButton");
 const downloadReviewedSendPacketButton = document.querySelector("#downloadReviewedSendPacketButton");
+const reviewedSendAuditList = document.querySelector("#reviewedSendAuditList");
+const downloadReviewedSendAuditButton = document.querySelector("#downloadReviewedSendAuditButton");
+const clearReviewedSendAuditButton = document.querySelector("#clearReviewedSendAuditButton");
 const exportWarmCsvButton = document.querySelector("#exportWarmCsvButton");
 const exportWarmJsonButton = document.querySelector("#exportWarmJsonButton");
 const checkCrmSetupButton = document.querySelector("#checkCrmSetupButton");
@@ -575,6 +580,33 @@ function loadProductionIntegrationSetup() {
     return normalizeProductionIntegrationSetup(JSON.parse(savedSetup));
   } catch {
     return structuredClone(defaultProductionIntegrationSetup);
+  }
+}
+
+function normalizeReviewedSendPacketAuditEntry(entry = {}) {
+  return {
+    id: String(entry.id || `${Date.now()}-${Math.random().toString(16).slice(2)}`),
+    action: String(entry.action || "Recorded"),
+    company: String(entry.company || "No prospect selected"),
+    ready: entry.ready === true,
+    blockers: Array.isArray(entry.blockers) ? entry.blockers.map(String) : [],
+    warnings: Array.isArray(entry.warnings) ? entry.warnings.map(String) : [],
+    createdAt: String(entry.createdAt || new Date().toISOString())
+  };
+}
+
+function loadReviewedSendPacketAuditLog() {
+  const savedLog = localStorage.getItem(reviewedSendPacketAuditStorageKey);
+
+  if (!savedLog) {
+    return [];
+  }
+
+  try {
+    const parsedLog = JSON.parse(savedLog);
+    return Array.isArray(parsedLog) ? parsedLog.map(normalizeReviewedSendPacketAuditEntry).slice(0, 50) : [];
+  } catch {
+    return [];
   }
 }
 
@@ -901,6 +933,10 @@ function saveProspects() {
 function saveProductionIntegrationSetupState() {
   productionIntegrationSetup.savedAt = new Date().toISOString();
   localStorage.setItem(productionIntegrationSetupStorageKey, JSON.stringify(productionIntegrationSetup));
+}
+
+function saveReviewedSendPacketAuditLog() {
+  localStorage.setItem(reviewedSendPacketAuditStorageKey, JSON.stringify(reviewedSendPacketAuditLog.slice(0, 50)));
 }
 
 function saveDailyRunHistory() {
@@ -7892,14 +7928,77 @@ function renderReviewedSendPacketPreview(prospect = getSelectedProspect()) {
   `;
 }
 
+function renderReviewedSendPacketAuditLog() {
+  if (reviewedSendPacketAuditLog.length === 0) {
+    reviewedSendAuditList.innerHTML = "<p>No reviewed send packets copied or downloaded yet.</p>";
+    return;
+  }
+
+  reviewedSendAuditList.innerHTML = reviewedSendPacketAuditLog.slice(0, 8).map((entry) => `
+    <article data-state="${entry.ready ? "ready" : "warning"}">
+      <strong>${escapeHtml(entry.action)} | ${escapeHtml(entry.company)}</strong>
+      <p>${escapeHtml(`${formatDateTime(entry.createdAt)} | ${entry.ready ? "Ready" : "Blocked"} | Blockers: ${entry.blockers.length ? entry.blockers.join(", ") : "None"}`)}</p>
+    </article>
+  `).join("");
+}
+
+function recordReviewedSendPacketAudit(action, prospect = getSelectedProspect()) {
+  const validation = getReviewedSendPacketValidation(prospect);
+  const entry = normalizeReviewedSendPacketAuditEntry({
+    action,
+    company: prospect?.company || "No prospect selected",
+    ready: validation.ready,
+    blockers: validation.blockingChecks.map((check) => check.label),
+    warnings: validation.warnings,
+    createdAt: new Date().toISOString()
+  });
+  reviewedSendPacketAuditLog = [entry, ...reviewedSendPacketAuditLog].slice(0, 50);
+  saveReviewedSendPacketAuditLog();
+  renderReviewedSendPacketAuditLog();
+  return entry;
+}
+
+function getReviewedSendPacketAuditRecord() {
+  return {
+    exportedAt: new Date().toISOString(),
+    count: reviewedSendPacketAuditLog.length,
+    records: reviewedSendPacketAuditLog
+  };
+}
+
+function downloadReviewedSendPacketAuditLog() {
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-reviewed-send-audit-${stamp}.json`, JSON.stringify(getReviewedSendPacketAuditRecord(), null, 2), "application/json;charset=utf-8");
+  setDataStatus("Downloaded reviewed send packet audit log.");
+}
+
+function clearReviewedSendPacketAuditLog() {
+  if (reviewedSendPacketAuditLog.length === 0) {
+    setDataStatus("Reviewed send packet audit log is already empty.");
+    return;
+  }
+
+  if (!confirm("Clear reviewed send packet audit log from this browser?")) {
+    setDataStatus("Reviewed send packet audit clear canceled.");
+    return;
+  }
+
+  reviewedSendPacketAuditLog = [];
+  saveReviewedSendPacketAuditLog();
+  renderReviewedSendPacketAuditLog();
+  setDataStatus("Cleared reviewed send packet audit log.");
+}
+
 async function copyReviewedProductionSendPacket() {
   const copiedDirectly = await copyTextWithFallback(formatReviewedProductionSendPacket());
+  recordReviewedSendPacketAudit("Copied reviewed send packet");
   setDataStatus(copiedDirectly ? "Copied reviewed production send packet JSON." : "Selected and copied reviewed production send packet JSON.");
 }
 
 function downloadReviewedProductionSendPacket() {
   const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
   downloadFile(`regent-growth-reviewed-send-packet-${stamp}.json`, formatReviewedProductionSendPacket(), "application/json;charset=utf-8");
+  recordReviewedSendPacketAudit("Downloaded reviewed send packet");
   setDataStatus("Downloaded reviewed production send packet JSON.");
 }
 
@@ -10769,6 +10868,8 @@ copyProductionIntegrationPacketButton.addEventListener("click", copyProductionIn
 downloadProductionIntegrationPacketButton.addEventListener("click", downloadProductionIntegrationPacket);
 copyReviewedSendPacketButton.addEventListener("click", copyReviewedProductionSendPacket);
 downloadReviewedSendPacketButton.addEventListener("click", downloadReviewedProductionSendPacket);
+downloadReviewedSendAuditButton.addEventListener("click", downloadReviewedSendPacketAuditLog);
+clearReviewedSendAuditButton.addEventListener("click", clearReviewedSendPacketAuditLog);
 copyEmailDraftButton.addEventListener("click", copyEmailDraft);
 exportEmailDraftButton.addEventListener("click", exportEmailDraft);
 exportEmailJsonButton.addEventListener("click", exportEmailJson);
@@ -10933,6 +11034,7 @@ bindCrmChecklistState();
 renderPromptTemplates();
 syncProductionIntegrationSetupForm();
 renderProductionIntegrationSetupStatus();
+renderReviewedSendPacketAuditLog();
 renderOutboundSession();
 restoreCrmPresetPreference();
 renderCrmProviderPreset();
