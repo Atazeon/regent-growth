@@ -129,6 +129,21 @@ function getMiddlewareAuditExport() {
   };
 }
 
+function replayMiddlewareFixture(payload = {}) {
+  const result = createMiddlewareResponse(payload);
+  return {
+    replay: true,
+    sent: false,
+    booked: false,
+    recorded: false,
+    result,
+    auditPreview: createMiddlewareAuditEntry(payload, result, {
+      method: "REPLAY",
+      path: "/reviewed-send"
+    })
+  };
+}
+
 function createMiddlewareAuditEntry(payload = {}, result = {}, requestMeta = {}) {
   const packet = payload.packet || {};
   const releaseGate = payload.releaseGate || {};
@@ -262,6 +277,22 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "POST" && requestUrl.pathname === "/replay") {
+    try {
+      const body = await readJsonBody(request);
+      sendJson(response, 200, replayMiddlewareFixture(body));
+    } catch (error) {
+      sendJson(response, 400, {
+        replay: true,
+        sent: false,
+        booked: false,
+        recorded: false,
+        issues: [error.message]
+      });
+    }
+    return;
+  }
+
   response.writeHead(404);
   response.end("Not found");
 });
@@ -281,6 +312,7 @@ module.exports = {
   getMiddlewareAuditExport,
   createMiddlewareAuditEntry,
   recordMiddlewareAuditEntry,
+  replayMiddlewareFixture,
   validateMiddlewareRequest,
   createMiddlewareResponse
 };
