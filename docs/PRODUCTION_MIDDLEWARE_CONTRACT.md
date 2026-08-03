@@ -82,3 +82,13 @@ Authorization: Bearer <server-side-token>
 
 - Valid reviewed send packet: `tests/fixtures/production-reviewed-send-valid.json`
 - Invalid automation-enabled packet: `tests/fixtures/production-reviewed-send-invalid-automation.json`
+
+## Local Stub
+
+Run the local stub before implementing real Gmail, Outlook, or custom provider middleware:
+
+```powershell
+& "C:\Users\ibrah\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe" production-provider-stub.js
+```
+
+The stub listens on `http://127.0.0.1:5194/reviewed-send`, validates this contract, and always returns `sent: false`.
