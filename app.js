@@ -7,6 +7,7 @@ const outboundSessionStorageKey = "regent-growth-outbound-session";
 const crmPresetStorageKey = "regent-growth-crm-preset";
 const productionIntegrationSetupStorageKey = "regent-growth-production-integration-setup";
 const reviewedSendPacketAuditStorageKey = "regent-growth-reviewed-send-packet-audit";
+const productionDryRunHistoryStorageKey = "regent-growth-production-dry-run-history";
 const ollamaEndpoint = "http://127.0.0.1:11434/api/generate";
 const sourceFetchEndpoint = "/api/fetch-source";
 const sourceSearchEndpoint = "/api/search-sources";
@@ -238,6 +239,7 @@ let dailyRunHistory = loadDailyRunHistory();
 let outboundSessionState = loadOutboundSessionState();
 let productionIntegrationSetup = loadProductionIntegrationSetup();
 let reviewedSendPacketAuditLog = loadReviewedSendPacketAuditLog();
+let productionDryRunHistory = loadProductionDryRunHistory();
 let productionIntegrationServerStatus = null;
 let editingIndex = null;
 let selectedProspectIndex = 0;
@@ -377,6 +379,9 @@ const downloadReviewedSendPacketButton = document.querySelector("#downloadReview
 const reviewedSendAuditList = document.querySelector("#reviewedSendAuditList");
 const downloadReviewedSendAuditButton = document.querySelector("#downloadReviewedSendAuditButton");
 const clearReviewedSendAuditButton = document.querySelector("#clearReviewedSendAuditButton");
+const productionDryRunHistoryList = document.querySelector("#productionDryRunHistoryList");
+const downloadProductionDryRunHistoryButton = document.querySelector("#downloadProductionDryRunHistoryButton");
+const clearProductionDryRunHistoryButton = document.querySelector("#clearProductionDryRunHistoryButton");
 const exportWarmCsvButton = document.querySelector("#exportWarmCsvButton");
 const exportWarmJsonButton = document.querySelector("#exportWarmJsonButton");
 const checkCrmSetupButton = document.querySelector("#checkCrmSetupButton");
@@ -607,6 +612,37 @@ function loadReviewedSendPacketAuditLog() {
   try {
     const parsedLog = JSON.parse(savedLog);
     return Array.isArray(parsedLog) ? parsedLog.map(normalizeReviewedSendPacketAuditEntry).slice(0, 50) : [];
+  } catch {
+    return [];
+  }
+}
+
+function normalizeProductionDryRunHistoryEntry(entry = {}) {
+  return {
+    id: String(entry.id || `${Date.now()}-${Math.random().toString(16).slice(2)}`),
+    accepted: entry.accepted === true,
+    sent: entry.sent === true,
+    booked: entry.booked === true,
+    dryRun: entry.dryRun !== false,
+    checkedAt: String(entry.checkedAt || entry.createdAt || new Date().toISOString()),
+    company: String(entry.company || ""),
+    recipient: String(entry.recipient || ""),
+    subject: String(entry.subject || ""),
+    message: String(entry.message || ""),
+    issues: Array.isArray(entry.issues) ? entry.issues.map(String) : []
+  };
+}
+
+function loadProductionDryRunHistory() {
+  const savedHistory = localStorage.getItem(productionDryRunHistoryStorageKey);
+
+  if (!savedHistory) {
+    return [];
+  }
+
+  try {
+    const parsedHistory = JSON.parse(savedHistory);
+    return Array.isArray(parsedHistory) ? parsedHistory.map(normalizeProductionDryRunHistoryEntry).slice(0, 50) : [];
   } catch {
     return [];
   }
@@ -939,6 +975,10 @@ function saveProductionIntegrationSetupState() {
 
 function saveReviewedSendPacketAuditLog() {
   localStorage.setItem(reviewedSendPacketAuditStorageKey, JSON.stringify(reviewedSendPacketAuditLog.slice(0, 50)));
+}
+
+function saveProductionDryRunHistory() {
+  localStorage.setItem(productionDryRunHistoryStorageKey, JSON.stringify(productionDryRunHistory.slice(0, 50)));
 }
 
 function saveDailyRunHistory() {
@@ -7991,6 +8031,59 @@ function clearReviewedSendPacketAuditLog() {
   setDataStatus("Cleared reviewed send packet audit log.");
 }
 
+function renderProductionDryRunHistory() {
+  if (productionDryRunHistory.length === 0) {
+    productionDryRunHistoryList.innerHTML = "<p>No production send dry-runs recorded yet.</p>";
+    return;
+  }
+
+  productionDryRunHistoryList.innerHTML = productionDryRunHistory.slice(0, 8).map((entry) => `
+    <article data-state="${entry.accepted ? "ready" : "warning"}">
+      <strong>${escapeHtml(entry.accepted ? "Accepted dry run" : "Blocked dry run")} | ${escapeHtml(entry.company || entry.recipient || "No prospect")}</strong>
+      <p>${escapeHtml(`${formatDateTime(entry.checkedAt)} | Sent: ${entry.sent ? "yes" : "no"} | Booked: ${entry.booked ? "yes" : "no"} | Issues: ${entry.issues.length ? entry.issues.join(", ") : "None"}`)}</p>
+    </article>
+  `).join("");
+}
+
+function recordProductionDryRunResult(result = {}) {
+  const entry = normalizeProductionDryRunHistoryEntry(result);
+  productionDryRunHistory = [entry, ...productionDryRunHistory].slice(0, 50);
+  saveProductionDryRunHistory();
+  renderProductionDryRunHistory();
+  return entry;
+}
+
+function getProductionDryRunHistoryRecord() {
+  return {
+    exportedAt: new Date().toISOString(),
+    count: productionDryRunHistory.length,
+    records: productionDryRunHistory
+  };
+}
+
+function downloadProductionDryRunHistory() {
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-production-dry-run-history-${stamp}.json`, JSON.stringify(getProductionDryRunHistoryRecord(), null, 2), "application/json;charset=utf-8");
+  setDataStatus("Downloaded production send dry-run history.");
+}
+
+function clearProductionDryRunHistory() {
+  if (productionDryRunHistory.length === 0) {
+    setDataStatus("Production send dry-run history is already empty.");
+    return;
+  }
+
+  if (!confirm("Clear production send dry-run history from this browser?")) {
+    setDataStatus("Production send dry-run history clear canceled.");
+    return;
+  }
+
+  productionDryRunHistory = [];
+  saveProductionDryRunHistory();
+  renderProductionDryRunHistory();
+  setDataStatus("Cleared production send dry-run history.");
+}
+
 async function copyReviewedProductionSendPacket() {
   const copiedDirectly = await copyTextWithFallback(formatReviewedProductionSendPacket());
   recordReviewedSendPacketAudit("Copied reviewed send packet");
@@ -8017,6 +8110,7 @@ async function dryRunReviewedProductionSendPacket() {
       body: JSON.stringify({ packet })
     });
     const result = await response.json().catch(() => ({}));
+    recordProductionDryRunResult(result);
 
     if (!response.ok) {
       throw new Error(result.message || result.issues?.join(" ") || `Reviewed send dry run returned ${response.status}.`);
@@ -10901,6 +10995,8 @@ copyReviewedSendPacketButton.addEventListener("click", copyReviewedProductionSen
 downloadReviewedSendPacketButton.addEventListener("click", downloadReviewedProductionSendPacket);
 downloadReviewedSendAuditButton.addEventListener("click", downloadReviewedSendPacketAuditLog);
 clearReviewedSendAuditButton.addEventListener("click", clearReviewedSendPacketAuditLog);
+downloadProductionDryRunHistoryButton.addEventListener("click", downloadProductionDryRunHistory);
+clearProductionDryRunHistoryButton.addEventListener("click", clearProductionDryRunHistory);
 copyEmailDraftButton.addEventListener("click", copyEmailDraft);
 exportEmailDraftButton.addEventListener("click", exportEmailDraft);
 exportEmailJsonButton.addEventListener("click", exportEmailJson);
@@ -11066,6 +11162,7 @@ renderPromptTemplates();
 syncProductionIntegrationSetupForm();
 renderProductionIntegrationSetupStatus();
 renderReviewedSendPacketAuditLog();
+renderProductionDryRunHistory();
 renderOutboundSession();
 restoreCrmPresetPreference();
 renderCrmProviderPreset();

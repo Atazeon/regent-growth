@@ -918,6 +918,18 @@ $env:REGENT_SEARCH_API_KEY="your_api_key"
               No reviewed send packets copied or downloaded yet.
             </div>
           </div>
+          <div class="send-packet-audit">
+            <div class="audit-heading">
+              <strong>Dry-run result history</strong>
+              <div class="email-handoff">
+                <button id="downloadProductionDryRunHistoryButton" class="secondary-button" type="button" title="Download production send dry-run result history" aria-label="Download production send dry-run result history">Download dry-runs</button>
+                <button id="clearProductionDryRunHistoryButton" class="secondary-button" type="button" title="Clear production send dry-run result history" aria-label="Clear production send dry-run result history">Clear dry-runs</button>
+              </div>
+            </div>
+            <div id="productionDryRunHistoryList" class="audit-list" aria-live="polite">
+              No production send dry-runs recorded yet.
+            </div>
+          </div>
           <div class="email-handoff">
             <button id="copyProductionIntegrationPacketButton" class="secondary-button" type="button" title="Copy production email and calendar integration readiness" aria-label="Copy production email and calendar integration readiness">Copy integration packet</button>
             <button id="downloadProductionIntegrationPacketButton" class="secondary-button" type="button" title="Download production email and calendar integration readiness" aria-label="Download production email and calendar integration readiness">Download integration packet</button>
