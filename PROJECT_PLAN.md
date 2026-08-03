@@ -50,10 +50,11 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 - Production integration closeout packet
 - Production integration final polish
 - Production middleware implementation planning
+- Production middleware skeleton
 
 ### Later
 
-- Production middleware skeleton
+- Production middleware skeleton runbook wiring
 
 ## Data Model Draft
 

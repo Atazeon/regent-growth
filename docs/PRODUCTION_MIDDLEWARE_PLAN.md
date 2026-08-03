@@ -5,6 +5,7 @@ This plan describes how to move from the local stub to real provider middleware 
 ## Phase 1: Middleware Skeleton
 
 - Keep `production-provider-stub.js` as the local contract reference.
+- Use `production-provider-middleware.js` as the guarded skeleton for future provider adapters.
 - Create provider middleware outside the browser.
 - Accept only `regent-growth.reviewed-send.v1` packets.
 - Require release gate evidence with every request.
