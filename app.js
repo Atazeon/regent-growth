@@ -12,6 +12,7 @@ const sourceSearchEndpoint = "/api/search-sources";
 const sourceSearchStatusEndpoint = "/api/search-status";
 const crmStatusEndpoint = "/api/crm-status";
 const crmSyncEndpoint = "/api/crm-sync";
+const productionIntegrationStatusEndpoint = "/api/production-integration-status";
 const teamProspectsEndpoint = "/api/team-prospects";
 const teamBackupsEndpoint = "/api/team-backups";
 const teamBackupEndpoint = "/api/team-backup";
@@ -234,6 +235,7 @@ let discoveryQueue = loadDiscoveryQueue();
 let dailyRunHistory = loadDailyRunHistory();
 let outboundSessionState = loadOutboundSessionState();
 let productionIntegrationSetup = loadProductionIntegrationSetup();
+let productionIntegrationServerStatus = null;
 let editingIndex = null;
 let selectedProspectIndex = 0;
 let crmFailedQueuePage = 0;
@@ -360,6 +362,7 @@ const productionSenderEmailInput = document.querySelector("#productionSenderEmai
 const productionBookingLinkInput = document.querySelector("#productionBookingLinkInput");
 const productionReviewGateInput = document.querySelector("#productionReviewGateInput");
 const productionIntegrationSetupStatus = document.querySelector("#productionIntegrationSetupStatus");
+const checkProductionIntegrationSetupButton = document.querySelector("#checkProductionIntegrationSetupButton");
 const copyProductionIntegrationSetupButton = document.querySelector("#copyProductionIntegrationSetupButton");
 const downloadProductionIntegrationSetupButton = document.querySelector("#downloadProductionIntegrationSetupButton");
 const copyProductionIntegrationPacketButton = document.querySelector("#copyProductionIntegrationPacketButton");
@@ -7619,10 +7622,13 @@ function syncProductionIntegrationSetupForm() {
 
 function renderProductionIntegrationSetupStatus() {
   const readiness = getProductionIntegrationSetupReadiness();
+  const serverSummary = productionIntegrationServerStatus
+    ? ` Server ${productionIntegrationServerStatus.configured ? "configured" : "not configured"}${productionIntegrationServerStatus.provider ? ` for ${productionIntegrationServerStatus.provider}` : ""}.`
+    : " Server status not checked.";
   productionIntegrationSetupStatus.dataset.state = readiness.ready ? "ready" : "warning";
   productionIntegrationSetupStatus.innerHTML = `
     <strong>${escapeHtml(readiness.ready ? "Provider setup ready for reviewed handoff" : "Provider setup incomplete")}</strong>
-    <p>${escapeHtml(`${readiness.providerLabel}: ${readiness.description} Sender ${readiness.senderReady ? "ready" : "missing or invalid"}. Review gate ${readiness.reviewReady ? "on" : "off"}.`)}</p>
+    <p>${escapeHtml(`${readiness.providerLabel}: ${readiness.description} Sender ${readiness.senderReady ? "ready" : "missing or invalid"}. Review gate ${readiness.reviewReady ? "on" : "off"}.${serverSummary}`)}</p>
   `;
 }
 
@@ -7652,6 +7658,9 @@ function formatProductionIntegrationSetupPacket() {
     `Require review before send: ${productionIntegrationSetup.requireReview ? "Yes" : "No"}`,
     `Saved at: ${formatDateTime(productionIntegrationSetup.savedAt)}`,
     `Ready: ${readiness.ready ? "Yes" : "No"}`,
+    `Server configured: ${productionIntegrationServerStatus ? (productionIntegrationServerStatus.configured ? "Yes" : "No") : "Not checked"}`,
+    `Server email endpoint: ${productionIntegrationServerStatus?.emailEndpoint || "Not checked"}`,
+    `Server calendar endpoint: ${productionIntegrationServerStatus?.calendarEndpoint || "Not checked"}`,
     "",
     "Provider Notes",
     readiness.description,
@@ -7664,6 +7673,33 @@ function formatProductionIntegrationSetupPacket() {
 async function copyProductionIntegrationSetupPacket() {
   const copiedDirectly = await copyTextWithFallback(formatProductionIntegrationSetupPacket());
   setDataStatus(copiedDirectly ? "Copied production provider setup packet." : "Selected and copied production provider setup packet.");
+}
+
+async function checkProductionIntegrationSetup() {
+  productionIntegrationSetupStatus.dataset.state = "working";
+  productionIntegrationSetupStatus.innerHTML = "<strong>Checking provider setup</strong><p>Reading local server environment status.</p>";
+
+  try {
+    const response = await fetch(productionIntegrationStatusEndpoint);
+
+    if (!response.ok) {
+      throw new Error(`Production provider check returned ${response.status}.`);
+    }
+
+    productionIntegrationServerStatus = await response.json();
+    renderProductionIntegrationSetupStatus();
+    setDataStatus(productionIntegrationServerStatus.configured
+      ? "Production provider environment variables are present. Reviewed handoff remains required."
+      : productionIntegrationServerStatus.message || "Production provider environment is not configured.",
+    productionIntegrationServerStatus.configured ? "" : "error");
+  } catch (error) {
+    productionIntegrationServerStatus = null;
+    renderProductionIntegrationSetupStatus();
+    setDataStatus(isLocalFile()
+      ? getLocalResearchServerGuidance("Production provider setup check")
+      : error.message,
+    "error");
+  }
 }
 
 function downloadProductionIntegrationSetupPacket() {
@@ -10621,6 +10657,7 @@ openMailClientButton.addEventListener("click", () => openEmailHandoff("mailto"))
 openGmailButton.addEventListener("click", () => openEmailHandoff("gmail"));
 openOutlookButton.addEventListener("click", () => openEmailHandoff("outlook"));
 productionIntegrationSetupForm.addEventListener("submit", saveProductionIntegrationSetup);
+checkProductionIntegrationSetupButton.addEventListener("click", checkProductionIntegrationSetup);
 copyProductionIntegrationSetupButton.addEventListener("click", copyProductionIntegrationSetupPacket);
 downloadProductionIntegrationSetupButton.addEventListener("click", downloadProductionIntegrationSetupPacket);
 copyProductionIntegrationPacketButton.addEventListener("click", copyProductionIntegrationPacket);

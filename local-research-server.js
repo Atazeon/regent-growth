@@ -22,6 +22,12 @@ const searchApiKeyHeader = process.env.REGENT_SEARCH_API_KEY_HEADER || "Authoriz
 const crmApiUrl = process.env.REGENT_CRM_API_URL || "";
 const crmApiKey = process.env.REGENT_CRM_API_KEY || "";
 const crmApiKeyHeader = process.env.REGENT_CRM_API_KEY_HEADER || "Authorization";
+const productionEmailProvider = process.env.REGENT_EMAIL_PROVIDER || "";
+const productionEmailApiUrl = process.env.REGENT_EMAIL_API_URL || "";
+const productionEmailApiKey = process.env.REGENT_EMAIL_API_KEY || "";
+const productionEmailApiKeyHeader = process.env.REGENT_EMAIL_API_KEY_HEADER || "Authorization";
+const productionCalendarApiUrl = process.env.REGENT_CALENDAR_API_URL || "";
+const productionCalendarApiKey = process.env.REGENT_CALENDAR_API_KEY || "";
 const contentTypes = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
@@ -33,6 +39,34 @@ const contentTypes = {
 function sendJson(response, status, payload) {
   response.writeHead(status, { "Content-Type": "application/json; charset=utf-8" });
   response.end(JSON.stringify(payload));
+}
+
+function getProductionIntegrationStatus() {
+  const emailConfigured = Boolean(productionEmailProvider && productionEmailApiUrl);
+  const calendarConfigured = Boolean(productionCalendarApiUrl);
+  return {
+    configured: emailConfigured,
+    provider: productionEmailProvider,
+    emailEndpoint: productionEmailApiUrl,
+    emailKeyConfigured: Boolean(productionEmailApiKey),
+    emailKeyHeader: productionEmailApiKeyHeader,
+    calendarEndpoint: productionCalendarApiUrl,
+    calendarKeyConfigured: Boolean(productionCalendarApiKey),
+    calendarConfigured,
+    sendEnabled: false,
+    bookingEnabled: false,
+    message: emailConfigured
+      ? "Production provider environment is present. Reviewed handoff remains required until send and booking endpoints are explicitly enabled."
+      : "Production provider is not configured. Set REGENT_EMAIL_PROVIDER and REGENT_EMAIL_API_URL before enabling real provider integration.",
+    requiredEnv: [
+      "REGENT_EMAIL_PROVIDER",
+      "REGENT_EMAIL_API_URL",
+      "REGENT_EMAIL_API_KEY",
+      "REGENT_EMAIL_API_KEY_HEADER",
+      "REGENT_CALENDAR_API_URL",
+      "REGENT_CALENDAR_API_KEY"
+    ]
+  };
 }
 
 function readSharedProspects() {
@@ -827,6 +861,11 @@ const server = http.createServer(async (request, response) => {
 
   if (request.method === "GET" && requestUrl.pathname === "/api/crm-status") {
     sendJson(response, 200, getCrmStatus());
+    return;
+  }
+
+  if (request.method === "GET" && requestUrl.pathname === "/api/production-integration-status") {
+    sendJson(response, 200, getProductionIntegrationStatus());
     return;
   }
 
