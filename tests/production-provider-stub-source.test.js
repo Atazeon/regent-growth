@@ -3,6 +3,7 @@ const path = require("path");
 
 const root = path.resolve(__dirname, "..");
 const stubSource = fs.readFileSync(path.join(root, "production-provider-stub.js"), "utf8");
+const app = fs.readFileSync(path.join(root, "app.js"), "utf8");
 const contract = fs.readFileSync(path.join(root, "docs", "PRODUCTION_MIDDLEWARE_CONTRACT.md"), "utf8");
 const valid = require("./fixtures/production-reviewed-send-valid.json");
 const invalid = require("./fixtures/production-reviewed-send-invalid-automation.json");
@@ -29,7 +30,11 @@ const checks = [
   ["stub response marked stub", validResponse.stub === true],
   ["contract documents local stub", contract.includes("## Local Stub")],
   ["contract documents stub URL", contract.includes("http://127.0.0.1:5194/reviewed-send")],
-  ["contract says stub sent false", contract.includes("always returns `sent: false`")]
+  ["contract says stub sent false", contract.includes("always returns `sent: false`")],
+  ["app detects stub status", app.includes("function isProductionProviderStubStatus(")],
+  ["app detects stub provider", app.includes('String(status.provider || "").toLowerCase() === "stub"')],
+  ["app detects stub endpoint", app.includes("127.0.0.1:5194/reviewed-send")],
+  ["app explains dry-run mode", app.includes("Stub dry-run mode detected; no real provider sending is enabled.")]
 ];
 
 const failures = checks.filter(([, passed]) => !passed).map(([name]) => name);

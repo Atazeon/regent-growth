@@ -7738,6 +7738,14 @@ function getProductionIntegrationSetupReadiness() {
   };
 }
 
+function isProductionProviderStubStatus(status = productionIntegrationServerStatus) {
+  return Boolean(status && (
+    String(status.provider || "").toLowerCase() === "stub"
+    || String(status.emailEndpoint || "").includes("127.0.0.1:5194/reviewed-send")
+    || String(status.emailEndpoint || "").includes("localhost:5194/reviewed-send")
+  ));
+}
+
 function syncProductionIntegrationSetupForm() {
   productionEmailProviderSelect.value = productionIntegrationSetup.provider;
   productionSenderEmailInput.value = productionIntegrationSetup.senderEmail;
@@ -7747,13 +7755,15 @@ function syncProductionIntegrationSetupForm() {
 
 function renderProductionIntegrationSetupStatus() {
   const readiness = getProductionIntegrationSetupReadiness();
+  const isStub = isProductionProviderStubStatus();
   const serverSummary = productionIntegrationServerStatus
     ? ` Server ${productionIntegrationServerStatus.configured ? "configured" : "not configured"}${productionIntegrationServerStatus.provider ? ` for ${productionIntegrationServerStatus.provider}` : ""}.`
     : " Server status not checked.";
+  const stubSummary = isStub ? " Stub dry-run mode detected; no real provider sending is enabled." : "";
   productionIntegrationSetupStatus.dataset.state = readiness.ready ? "ready" : "warning";
   productionIntegrationSetupStatus.innerHTML = `
     <strong>${escapeHtml(readiness.ready ? "Provider setup ready for reviewed handoff" : "Provider setup incomplete")}</strong>
-    <p>${escapeHtml(`${readiness.providerLabel}: ${readiness.description} Sender ${readiness.senderReady ? "ready" : "missing or invalid"}. Review gate ${readiness.reviewReady ? "on" : "off"}.${serverSummary}`)}</p>
+    <p>${escapeHtml(`${readiness.providerLabel}: ${readiness.description} Sender ${readiness.senderReady ? "ready" : "missing or invalid"}. Review gate ${readiness.reviewReady ? "on" : "off"}.${serverSummary}${stubSummary}`)}</p>
   `;
 }
 
