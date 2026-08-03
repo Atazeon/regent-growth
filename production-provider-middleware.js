@@ -98,6 +98,37 @@ function getMiddlewareAuditTrail() {
   return middlewareAuditTrail.slice();
 }
 
+function getMiddlewareAuditSummary(entries = getMiddlewareAuditTrail()) {
+  return entries.reduce((summary, entry) => {
+    summary.total += 1;
+    if (entry.accepted) summary.accepted += 1;
+    if (entry.sent) summary.sent += 1;
+    if (entry.booked) summary.booked += 1;
+    summary.issueCount += Number(entry.issueCount || 0);
+    summary.providers[entry.provider || "unknown"] = (summary.providers[entry.provider || "unknown"] || 0) + 1;
+    return summary;
+  }, {
+    total: 0,
+    accepted: 0,
+    sent: 0,
+    booked: 0,
+    issueCount: 0,
+    providers: {}
+  });
+}
+
+function getMiddlewareAuditExport() {
+  const entries = getMiddlewareAuditTrail();
+  return {
+    schemaVersion: "regent-growth.middleware-audit.v1",
+    generatedAt: new Date().toISOString(),
+    maxEntries: maxAuditEntries,
+    bodyContentStored: false,
+    summary: getMiddlewareAuditSummary(entries),
+    entries
+  };
+}
+
 function createMiddlewareAuditEntry(payload = {}, result = {}, requestMeta = {}) {
   const packet = payload.packet || {};
   const releaseGate = payload.releaseGate || {};
@@ -198,6 +229,11 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "GET" && requestUrl.pathname === "/audit/export") {
+    sendJson(response, 200, getMiddlewareAuditExport());
+    return;
+  }
+
   if (request.method === "POST" && requestUrl.pathname === "/reviewed-send") {
     try {
       const body = await readJsonBody(request);
@@ -241,6 +277,8 @@ module.exports = {
   getAdapterGuardrails,
   getMiddlewareStatus,
   getMiddlewareAuditTrail,
+  getMiddlewareAuditSummary,
+  getMiddlewareAuditExport,
   createMiddlewareAuditEntry,
   recordMiddlewareAuditEntry,
   validateMiddlewareRequest,
