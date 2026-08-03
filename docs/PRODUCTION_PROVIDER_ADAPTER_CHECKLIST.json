@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "regent-growth.provider-adapter-checklist.v1",
+  "canSendDefault": false,
+  "bodyContentStoredInAuditExports": false,
+  "sharedGates": [
+    "automationAllowed false",
+    "human review required",
+    "compliance review required",
+    "automatic booking disabled from email endpoint",
+    "release gate evidence required",
+    "suppression-list check required",
+    "unsubscribe or opt-out text required",
+    "sender identity must match authenticated provider account",
+    "test-account replay and dry-run evidence required",
+    "before-send and after-send audit records required",
+    "provider rate limits per sender and recipient domain required",
+    "message body excluded from audit exports"
+  ],
+  "providers": {
+    "gmail": {
+      "requiredEnv": [
+        "REGENT_GMAIL_CLIENT_ID",
+        "REGENT_GMAIL_CLIENT_SECRET",
+        "REGENT_GMAIL_REFRESH_TOKEN"
+      ],
+      "requiredSetup": [
+        "dedicated test mailbox",
+        "OAuth consent approved",
+        "mail send scope verified",
+        "sender email matches Gmail account",
+        "refresh token stored server-side only"
+      ],
+      "canSend": false
+    },
+    "outlook": {
+      "requiredEnv": [
+        "REGENT_OUTLOOK_CLIENT_ID",
+        "REGENT_OUTLOOK_CLIENT_SECRET",
+        "REGENT_OUTLOOK_TENANT_ID",
+        "REGENT_OUTLOOK_REFRESH_TOKEN"
+      ],
+      "requiredSetup": [
+        "dedicated test mailbox",
+        "Microsoft Graph mail send scope verified",
+        "sender email matches Outlook account",
+        "refresh token stored server-side only"
+      ],
+      "canSend": false
+    },
+    "custom": {
+      "requiredEnv": [
+        "REGENT_CUSTOM_SEND_URL",
+        "REGENT_CUSTOM_SEND_KEY"
+      ],
+      "requiredSetup": [
+        "reviewed-send endpoint accepts regent-growth.reviewed-send.v1",
+        "provider message IDs returned only after provider confirmation",
+        "provider-side suppression evidence",
+        "provider-side rate limit evidence",
+        "provider-side audit evidence"
+      ],
+      "canSend": false
+    }
+  },
+  "releaseRule": "Do not set canSend true until every shared and provider-specific gate has test coverage."
+}

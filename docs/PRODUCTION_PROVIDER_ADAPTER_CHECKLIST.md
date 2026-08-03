@@ -2,6 +2,8 @@
 
 Use this checklist before changing any provider adapter from skeleton-only to send-capable.
 
+Machine-readable export: `docs/PRODUCTION_PROVIDER_ADAPTER_CHECKLIST.json`.
+
 ## Shared Gates
 
 - Keep `automationAllowed: false` required.
