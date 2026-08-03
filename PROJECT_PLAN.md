@@ -46,10 +46,11 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 - Production provider local stub
 - Production provider stub runbook wiring
 - Production provider status-to-stub guidance
+- Production provider status export
 
 ### Later
 
-- Production provider status export
+- Production integration closeout packet
 
 ## Data Model Draft
 

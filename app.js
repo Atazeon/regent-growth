@@ -390,6 +390,8 @@ const downloadProductionReleaseGateButton = document.querySelector("#downloadPro
 const checkProductionIntegrationSetupButton = document.querySelector("#checkProductionIntegrationSetupButton");
 const copyProductionIntegrationSetupButton = document.querySelector("#copyProductionIntegrationSetupButton");
 const downloadProductionIntegrationSetupButton = document.querySelector("#downloadProductionIntegrationSetupButton");
+const copyProductionProviderStatusButton = document.querySelector("#copyProductionProviderStatusButton");
+const downloadProductionProviderStatusButton = document.querySelector("#downloadProductionProviderStatusButton");
 const copyProductionIntegrationPacketButton = document.querySelector("#copyProductionIntegrationPacketButton");
 const downloadProductionIntegrationPacketButton = document.querySelector("#downloadProductionIntegrationPacketButton");
 const reviewedSendPacketPreview = document.querySelector("#reviewedSendPacketPreview");
@@ -7851,6 +7853,31 @@ function downloadProductionIntegrationSetupPacket() {
   setDataStatus("Downloaded production provider setup packet.");
 }
 
+function getProductionProviderStatusRecord() {
+  const setupReadiness = getProductionIntegrationSetupReadiness();
+  return {
+    exportedAt: new Date().toISOString(),
+    setup: productionIntegrationSetup,
+    setupReady: setupReadiness.ready,
+    providerLabel: setupReadiness.providerLabel,
+    serverStatus: productionIntegrationServerStatus,
+    stubMode: isProductionProviderStubStatus(),
+    compliance: getProductionComplianceSummary(),
+    releaseGate: getProductionReleaseGateSummary()
+  };
+}
+
+async function copyProductionProviderStatus() {
+  const copiedDirectly = await copyTextWithFallback(JSON.stringify(getProductionProviderStatusRecord(), null, 2));
+  setDataStatus(copiedDirectly ? "Copied production provider status JSON." : "Selected and copied production provider status JSON.");
+}
+
+function downloadProductionProviderStatus() {
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-production-provider-status-${stamp}.json`, JSON.stringify(getProductionProviderStatusRecord(), null, 2), "application/json;charset=utf-8");
+  setDataStatus("Downloaded production provider status JSON.");
+}
+
 function getProductionComplianceSummary() {
   const completed = productionComplianceItems.filter((item) => productionComplianceState[item.id]).length;
   return {
@@ -11208,6 +11235,8 @@ productionIntegrationSetupForm.addEventListener("submit", saveProductionIntegrat
 checkProductionIntegrationSetupButton.addEventListener("click", checkProductionIntegrationSetup);
 copyProductionIntegrationSetupButton.addEventListener("click", copyProductionIntegrationSetupPacket);
 downloadProductionIntegrationSetupButton.addEventListener("click", downloadProductionIntegrationSetupPacket);
+copyProductionProviderStatusButton.addEventListener("click", copyProductionProviderStatus);
+downloadProductionProviderStatusButton.addEventListener("click", downloadProductionProviderStatus);
 copyProductionIntegrationPacketButton.addEventListener("click", copyProductionIntegrationPacket);
 downloadProductionIntegrationPacketButton.addEventListener("click", downloadProductionIntegrationPacket);
 dryRunReviewedSendPacketButton.addEventListener("click", dryRunReviewedProductionSendPacket);
