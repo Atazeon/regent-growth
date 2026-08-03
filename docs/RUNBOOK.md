@@ -79,6 +79,28 @@ $env:REGENT_CALENDAR_API_KEY="your_calendar_api_key"
 1. Keep reviewed handoff enabled. The local server reports production configuration only; real automatic sending and booking stay disabled until explicit send and booking endpoints are implemented, tested, and reviewed.
 1. Review `docs/PRODUCTION_PROVIDER_BOUNDARY.md` before building real send or booking functionality.
 
+## Provider Stub Dry Run
+
+Use the provider stub to test the reviewed send contract without connecting Gmail, Outlook, or any real provider:
+
+1. Start the provider stub in a separate terminal:
+
+```powershell
+& "C:\Users\ibrah\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe" production-provider-stub.js
+```
+
+1. Start the app server with the stub endpoint configured:
+
+```powershell
+$env:REGENT_EMAIL_PROVIDER="stub"
+$env:REGENT_EMAIL_API_URL="http://127.0.0.1:5194/reviewed-send"
+$env:REGENT_EMAIL_API_KEY=""
+& "C:\Users\ibrah\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe" local-research-server.js
+```
+
+1. In the app, save provider setup, click `Check provider`, then use `Dry-run send`.
+1. Confirm dry-run history records `Sent: no` and `Booked: no`.
+
 ## Validation
 
 ```powershell

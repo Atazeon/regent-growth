@@ -44,10 +44,11 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 - Production provider middleware contract
 - Production middleware fixture tests
 - Production provider local stub
+- Production provider stub runbook wiring
 
 ### Later
 
-- Production provider stub runbook wiring
+- Production provider status-to-stub guidance
 
 ## Data Model Draft
 

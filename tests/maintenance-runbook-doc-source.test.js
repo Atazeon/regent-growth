@@ -14,6 +14,9 @@ const checks = [
   ["runbook documents email provider env", runbook.includes("REGENT_EMAIL_PROVIDER")],
   ["runbook documents provider check", runbook.includes("Check provider")],
   ["runbook keeps automatic send disabled", runbook.includes("real automatic sending and booking stay disabled")],
+  ["runbook documents provider stub dry run", runbook.includes("## Provider Stub Dry Run")],
+  ["runbook documents stub file", runbook.includes("production-provider-stub.js")],
+  ["runbook documents stub endpoint", runbook.includes("http://127.0.0.1:5194/reviewed-send")],
   ["runbook documents validation", runbook.includes("tests\\run-source-tests.js")],
   ["runbook has troubleshooting", runbook.includes("## Troubleshooting")]
 ];
