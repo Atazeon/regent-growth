@@ -17,6 +17,7 @@ This plan describes how to move from the local stub to real provider middleware 
 - Start with a dedicated test mailbox, not a primary business mailbox.
 - Keep adapter guardrails in `production-provider-middleware.js` updated with required environment variables and setup checks.
 - Keep `docs/PRODUCTION_ADAPTER_STATUS.md` updated when adapter readiness changes.
+- Use `docs/PRODUCTION_PROVIDER_ADAPTER_CHECKLIST.md` before changing any adapter to `canSend: true`.
 - Store OAuth tokens server-side only.
 - Reject requests when sender email does not match the authenticated account.
 - Keep calendar booking separate from email sending.
