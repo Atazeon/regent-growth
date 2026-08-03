@@ -53,10 +53,11 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 - Production middleware skeleton
 - Production middleware skeleton runbook wiring
 - Production middleware skeleton status export
+- Production middleware adapter guardrails
 
 ### Later
 
-- Production middleware adapter guardrails
+- Production middleware adapter status docs
 
 ## Data Model Draft
 

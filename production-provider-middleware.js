@@ -7,19 +7,27 @@ const maxBodyBytes = 1024 * 1024;
 const providerAdapters = {
   stub: {
     name: "stub",
-    canSend: false
+    canSend: false,
+    requiredEnv: [],
+    requiredSetup: ["Use only for local contract validation"]
   },
   gmail: {
     name: "gmail",
-    canSend: false
+    canSend: false,
+    requiredEnv: ["REGENT_GMAIL_CLIENT_ID", "REGENT_GMAIL_CLIENT_SECRET", "REGENT_GMAIL_REFRESH_TOKEN"],
+    requiredSetup: ["Verified sender mailbox", "OAuth consent approved", "Suppression list configured"]
   },
   outlook: {
     name: "outlook",
-    canSend: false
+    canSend: false,
+    requiredEnv: ["REGENT_OUTLOOK_CLIENT_ID", "REGENT_OUTLOOK_CLIENT_SECRET", "REGENT_OUTLOOK_TENANT_ID", "REGENT_OUTLOOK_REFRESH_TOKEN"],
+    requiredSetup: ["Verified sender mailbox", "Microsoft Graph mail scope approved", "Suppression list configured"]
   },
   custom: {
     name: "custom",
-    canSend: false
+    canSend: false,
+    requiredEnv: ["REGENT_CUSTOM_SEND_URL", "REGENT_CUSTOM_SEND_KEY"],
+    requiredSetup: ["Reviewed send endpoint deployed", "Provider-side audit logging enabled", "Suppression list configured"]
   }
 };
 
@@ -56,8 +64,21 @@ function getProviderAdapter(name = providerName) {
   return providerAdapters[String(name || "").toLowerCase()] || providerAdapters.stub;
 }
 
+function getAdapterGuardrails(adapter = getProviderAdapter()) {
+  const missingEnv = adapter.requiredEnv.filter((name) => !process.env[name]);
+  return {
+    provider: adapter.name,
+    canSend: adapter.canSend,
+    requiredEnv: adapter.requiredEnv,
+    missingEnv,
+    requiredSetup: adapter.requiredSetup,
+    readyForImplementation: adapter.canSend && missingEnv.length === 0
+  };
+}
+
 function getMiddlewareStatus() {
   const adapter = getProviderAdapter();
+  const guardrails = getAdapterGuardrails(adapter);
   return {
     ok: true,
     skeleton: true,
@@ -66,6 +87,7 @@ function getMiddlewareStatus() {
     sentEnabled: false,
     bookedEnabled: false,
     requiredSchema: "regent-growth.reviewed-send.v1",
+    guardrails,
     checkedAt: new Date().toISOString()
   };
 }
@@ -156,6 +178,7 @@ if (require.main === module) {
 
 module.exports = {
   getProviderAdapter,
+  getAdapterGuardrails,
   getMiddlewareStatus,
   validateMiddlewareRequest,
   createMiddlewareResponse
