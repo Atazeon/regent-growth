@@ -367,6 +367,7 @@ const copyProductionIntegrationSetupButton = document.querySelector("#copyProduc
 const downloadProductionIntegrationSetupButton = document.querySelector("#downloadProductionIntegrationSetupButton");
 const copyProductionIntegrationPacketButton = document.querySelector("#copyProductionIntegrationPacketButton");
 const downloadProductionIntegrationPacketButton = document.querySelector("#downloadProductionIntegrationPacketButton");
+const reviewedSendPacketPreview = document.querySelector("#reviewedSendPacketPreview");
 const copyReviewedSendPacketButton = document.querySelector("#copyReviewedSendPacketButton");
 const downloadReviewedSendPacketButton = document.querySelector("#downloadReviewedSendPacketButton");
 const exportWarmCsvButton = document.querySelector("#exportWarmCsvButton");
@@ -7646,6 +7647,7 @@ function saveProductionIntegrationSetup(event) {
   saveProductionIntegrationSetupState();
   renderProductionIntegrationSetupStatus();
   renderProductionIntegrationReadiness();
+  renderReviewedSendPacketPreview();
   setDataStatus(`Saved production provider setup for ${getProductionEmailProviderLabel()}.`);
 }
 
@@ -7690,6 +7692,8 @@ async function checkProductionIntegrationSetup() {
 
     productionIntegrationServerStatus = await response.json();
     renderProductionIntegrationSetupStatus();
+    renderProductionIntegrationReadiness();
+    renderReviewedSendPacketPreview();
     setDataStatus(productionIntegrationServerStatus.configured
       ? "Production provider environment variables are present. Reviewed handoff remains required."
       : productionIntegrationServerStatus.message || "Production provider environment is not configured.",
@@ -7697,6 +7701,8 @@ async function checkProductionIntegrationSetup() {
   } catch (error) {
     productionIntegrationServerStatus = null;
     renderProductionIntegrationSetupStatus();
+    renderProductionIntegrationReadiness();
+    renderReviewedSendPacketPreview();
     setDataStatus(isLocalFile()
       ? getLocalResearchServerGuidance("Production provider setup check")
       : error.message,
@@ -7854,6 +7860,38 @@ function formatReviewedProductionSendPacket(prospect = getSelectedProspect()) {
   return JSON.stringify(getReviewedProductionSendPacket(prospect), null, 2);
 }
 
+function getReviewedSendPacketValidation(prospect = getSelectedProspect()) {
+  const packet = getReviewedProductionSendPacket(prospect);
+  const blockingChecks = packet.readinessChecks.filter((check) => check.required && !check.ready);
+  const warnings = [];
+
+  if (!packet.provider.serverConfigured) warnings.push("Provider server environment not checked or not configured.");
+  if (!packet.calendar.bookingLink) warnings.push("No booking link is attached.");
+  if (packet.automationAllowed) warnings.push("Automation flag must remain false before production send implementation.");
+
+  return {
+    ready: packet.readyForReviewedHandoff && blockingChecks.length === 0 && packet.safety.humanReviewRequired && packet.safety.automaticSendDisabled,
+    blockingChecks,
+    warnings,
+    packet
+  };
+}
+
+function renderReviewedSendPacketPreview(prospect = getSelectedProspect()) {
+  const validation = getReviewedSendPacketValidation(prospect);
+  reviewedSendPacketPreview.dataset.state = validation.ready ? "ready" : "warning";
+  const blockingText = validation.blockingChecks.length
+    ? validation.blockingChecks.map((check) => check.label).join(", ")
+    : "No required blockers.";
+  const warningText = validation.warnings.length
+    ? validation.warnings.join(" ")
+    : "No optional warnings.";
+  reviewedSendPacketPreview.innerHTML = `
+    <strong>${escapeHtml(validation.ready ? "Reviewed send packet valid" : "Reviewed send packet blocked")}</strong>
+    <p>${escapeHtml(`Schema ${validation.packet.schemaVersion}. Blockers: ${blockingText} Warnings: ${warningText}`)}</p>
+  `;
+}
+
 async function copyReviewedProductionSendPacket() {
   const copiedDirectly = await copyTextWithFallback(formatReviewedProductionSendPacket());
   setDataStatus(copiedDirectly ? "Copied reviewed production send packet JSON." : "Selected and copied reviewed production send packet JSON.");
@@ -7879,6 +7917,7 @@ function renderEmailSendStatus(prospect = getSelectedProspect()) {
       <p>${escapeHtml(readiness.issues.join(" "))}</p>
     `;
   renderProductionIntegrationReadiness(prospect);
+  renderReviewedSendPacketPreview(prospect);
 }
 
 function saveCurrentEmailDraft() {
