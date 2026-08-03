@@ -384,6 +384,9 @@ const productionComplianceChecklist = document.querySelector("#productionComplia
 const copyProductionComplianceButton = document.querySelector("#copyProductionComplianceButton");
 const downloadProductionComplianceButton = document.querySelector("#downloadProductionComplianceButton");
 const resetProductionComplianceButton = document.querySelector("#resetProductionComplianceButton");
+const productionReleaseGateSummary = document.querySelector("#productionReleaseGateSummary");
+const copyProductionReleaseGateButton = document.querySelector("#copyProductionReleaseGateButton");
+const downloadProductionReleaseGateButton = document.querySelector("#downloadProductionReleaseGateButton");
 const checkProductionIntegrationSetupButton = document.querySelector("#checkProductionIntegrationSetupButton");
 const copyProductionIntegrationSetupButton = document.querySelector("#copyProductionIntegrationSetupButton");
 const downloadProductionIntegrationSetupButton = document.querySelector("#downloadProductionIntegrationSetupButton");
@@ -7767,6 +7770,7 @@ function saveProductionIntegrationSetup(event) {
   renderProductionIntegrationSetupStatus();
   renderProductionIntegrationReadiness();
   renderReviewedSendPacketPreview();
+  renderProductionReleaseGateSummary();
   setDataStatus(`Saved production provider setup for ${getProductionEmailProviderLabel()}.`);
 }
 
@@ -7813,6 +7817,7 @@ async function checkProductionIntegrationSetup() {
     renderProductionIntegrationSetupStatus();
     renderProductionIntegrationReadiness();
     renderReviewedSendPacketPreview();
+    renderProductionReleaseGateSummary();
     setDataStatus(productionIntegrationServerStatus.configured
       ? "Production provider environment variables are present. Reviewed handoff remains required."
       : productionIntegrationServerStatus.message || "Production provider environment is not configured.",
@@ -7822,6 +7827,7 @@ async function checkProductionIntegrationSetup() {
     renderProductionIntegrationSetupStatus();
     renderProductionIntegrationReadiness();
     renderReviewedSendPacketPreview();
+    renderProductionReleaseGateSummary();
     setDataStatus(isLocalFile()
       ? getLocalResearchServerGuidance("Production provider setup check")
       : error.message,
@@ -7857,6 +7863,7 @@ function renderProductionComplianceChecklist() {
       ${escapeHtml(item.label)}
     </label>
   `).join("");
+  renderProductionReleaseGateSummary();
 }
 
 function formatProductionComplianceChecklist() {
@@ -8073,6 +8080,64 @@ function renderReviewedSendPacketPreview(prospect = getSelectedProspect()) {
   `;
 }
 
+function getProductionReleaseGateSummary(prospect = getSelectedProspect()) {
+  const setupReadiness = getProductionIntegrationSetupReadiness();
+  const packetValidation = getReviewedSendPacketValidation(prospect);
+  const complianceSummary = getProductionComplianceSummary();
+  const latestDryRun = productionDryRunHistory[0] || null;
+  const checks = [
+    { label: "Provider setup ready", ready: setupReadiness.ready },
+    { label: "Reviewed send packet valid", ready: packetValidation.ready },
+    { label: "Latest dry run accepted", ready: latestDryRun?.accepted === true },
+    { label: "Compliance checklist complete", ready: complianceSummary.ready },
+    { label: "Automatic send still disabled", ready: packetValidation.packet.automationAllowed === false }
+  ];
+  return {
+    ready: checks.every((check) => check.ready),
+    checks,
+    latestDryRun,
+    complianceSummary
+  };
+}
+
+function renderProductionReleaseGateSummary(prospect = getSelectedProspect()) {
+  const summary = getProductionReleaseGateSummary(prospect);
+  productionReleaseGateSummary.dataset.state = summary.ready ? "ready" : "warning";
+  productionReleaseGateSummary.innerHTML = `
+    <strong>${escapeHtml(summary.ready ? "Production release gate ready for review" : "Production release gate blocked")}</strong>
+    <p>${escapeHtml(summary.checks.map((check) => `${check.ready ? "Ready" : "Blocked"} ${check.label}`).join(" | "))}</p>
+  `;
+}
+
+function formatProductionReleaseGateSummary(prospect = getSelectedProspect()) {
+  const summary = getProductionReleaseGateSummary(prospect);
+  return [
+    "Production Send Release Gate Summary",
+    `Created: ${formatDateTime(new Date().toISOString())}`,
+    `Ready: ${summary.ready ? "Yes" : "No"}`,
+    `Company: ${prospect?.company || "No prospect selected"}`,
+    `Latest dry run: ${summary.latestDryRun ? `${summary.latestDryRun.accepted ? "Accepted" : "Blocked"} at ${formatDateTime(summary.latestDryRun.checkedAt)}` : "None"}`,
+    `Compliance: ${summary.complianceSummary.completed}/${summary.complianceSummary.total}`,
+    "",
+    "Checks",
+    ...summary.checks.map((check) => `${check.ready ? "[x]" : "[ ]"} ${check.label}`),
+    "",
+    "Rule",
+    "This is a release gate only. It does not enable automatic sending."
+  ].join("\n");
+}
+
+async function copyProductionReleaseGateSummary() {
+  const copiedDirectly = await copyTextWithFallback(formatProductionReleaseGateSummary());
+  setDataStatus(copiedDirectly ? "Copied production send release gate summary." : "Selected and copied production send release gate summary.");
+}
+
+function downloadProductionReleaseGateSummary() {
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  downloadFile(`regent-growth-production-release-gate-${stamp}.txt`, formatProductionReleaseGateSummary(), "text/plain;charset=utf-8");
+  setDataStatus("Downloaded production send release gate summary.");
+}
+
 function renderReviewedSendPacketAuditLog() {
   if (reviewedSendPacketAuditLog.length === 0) {
     reviewedSendAuditList.innerHTML = "<p>No reviewed send packets copied or downloaded yet.</p>";
@@ -8153,6 +8218,7 @@ function recordProductionDryRunResult(result = {}) {
   productionDryRunHistory = [entry, ...productionDryRunHistory].slice(0, 50);
   saveProductionDryRunHistory();
   renderProductionDryRunHistory();
+  renderProductionReleaseGateSummary();
   return entry;
 }
 
@@ -8184,6 +8250,7 @@ function clearProductionDryRunHistory() {
   productionDryRunHistory = [];
   saveProductionDryRunHistory();
   renderProductionDryRunHistory();
+  renderProductionReleaseGateSummary();
   setDataStatus("Cleared production send dry-run history.");
 }
 
@@ -8283,6 +8350,7 @@ function renderEmailSendStatus(prospect = getSelectedProspect()) {
     `;
   renderProductionIntegrationReadiness(prospect);
   renderReviewedSendPacketPreview(prospect);
+  renderProductionReleaseGateSummary(prospect);
 }
 
 function saveCurrentEmailDraft() {
@@ -11152,6 +11220,8 @@ productionComplianceChecklist.addEventListener("change", (event) => {
 copyProductionComplianceButton.addEventListener("click", copyProductionComplianceChecklist);
 downloadProductionComplianceButton.addEventListener("click", downloadProductionComplianceChecklist);
 resetProductionComplianceButton.addEventListener("click", resetProductionComplianceChecklist);
+copyProductionReleaseGateButton.addEventListener("click", copyProductionReleaseGateSummary);
+downloadProductionReleaseGateButton.addEventListener("click", downloadProductionReleaseGateSummary);
 copyEmailDraftButton.addEventListener("click", copyEmailDraft);
 exportEmailDraftButton.addEventListener("click", exportEmailDraft);
 exportEmailJsonButton.addEventListener("click", exportEmailJson);
@@ -11317,6 +11387,7 @@ renderPromptTemplates();
 syncProductionIntegrationSetupForm();
 renderProductionIntegrationSetupStatus();
 renderProductionComplianceChecklist();
+renderProductionReleaseGateSummary();
 renderReviewedSendPacketAuditLog();
 renderProductionDryRunHistory();
 renderOutboundSession();
