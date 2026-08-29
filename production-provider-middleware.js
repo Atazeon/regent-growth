@@ -30,6 +30,12 @@ const providerAdapters = {
     canSend: false,
     requiredEnv: ["REGENT_CUSTOM_SEND_URL", "REGENT_CUSTOM_SEND_KEY"],
     requiredSetup: ["Reviewed send endpoint deployed", "Provider-side audit logging enabled", "Suppression list configured"]
+  },
+  "test-mailbox": {
+    name: "test-mailbox",
+    canSend: false,
+    requiredEnv: ["REGENT_TEST_MAILBOX_SENDER", "REGENT_TEST_MAILBOX_ADDRESS"],
+    requiredSetup: ["Dedicated test mailbox configured", "Reviewed packet capture verified", "No real provider send enabled"]
   }
 };
 
@@ -79,6 +85,8 @@ function getAdapterGuardrails(adapter = getProviderAdapter()) {
 }
 
 function createProviderSendAdapter(adapter = getProviderAdapter()) {
+  if (adapter.name === "test-mailbox") return createTestMailboxSendAdapter(adapter);
+
   return {
     provider: adapter.name,
     canSend: adapter.canSend,
@@ -90,6 +98,42 @@ function createProviderSendAdapter(adapter = getProviderAdapter()) {
         provider: adapter.name,
         providerMessageId: "",
         issues: [`Provider adapter ${adapter.name} is not send-capable yet.`]
+      };
+    }
+  };
+}
+
+function createTestMailboxSendAdapter(adapter = getProviderAdapter("test-mailbox")) {
+  return {
+    provider: adapter.name,
+    canSend: false,
+    async sendReviewedPacket(payload = {}) {
+      const validation = validateMiddlewareRequest(payload);
+      const packet = payload.packet || {};
+      const expectedSender = process.env.REGENT_TEST_MAILBOX_SENDER || "";
+      const expectedRecipient = process.env.REGENT_TEST_MAILBOX_ADDRESS || "";
+      const issues = [...validation.issues];
+
+      if (!expectedSender) issues.push("REGENT_TEST_MAILBOX_SENDER is required for test-mailbox capture.");
+      if (!expectedRecipient) issues.push("REGENT_TEST_MAILBOX_ADDRESS is required for test-mailbox capture.");
+      if (expectedSender && packet.provider?.senderEmail !== expectedSender) {
+        issues.push("Sender email must match REGENT_TEST_MAILBOX_SENDER.");
+      }
+      if (expectedRecipient && packet.message?.to !== expectedRecipient) {
+        issues.push("Recipient email must match REGENT_TEST_MAILBOX_ADDRESS.");
+      }
+
+      return {
+        accepted: issues.length === 0,
+        sent: false,
+        booked: false,
+        captured: issues.length === 0,
+        provider: adapter.name,
+        providerMessageId: "",
+        issues,
+        message: issues.length === 0
+          ? "Reviewed packet captured for the configured test mailbox. No email was sent."
+          : "Reviewed packet was not captured for the test mailbox."
       };
     }
   };
@@ -404,6 +448,7 @@ module.exports = {
   getProviderAdapter,
   getAdapterGuardrails,
   createProviderSendAdapter,
+  createTestMailboxSendAdapter,
   getMiddlewareStatus,
   getAdapterReadinessReport,
   getAdapterReadinessExport,
