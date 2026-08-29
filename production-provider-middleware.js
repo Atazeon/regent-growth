@@ -139,6 +139,26 @@ function createTestMailboxSendAdapter(adapter = getProviderAdapter("test-mailbox
   };
 }
 
+function createTestMailboxCaptureAuditEntry(payload = {}, result = {}) {
+  const packet = payload.packet || {};
+  return {
+    id: `test-mailbox-capture-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    action: "test-mailbox-capture",
+    provider: "test-mailbox",
+    accepted: result.accepted === true,
+    captured: result.captured === true,
+    sent: false,
+    booked: false,
+    senderEmail: packet.provider?.senderEmail || "",
+    recipientEmail: packet.message?.to || "",
+    subjectPresent: Boolean(packet.message?.subject),
+    bodyStored: false,
+    issueCount: Array.isArray(result.issues) ? result.issues.length : 0,
+    issues: Array.isArray(result.issues) ? result.issues : [],
+    checkedAt: new Date().toISOString()
+  };
+}
+
 function getMiddlewareStatus() {
   const adapter = getProviderAdapter();
   const guardrails = getAdapterGuardrails(adapter);
@@ -449,6 +469,7 @@ module.exports = {
   getAdapterGuardrails,
   createProviderSendAdapter,
   createTestMailboxSendAdapter,
+  createTestMailboxCaptureAuditEntry,
   getMiddlewareStatus,
   getAdapterReadinessReport,
   getAdapterReadinessExport,
