@@ -211,6 +211,31 @@ function getTestMailboxEnvStatus() {
   };
 }
 
+function getTestMailboxRunPacket() {
+  return {
+    schemaVersion: "regent-growth.test-mailbox-run-packet.v1",
+    generatedAt: new Date().toISOString(),
+    provider: "test-mailbox",
+    mode: "capture-only",
+    sentEnabled: false,
+    bookedEnabled: false,
+    statusEndpoint: "/test-mailbox/status",
+    captureEndpoint: "/test-mailbox/capture",
+    captureExportEndpoint: "/test-mailbox/capture/export",
+    replayFixture: "tests/fixtures/production-test-mailbox-reviewed-send.json",
+    mismatchFixture: "tests/fixtures/production-test-mailbox-mismatch-reviewed-send.json",
+    status: getTestMailboxEnvStatus(),
+    requiredSteps: [
+      "Set REGENT_EMAIL_PROVIDER to test-mailbox.",
+      "Set REGENT_TEST_MAILBOX_SENDER to the reviewed sender.",
+      "Set REGENT_TEST_MAILBOX_ADDRESS to the test recipient.",
+      "Run the matching replay fixture.",
+      "Run the mismatch fixture and confirm rejection.",
+      "Export the capture audit and confirm bodyContentStored is false."
+    ]
+  };
+}
+
 function getMiddlewareStatus() {
   const adapter = getProviderAdapter();
   const guardrails = getAdapterGuardrails(adapter);
@@ -547,6 +572,11 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "GET" && requestUrl.pathname === "/test-mailbox/run-packet") {
+    sendJson(response, 200, getTestMailboxRunPacket());
+    return;
+  }
+
   response.writeHead(404);
   response.end("Not found");
 });
@@ -567,6 +597,7 @@ module.exports = {
   getTestMailboxCaptureAuditTrail,
   getTestMailboxCaptureAuditExport,
   getTestMailboxEnvStatus,
+  getTestMailboxRunPacket,
   getMiddlewareStatus,
   getAdapterReadinessReport,
   getAdapterReadinessExport,
