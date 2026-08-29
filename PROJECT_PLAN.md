@@ -67,10 +67,11 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 - Production middleware final provider setup review
 - First test-mailbox provider adapter interface
 - First test-mailbox provider adapter implementation
+- First test-mailbox provider adapter runbook
 
 ### Later
 
-- First test-mailbox provider adapter runbook
+- First test-mailbox provider adapter replay fixture
 
 ## Data Model Draft
 

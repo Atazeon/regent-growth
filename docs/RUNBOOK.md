@@ -126,6 +126,28 @@ Check skeleton status at:
 http://127.0.0.1:5195/status
 ```
 
+## Test-Mailbox Adapter Capture
+
+Use the test-mailbox adapter before implementing Gmail, Outlook, or custom provider sends. It validates one configured sender and one configured recipient, captures the reviewed packet result, and still returns `sent: false`.
+
+```powershell
+$env:REGENT_EMAIL_PROVIDER="test-mailbox"
+$env:REGENT_TEST_MAILBOX_SENDER="sender@example.com"
+$env:REGENT_TEST_MAILBOX_ADDRESS="founder@example.com"
+& "C:\Users\ibrah\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe" production-provider-middleware.js
+```
+
+Check readiness and replay endpoints:
+
+```text
+http://127.0.0.1:5195/adapter-readiness
+http://127.0.0.1:5195/adapter-readiness/export
+POST http://127.0.0.1:5195/replay
+POST http://127.0.0.1:5195/replay/export
+```
+
+Use `tests/fixtures/production-reviewed-send-valid.json` as the initial replay body after changing its provider to `test-mailbox` and matching the configured sender and recipient. Do not use a real prospect recipient in this adapter.
+
 ## Validation
 
 ```powershell
