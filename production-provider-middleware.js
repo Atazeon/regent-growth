@@ -171,6 +171,25 @@ function getTestMailboxCaptureAuditTrail() {
   return testMailboxCaptureAuditTrail.slice();
 }
 
+function getTestMailboxCaptureAuditExport() {
+  const entries = getTestMailboxCaptureAuditTrail();
+  return {
+    schemaVersion: "regent-growth.test-mailbox-capture-audit.v1",
+    generatedAt: new Date().toISOString(),
+    maxEntries: maxAuditEntries,
+    bodyContentStored: false,
+    summary: {
+      total: entries.length,
+      accepted: entries.filter((entry) => entry.accepted).length,
+      captured: entries.filter((entry) => entry.captured).length,
+      sent: 0,
+      booked: 0,
+      issueCount: entries.reduce((total, entry) => total + Number(entry.issueCount || 0), 0)
+    },
+    entries
+  };
+}
+
 function getMiddlewareStatus() {
   const adapter = getProviderAdapter();
   const guardrails = getAdapterGuardrails(adapter);
@@ -497,6 +516,11 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "GET" && requestUrl.pathname === "/test-mailbox/capture/export") {
+    sendJson(response, 200, getTestMailboxCaptureAuditExport());
+    return;
+  }
+
   response.writeHead(404);
   response.end("Not found");
 });
@@ -515,6 +539,7 @@ module.exports = {
   createTestMailboxCaptureAuditEntry,
   recordTestMailboxCaptureAuditEntry,
   getTestMailboxCaptureAuditTrail,
+  getTestMailboxCaptureAuditExport,
   getMiddlewareStatus,
   getAdapterReadinessReport,
   getAdapterReadinessExport,
