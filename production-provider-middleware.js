@@ -371,6 +371,56 @@ function getRealProviderPreflightGate() {
   };
 }
 
+function getRealProviderSelectionPlan() {
+  const preflight = getRealProviderPreflightGate();
+  const candidates = ["gmail", "outlook", "custom"].map((provider) => {
+    const adapter = getProviderAdapter(provider);
+    const guardrails = getAdapterGuardrails(adapter);
+    const configuredEnvCount = guardrails.requiredEnv.length - guardrails.missingEnv.length;
+    const setupCount = guardrails.requiredSetup.length;
+    const readinessScore = configuredEnvCount + (preflight.missingEvidence.length === 0 ? setupCount : 0);
+
+    return {
+      provider,
+      canSend: false,
+      configuredEnvCount,
+      requiredEnvCount: guardrails.requiredEnv.length,
+      missingEnv: guardrails.missingEnv,
+      requiredSetup: guardrails.requiredSetup,
+      readinessScore,
+      blockedReasons: [
+        "Adapter send implementation is not enabled.",
+        ...guardrails.missingEnv.map((name) => `Missing ${name}.`),
+        ...(preflight.missingEvidence.length ? ["Preflight evidence is incomplete."] : [])
+      ]
+    };
+  });
+  const rankedCandidates = candidates.slice().sort((a, b) => {
+    if (b.readinessScore !== a.readinessScore) return b.readinessScore - a.readinessScore;
+    return a.provider.localeCompare(b.provider);
+  });
+
+  return {
+    schemaVersion: "regent-growth.real-provider-selection-plan.v1",
+    generatedAt: new Date().toISOString(),
+    approvedForRealSend: false,
+    sentEnabled: false,
+    bookedEnabled: false,
+    recommendation: rankedCandidates[0]?.provider || "gmail",
+    recommendationReason: "Pick the provider with the most configured environment evidence, then complete provider-specific implementation behind the preflight gate.",
+    preflightEndpoint: "/provider-preflight",
+    candidates: rankedCandidates,
+    requiredDecisionInputs: [
+      "Primary sending mailbox owner",
+      "Provider account type and domain",
+      "OAuth or API key creation path",
+      "Suppression-list source",
+      "Unsubscribe or opt-out text",
+      "Daily send limit"
+    ]
+  };
+}
+
 function getMiddlewareAuditTrail() {
   return middlewareAuditTrail.slice();
 }
@@ -537,6 +587,11 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "GET" && requestUrl.pathname === "/provider-selection-plan") {
+    sendJson(response, 200, getRealProviderSelectionPlan());
+    return;
+  }
+
   if (request.method === "GET" && requestUrl.pathname === "/audit") {
     sendJson(response, 200, {
       ok: true,
@@ -687,6 +742,7 @@ module.exports = {
   getAdapterReadinessReport,
   getAdapterReadinessExport,
   getRealProviderPreflightGate,
+  getRealProviderSelectionPlan,
   getMiddlewareAuditTrail,
   getMiddlewareAuditSummary,
   getMiddlewareAuditExport,
