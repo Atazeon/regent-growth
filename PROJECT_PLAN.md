@@ -80,10 +80,11 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 - First test-mailbox provider adapter status docs
 - First test-mailbox provider adapter run packet
 - First test-mailbox provider adapter run packet docs
+- First test-mailbox provider adapter run packet export docs
 
 ### Later
 
-- First test-mailbox provider adapter run packet export docs
+- First real provider adapter preflight gate
 
 ## Data Model Draft
 
