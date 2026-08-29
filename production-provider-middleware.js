@@ -190,6 +190,27 @@ function getTestMailboxCaptureAuditExport() {
   };
 }
 
+function getTestMailboxEnvStatus() {
+  const senderConfigured = Boolean(process.env.REGENT_TEST_MAILBOX_SENDER);
+  const recipientConfigured = Boolean(process.env.REGENT_TEST_MAILBOX_ADDRESS);
+  return {
+    schemaVersion: "regent-growth.test-mailbox-status.v1",
+    checkedAt: new Date().toISOString(),
+    provider: "test-mailbox",
+    configured: senderConfigured && recipientConfigured,
+    canSend: false,
+    sentEnabled: false,
+    bookedEnabled: false,
+    requiredEnv: ["REGENT_TEST_MAILBOX_SENDER", "REGENT_TEST_MAILBOX_ADDRESS"],
+    missingEnv: [
+      ...(senderConfigured ? [] : ["REGENT_TEST_MAILBOX_SENDER"]),
+      ...(recipientConfigured ? [] : ["REGENT_TEST_MAILBOX_ADDRESS"])
+    ],
+    senderConfigured,
+    recipientConfigured
+  };
+}
+
 function getMiddlewareStatus() {
   const adapter = getProviderAdapter();
   const guardrails = getAdapterGuardrails(adapter);
@@ -521,6 +542,11 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "GET" && requestUrl.pathname === "/test-mailbox/status") {
+    sendJson(response, 200, getTestMailboxEnvStatus());
+    return;
+  }
+
   response.writeHead(404);
   response.end("Not found");
 });
@@ -540,6 +566,7 @@ module.exports = {
   recordTestMailboxCaptureAuditEntry,
   getTestMailboxCaptureAuditTrail,
   getTestMailboxCaptureAuditExport,
+  getTestMailboxEnvStatus,
   getMiddlewareStatus,
   getAdapterReadinessReport,
   getAdapterReadinessExport,
