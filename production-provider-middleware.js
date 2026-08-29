@@ -421,6 +421,41 @@ function getRealProviderSelectionPlan() {
   };
 }
 
+function getRealProviderDecisionRecord(selectedProvider = process.env.REGENT_SELECTED_EMAIL_PROVIDER || "") {
+  const selectionPlan = getRealProviderSelectionPlan();
+  const normalizedProvider = String(selectedProvider || selectionPlan.recommendation || "").toLowerCase();
+  const selectedCandidate = selectionPlan.candidates.find((candidate) => candidate.provider === normalizedProvider) || null;
+  const provider = selectedCandidate?.provider || selectionPlan.recommendation;
+
+  return {
+    schemaVersion: "regent-growth.real-provider-decision-record.v1",
+    generatedAt: new Date().toISOString(),
+    provider,
+    requestedProvider: normalizedProvider,
+    validProvider: Boolean(selectedCandidate),
+    approvedForRealSend: false,
+    sentEnabled: false,
+    bookedEnabled: false,
+    selectionPlanEndpoint: "/provider-selection-plan",
+    preflightEndpoint: "/provider-preflight",
+    candidate: selectedCandidate || selectionPlan.candidates.find((candidate) => candidate.provider === provider) || null,
+    requiredDecisionInputs: selectionPlan.requiredDecisionInputs,
+    requiredImplementationBeforeSend: [
+      "Provider-specific send adapter",
+      "Suppression-list enforcement",
+      "Unsubscribe or opt-out enforcement",
+      "Provider audit logging",
+      "Provider retry and failure handling",
+      "Manual setup review approval"
+    ],
+    blockedReasons: [
+      "Decision record is not send approval.",
+      "Provider implementation remains disabled.",
+      ...(!selectedCandidate ? ["Requested provider is not one of gmail, outlook, or custom."] : [])
+    ]
+  };
+}
+
 function getMiddlewareAuditTrail() {
   return middlewareAuditTrail.slice();
 }
@@ -592,6 +627,11 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "GET" && requestUrl.pathname === "/provider-decision-record") {
+    sendJson(response, 200, getRealProviderDecisionRecord(requestUrl.searchParams.get("provider")));
+    return;
+  }
+
   if (request.method === "GET" && requestUrl.pathname === "/audit") {
     sendJson(response, 200, {
       ok: true,
@@ -743,6 +783,7 @@ module.exports = {
   getAdapterReadinessExport,
   getRealProviderPreflightGate,
   getRealProviderSelectionPlan,
+  getRealProviderDecisionRecord,
   getMiddlewareAuditTrail,
   getMiddlewareAuditSummary,
   getMiddlewareAuditExport,
