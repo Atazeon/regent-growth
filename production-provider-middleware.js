@@ -5,6 +5,7 @@ const providerName = process.env.REGENT_EMAIL_PROVIDER || "stub";
 const maxBodyBytes = 1024 * 1024;
 const maxAuditEntries = 100;
 const middlewareAuditTrail = [];
+const testMailboxCaptureAuditTrail = [];
 
 const providerAdapters = {
   stub: {
@@ -157,6 +158,17 @@ function createTestMailboxCaptureAuditEntry(payload = {}, result = {}) {
     issues: Array.isArray(result.issues) ? result.issues : [],
     checkedAt: new Date().toISOString()
   };
+}
+
+function recordTestMailboxCaptureAuditEntry(payload = {}, result = {}) {
+  const entry = createTestMailboxCaptureAuditEntry(payload, result);
+  testMailboxCaptureAuditTrail.unshift(entry);
+  testMailboxCaptureAuditTrail.splice(maxAuditEntries);
+  return entry;
+}
+
+function getTestMailboxCaptureAuditTrail() {
+  return testMailboxCaptureAuditTrail.slice();
 }
 
 function getMiddlewareStatus() {
@@ -454,6 +466,37 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "POST" && requestUrl.pathname === "/test-mailbox/capture") {
+    try {
+      const body = await readJsonBody(request);
+      const adapter = createTestMailboxSendAdapter();
+      const result = await adapter.sendReviewedPacket(body);
+      const audit = recordTestMailboxCaptureAuditEntry(body, result);
+      result.auditId = audit.id;
+      sendJson(response, result.accepted ? 200 : 400, {
+        ...result,
+        audit
+      });
+    } catch (error) {
+      const result = {
+        accepted: false,
+        sent: false,
+        booked: false,
+        captured: false,
+        provider: "test-mailbox",
+        providerMessageId: "",
+        issues: [error.message]
+      };
+      const audit = recordTestMailboxCaptureAuditEntry({}, result);
+      result.auditId = audit.id;
+      sendJson(response, 400, {
+        ...result,
+        audit
+      });
+    }
+    return;
+  }
+
   response.writeHead(404);
   response.end("Not found");
 });
@@ -470,6 +513,8 @@ module.exports = {
   createProviderSendAdapter,
   createTestMailboxSendAdapter,
   createTestMailboxCaptureAuditEntry,
+  recordTestMailboxCaptureAuditEntry,
+  getTestMailboxCaptureAuditTrail,
   getMiddlewareStatus,
   getAdapterReadinessReport,
   getAdapterReadinessExport,
