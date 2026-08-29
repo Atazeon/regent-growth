@@ -87,6 +87,7 @@ function getAdapterGuardrails(adapter = getProviderAdapter()) {
 
 function createProviderSendAdapter(adapter = getProviderAdapter()) {
   if (adapter.name === "test-mailbox") return createTestMailboxSendAdapter(adapter);
+  if (adapter.name === "gmail") return createGmailSendAdapter(adapter);
 
   return {
     provider: adapter.name,
@@ -99,6 +100,38 @@ function createProviderSendAdapter(adapter = getProviderAdapter()) {
         provider: adapter.name,
         providerMessageId: "",
         issues: [`Provider adapter ${adapter.name} is not send-capable yet.`]
+      };
+    }
+  };
+}
+
+function createGmailSendAdapter(adapter = getProviderAdapter("gmail")) {
+  return {
+    provider: adapter.name,
+    canSend: false,
+    async sendReviewedPacket(payload = {}) {
+      const validation = validateMiddlewareRequest(payload);
+      const guard = getProviderImplementationGuard("gmail");
+      const issues = [
+        "Provider adapter gmail is not send-capable yet.",
+        ...validation.issues,
+        ...guard.missingControls.map((key) => `Gmail implementation control missing: ${key}.`)
+      ];
+
+      if (guard.candidate?.missingEnv?.length) {
+        issues.push(...guard.candidate.missingEnv.map((name) => `Missing ${name}.`));
+      }
+
+      return {
+        accepted: false,
+        sent: false,
+        booked: false,
+        provider: adapter.name,
+        providerMessageId: "",
+        implementationGuard: guard.schemaVersion,
+        missingControls: guard.missingControls,
+        issues,
+        message: "Gmail adapter skeleton validated the packet path. Real Gmail sending is not implemented."
       };
     }
   };
@@ -838,6 +871,7 @@ module.exports = {
   getProviderAdapter,
   getAdapterGuardrails,
   createProviderSendAdapter,
+  createGmailSendAdapter,
   createTestMailboxSendAdapter,
   createTestMailboxCaptureAuditEntry,
   recordTestMailboxCaptureAuditEntry,
