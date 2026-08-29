@@ -291,6 +291,86 @@ function getAdapterReadinessExport() {
   };
 }
 
+function getRealProviderPreflightGate() {
+  const readinessExport = getAdapterReadinessExport();
+  const testMailboxStatus = getTestMailboxEnvStatus();
+  const testMailboxRunPacket = getTestMailboxRunPacket();
+  const testMailboxCaptureExport = getTestMailboxCaptureAuditExport();
+  const hasAcceptedCapture = testMailboxCaptureExport.summary.accepted > 0;
+  const hasRejectedCapture = testMailboxCaptureExport.entries.some((entry) => entry.accepted === false && entry.issueCount > 0);
+  const evidence = [
+    {
+      key: "provider-adapter-checklist",
+      label: "Provider adapter checklist export",
+      ready: readinessExport.machineChecklist === "docs/PRODUCTION_PROVIDER_ADAPTER_CHECKLIST.json",
+      source: readinessExport.machineChecklist
+    },
+    {
+      key: "adapter-readiness-export",
+      label: "Adapter readiness export",
+      ready: readinessExport.report.sentEnabled === false && readinessExport.report.blockedProviders.includes("gmail"),
+      endpoint: "/adapter-readiness/export"
+    },
+    {
+      key: "test-mailbox-status",
+      label: "Test-mailbox sender and recipient configured",
+      ready: testMailboxStatus.configured === true,
+      endpoint: "/test-mailbox/status",
+      missing: testMailboxStatus.missingEnv
+    },
+    {
+      key: "test-mailbox-run-packet",
+      label: "Test-mailbox run packet export",
+      ready: testMailboxRunPacket.sentEnabled === false && testMailboxRunPacket.bookedEnabled === false,
+      endpoint: "/test-mailbox/run-packet"
+    },
+    {
+      key: "test-mailbox-accepted-capture",
+      label: "Matching test-mailbox capture recorded",
+      ready: hasAcceptedCapture,
+      endpoint: "/test-mailbox/capture/export"
+    },
+    {
+      key: "test-mailbox-rejected-capture",
+      label: "Mismatch test-mailbox capture rejected",
+      ready: hasRejectedCapture,
+      endpoint: "/test-mailbox/capture/export"
+    },
+    {
+      key: "body-content-not-stored",
+      label: "Capture audit export does not store message bodies",
+      ready: testMailboxCaptureExport.bodyContentStored === false,
+      endpoint: "/test-mailbox/capture/export"
+    },
+    {
+      key: "setup-review",
+      label: "Final provider setup review documented",
+      ready: true,
+      source: "docs/PRODUCTION_PROVIDER_SETUP_REVIEW.md"
+    }
+  ];
+  const missingEvidence = evidence.filter((item) => !item.ready).map((item) => item.key);
+
+  return {
+    schemaVersion: "regent-growth.real-provider-preflight.v1",
+    checkedAt: new Date().toISOString(),
+    approvedForRealSend: false,
+    sentEnabled: false,
+    bookedEnabled: false,
+    providerCandidates: ["gmail", "outlook", "custom"],
+    readinessExportEndpoint: "/adapter-readiness/export",
+    testMailboxRunPacketEndpoint: "/test-mailbox/run-packet",
+    testMailboxCaptureExportEndpoint: "/test-mailbox/capture/export",
+    evidence,
+    missingEvidence,
+    blockedReasons: [
+      "Real provider adapters remain skeleton-only.",
+      ...(missingEvidence.length ? ["Required test-mailbox evidence is incomplete."] : []),
+      "Manual provider setup review is still required before enabling canSend."
+    ]
+  };
+}
+
 function getMiddlewareAuditTrail() {
   return middlewareAuditTrail.slice();
 }
@@ -452,6 +532,11 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "GET" && requestUrl.pathname === "/provider-preflight") {
+    sendJson(response, 200, getRealProviderPreflightGate());
+    return;
+  }
+
   if (request.method === "GET" && requestUrl.pathname === "/audit") {
     sendJson(response, 200, {
       ok: true,
@@ -601,6 +686,7 @@ module.exports = {
   getMiddlewareStatus,
   getAdapterReadinessReport,
   getAdapterReadinessExport,
+  getRealProviderPreflightGate,
   getMiddlewareAuditTrail,
   getMiddlewareAuditSummary,
   getMiddlewareAuditExport,
