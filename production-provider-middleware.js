@@ -456,6 +456,68 @@ function getRealProviderDecisionRecord(selectedProvider = process.env.REGENT_SEL
   };
 }
 
+function getProviderImplementationGuard(selectedProvider = process.env.REGENT_SELECTED_EMAIL_PROVIDER || "") {
+  const decisionRecord = getRealProviderDecisionRecord(selectedProvider);
+  const provider = decisionRecord.provider;
+  const evidenceEnvPrefix = `REGENT_${provider.toUpperCase().replace(/[^A-Z0-9]/g, "_")}`;
+  const controls = [
+    {
+      key: "send-adapter",
+      label: "Provider-specific send adapter implemented",
+      evidenceEnv: `${evidenceEnvPrefix}_SEND_ADAPTER_REVIEWED`
+    },
+    {
+      key: "suppression-enforcement",
+      label: "Suppression-list enforcement implemented",
+      evidenceEnv: `${evidenceEnvPrefix}_SUPPRESSION_REVIEWED`
+    },
+    {
+      key: "unsubscribe-enforcement",
+      label: "Unsubscribe or opt-out enforcement implemented",
+      evidenceEnv: `${evidenceEnvPrefix}_UNSUBSCRIBE_REVIEWED`
+    },
+    {
+      key: "audit-logging",
+      label: "Provider audit logging implemented",
+      evidenceEnv: `${evidenceEnvPrefix}_AUDIT_REVIEWED`
+    },
+    {
+      key: "retry-failure-handling",
+      label: "Provider retry and failure handling implemented",
+      evidenceEnv: `${evidenceEnvPrefix}_RETRY_REVIEWED`
+    },
+    {
+      key: "manual-setup-review",
+      label: "Manual setup review approved",
+      evidenceEnv: `${evidenceEnvPrefix}_SETUP_APPROVED`
+    }
+  ].map((control) => ({
+    ...control,
+    ready: process.env[control.evidenceEnv] === "true"
+  }));
+  const missingControls = controls.filter((control) => !control.ready).map((control) => control.key);
+
+  return {
+    schemaVersion: "regent-growth.provider-implementation-guard.v1",
+    checkedAt: new Date().toISOString(),
+    provider,
+    validProvider: decisionRecord.validProvider,
+    approvedForRealSend: false,
+    canEnableSend: false,
+    sentEnabled: false,
+    bookedEnabled: false,
+    decisionRecordEndpoint: "/provider-decision-record",
+    controls,
+    missingControls,
+    blockedReasons: [
+      "Implementation guard is not send approval.",
+      ...(!decisionRecord.validProvider ? ["Selected provider is invalid."] : []),
+      ...(missingControls.length ? ["Required implementation controls are incomplete."] : []),
+      "Set canSend only in a provider-specific implementation change with tests."
+    ]
+  };
+}
+
 function getMiddlewareAuditTrail() {
   return middlewareAuditTrail.slice();
 }
@@ -632,6 +694,11 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "GET" && requestUrl.pathname === "/provider-implementation-guard") {
+    sendJson(response, 200, getProviderImplementationGuard(requestUrl.searchParams.get("provider")));
+    return;
+  }
+
   if (request.method === "GET" && requestUrl.pathname === "/audit") {
     sendJson(response, 200, {
       ok: true,
@@ -784,6 +851,7 @@ module.exports = {
   getRealProviderPreflightGate,
   getRealProviderSelectionPlan,
   getRealProviderDecisionRecord,
+  getProviderImplementationGuard,
   getMiddlewareAuditTrail,
   getMiddlewareAuditSummary,
   getMiddlewareAuditExport,
