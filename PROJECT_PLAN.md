@@ -88,10 +88,11 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 - First real provider adapter decision record
 - First real provider adapter decision docs
 - First provider-specific implementation guard
+- First provider-specific implementation guard docs
 
 ### Later
 
-- First provider-specific implementation guard docs
+- First Gmail provider adapter implementation skeleton
 
 ## Data Model Draft
 
