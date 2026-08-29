@@ -86,10 +86,11 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 - First real provider adapter selection plan
 - First real provider adapter selection docs
 - First real provider adapter decision record
+- First real provider adapter decision docs
 
 ### Later
 
-- First real provider adapter decision docs
+- First provider-specific implementation guard
 
 ## Data Model Draft
 
