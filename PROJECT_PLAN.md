@@ -96,10 +96,11 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 - First Gmail reviewed packet preflight
 - First Gmail reviewed packet preflight docs
 - First Gmail provider audit preview
+- First Gmail provider audit preview docs
 
 ### Later
 
-- First Gmail provider audit preview docs
+- First Gmail provider retry preview
 
 ## Data Model Draft
 
