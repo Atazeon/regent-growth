@@ -244,6 +244,28 @@ function getTestMailboxEnvStatus() {
   };
 }
 
+function getGmailEnvStatus() {
+  const adapter = getProviderAdapter("gmail");
+  const guardrails = getAdapterGuardrails(adapter);
+  const configuredEnv = guardrails.requiredEnv.filter((name) => Boolean(process.env[name]));
+
+  return {
+    schemaVersion: "regent-growth.gmail-provider-status.v1",
+    checkedAt: new Date().toISOString(),
+    provider: "gmail",
+    configured: guardrails.missingEnv.length === 0,
+    canSend: false,
+    sentEnabled: false,
+    bookedEnabled: false,
+    requiredEnv: guardrails.requiredEnv,
+    configuredEnv,
+    missingEnv: guardrails.missingEnv,
+    requiredSetup: guardrails.requiredSetup,
+    implementationGuardEndpoint: "/provider-implementation-guard?provider=gmail",
+    decisionRecordEndpoint: "/provider-decision-record?provider=gmail"
+  };
+}
+
 function getTestMailboxRunPacket() {
   return {
     schemaVersion: "regent-growth.test-mailbox-run-packet.v1",
@@ -732,6 +754,11 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "GET" && requestUrl.pathname === "/gmail/status") {
+    sendJson(response, 200, getGmailEnvStatus());
+    return;
+  }
+
   if (request.method === "GET" && requestUrl.pathname === "/audit") {
     sendJson(response, 200, {
       ok: true,
@@ -878,6 +905,7 @@ module.exports = {
   getTestMailboxCaptureAuditTrail,
   getTestMailboxCaptureAuditExport,
   getTestMailboxEnvStatus,
+  getGmailEnvStatus,
   getTestMailboxRunPacket,
   getMiddlewareStatus,
   getAdapterReadinessReport,
