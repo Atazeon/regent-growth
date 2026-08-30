@@ -6,6 +6,7 @@ const maxBodyBytes = 1024 * 1024;
 const maxAuditEntries = 100;
 const middlewareAuditTrail = [];
 const testMailboxCaptureAuditTrail = [];
+const gmailAuditPreviewTrail = [];
 
 const providerAdapters = {
   stub: {
@@ -295,6 +296,55 @@ function getGmailReviewedPacketPreflight(payload = {}) {
       "Real Gmail sending is not implemented.",
       ...(issues.length ? ["Gmail preflight issues must be resolved before implementation review."] : [])
     ]
+  };
+}
+
+function createGmailAuditPreviewEntry(payload = {}, preflight = getGmailReviewedPacketPreflight(payload)) {
+  const packet = payload.packet || {};
+  return {
+    id: `gmail-audit-preview-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    action: "gmail-preflight",
+    provider: "gmail",
+    accepted: false,
+    sent: false,
+    booked: false,
+    reviewedPacketValid: preflight.reviewedPacketValid === true,
+    envConfigured: preflight.envConfigured === true,
+    implementationReady: preflight.implementationReady === true,
+    issueCount: Array.isArray(preflight.issues) ? preflight.issues.length : 0,
+    issues: Array.isArray(preflight.issues) ? preflight.issues : [],
+    senderEmail: packet.provider?.senderEmail || "",
+    recipientEmail: packet.message?.to || "",
+    subjectPresent: Boolean(packet.message?.subject),
+    bodyStored: false,
+    checkedAt: preflight.checkedAt || new Date().toISOString()
+  };
+}
+
+function recordGmailAuditPreviewEntry(payload = {}, preflight = getGmailReviewedPacketPreflight(payload)) {
+  const entry = createGmailAuditPreviewEntry(payload, preflight);
+  gmailAuditPreviewTrail.unshift(entry);
+  gmailAuditPreviewTrail.splice(maxAuditEntries);
+  return entry;
+}
+
+function getGmailAuditPreviewExport() {
+  const entries = gmailAuditPreviewTrail.slice();
+  return {
+    schemaVersion: "regent-growth.gmail-audit-preview.v1",
+    generatedAt: new Date().toISOString(),
+    maxEntries: maxAuditEntries,
+    bodyContentStored: false,
+    summary: {
+      total: entries.length,
+      reviewedPacketValid: entries.filter((entry) => entry.reviewedPacketValid).length,
+      envConfigured: entries.filter((entry) => entry.envConfigured).length,
+      implementationReady: entries.filter((entry) => entry.implementationReady).length,
+      sent: 0,
+      booked: 0,
+      issueCount: entries.reduce((total, entry) => total + Number(entry.issueCount || 0), 0)
+    },
+    entries
   };
 }
 
@@ -811,6 +861,36 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "POST" && requestUrl.pathname === "/gmail/audit-preview") {
+    try {
+      const body = await readJsonBody(request);
+      const preflight = getGmailReviewedPacketPreflight(body);
+      const auditPreview = recordGmailAuditPreviewEntry(body, preflight);
+      sendJson(response, 200, {
+        schemaVersion: "regent-growth.gmail-audit-preview-result.v1",
+        recorded: true,
+        sent: false,
+        booked: false,
+        preflight,
+        auditPreview
+      });
+    } catch (error) {
+      sendJson(response, 400, {
+        schemaVersion: "regent-growth.gmail-audit-preview-result.v1",
+        recorded: false,
+        sent: false,
+        booked: false,
+        issues: [error.message]
+      });
+    }
+    return;
+  }
+
+  if (request.method === "GET" && requestUrl.pathname === "/gmail/audit-preview/export") {
+    sendJson(response, 200, getGmailAuditPreviewExport());
+    return;
+  }
+
   if (request.method === "GET" && requestUrl.pathname === "/audit") {
     sendJson(response, 200, {
       ok: true,
@@ -959,6 +1039,9 @@ module.exports = {
   getTestMailboxEnvStatus,
   getGmailEnvStatus,
   getGmailReviewedPacketPreflight,
+  createGmailAuditPreviewEntry,
+  recordGmailAuditPreviewEntry,
+  getGmailAuditPreviewExport,
   getTestMailboxRunPacket,
   getMiddlewareStatus,
   getAdapterReadinessReport,

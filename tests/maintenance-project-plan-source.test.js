@@ -96,7 +96,8 @@ const nextTaskMarkers = [
   "- First Gmail provider adapter env status docs",
   "- First Gmail reviewed packet preflight",
   "- First Gmail reviewed packet preflight docs",
-  "- First Gmail provider audit preview"
+  "- First Gmail provider audit preview",
+  "- First Gmail provider audit preview docs"
 ];
 
 const checks = [
