@@ -379,6 +379,50 @@ function getGmailRetryPreview(payload = {}) {
   };
 }
 
+function mapGmailProviderResponse(responsePayload = {}) {
+  const accepted = Boolean(responsePayload.id || responsePayload.messageId);
+  const error = responsePayload.error || {};
+  const issues = [];
+
+  if (!accepted) {
+    issues.push(error.message || "Gmail response did not include a message id.");
+  }
+  if (error.code) {
+    issues.push(`Gmail error code: ${error.code}.`);
+  }
+
+  return {
+    schemaVersion: "regent-growth.gmail-response-mapping.v1",
+    mappedAt: new Date().toISOString(),
+    provider: "gmail",
+    accepted,
+    sent: false,
+    booked: false,
+    providerMessageId: responsePayload.id || responsePayload.messageId || "",
+    threadId: responsePayload.threadId || "",
+    retryable: ["rateLimitExceeded", "backendError", "internalError"].includes(error.reason || error.code),
+    issueCount: issues.length,
+    issues,
+    rawResponseStored: false
+  };
+}
+
+function getGmailResponseMappingPreview(responsePayload = {}) {
+  return {
+    schemaVersion: "regent-growth.gmail-response-mapping-preview.v1",
+    generatedAt: new Date().toISOString(),
+    provider: "gmail",
+    canSend: false,
+    sentEnabled: false,
+    bookedEnabled: false,
+    mapping: mapGmailProviderResponse(responsePayload),
+    blockedReasons: [
+      "Gmail response mapping preview is not send approval.",
+      "Raw Gmail responses must not be stored in audit exports."
+    ]
+  };
+}
+
 function getTestMailboxRunPacket() {
   return {
     schemaVersion: "regent-growth.test-mailbox-run-packet.v1",
@@ -942,6 +986,24 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "POST" && requestUrl.pathname === "/gmail/response-mapping-preview") {
+    try {
+      const body = await readJsonBody(request);
+      sendJson(response, 200, getGmailResponseMappingPreview(body));
+    } catch (error) {
+      sendJson(response, 400, {
+        schemaVersion: "regent-growth.gmail-response-mapping-preview.v1",
+        generatedAt: new Date().toISOString(),
+        provider: "gmail",
+        canSend: false,
+        sentEnabled: false,
+        bookedEnabled: false,
+        issues: [error.message]
+      });
+    }
+    return;
+  }
+
   if (request.method === "GET" && requestUrl.pathname === "/audit") {
     sendJson(response, 200, {
       ok: true,
@@ -1094,6 +1156,8 @@ module.exports = {
   recordGmailAuditPreviewEntry,
   getGmailAuditPreviewExport,
   getGmailRetryPreview,
+  mapGmailProviderResponse,
+  getGmailResponseMappingPreview,
   getTestMailboxRunPacket,
   getMiddlewareStatus,
   getAdapterReadinessReport,
