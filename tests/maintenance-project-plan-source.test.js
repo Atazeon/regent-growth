@@ -99,7 +99,8 @@ const nextTaskMarkers = [
   "- First Gmail provider audit preview",
   "- First Gmail provider audit preview docs",
   "- First Gmail provider retry preview",
-  "- First Gmail provider retry preview docs"
+  "- First Gmail provider retry preview docs",
+  "- First Gmail provider response mapping preview"
 ];
 
 const checks = [
