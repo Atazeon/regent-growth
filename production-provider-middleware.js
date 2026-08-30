@@ -266,6 +266,38 @@ function getGmailEnvStatus() {
   };
 }
 
+function getGmailReviewedPacketPreflight(payload = {}) {
+  const validation = validateMiddlewareRequest(payload);
+  const envStatus = getGmailEnvStatus();
+  const implementationGuard = getProviderImplementationGuard("gmail");
+  const issues = [
+    ...validation.issues,
+    ...envStatus.missingEnv.map((name) => `Missing ${name}.`),
+    ...implementationGuard.missingControls.map((key) => `Gmail implementation control missing: ${key}.`)
+  ];
+
+  return {
+    schemaVersion: "regent-growth.gmail-reviewed-packet-preflight.v1",
+    checkedAt: new Date().toISOString(),
+    provider: "gmail",
+    accepted: false,
+    canSend: false,
+    sentEnabled: false,
+    bookedEnabled: false,
+    reviewedPacketValid: validation.accepted,
+    envConfigured: envStatus.configured,
+    implementationReady: implementationGuard.missingControls.length === 0,
+    envStatusEndpoint: "/gmail/status",
+    implementationGuardEndpoint: "/provider-implementation-guard?provider=gmail",
+    issues,
+    blockedReasons: [
+      "Gmail reviewed-packet preflight is not send approval.",
+      "Real Gmail sending is not implemented.",
+      ...(issues.length ? ["Gmail preflight issues must be resolved before implementation review."] : [])
+    ]
+  };
+}
+
 function getTestMailboxRunPacket() {
   return {
     schemaVersion: "regent-growth.test-mailbox-run-packet.v1",
@@ -759,6 +791,26 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "POST" && requestUrl.pathname === "/gmail/preflight") {
+    try {
+      const body = await readJsonBody(request);
+      sendJson(response, 200, getGmailReviewedPacketPreflight(body));
+    } catch (error) {
+      sendJson(response, 400, {
+        schemaVersion: "regent-growth.gmail-reviewed-packet-preflight.v1",
+        checkedAt: new Date().toISOString(),
+        provider: "gmail",
+        accepted: false,
+        canSend: false,
+        sentEnabled: false,
+        bookedEnabled: false,
+        issues: [error.message],
+        blockedReasons: ["Gmail reviewed-packet preflight requires valid JSON."]
+      });
+    }
+    return;
+  }
+
   if (request.method === "GET" && requestUrl.pathname === "/audit") {
     sendJson(response, 200, {
       ok: true,
@@ -906,6 +958,7 @@ module.exports = {
   getTestMailboxCaptureAuditExport,
   getTestMailboxEnvStatus,
   getGmailEnvStatus,
+  getGmailReviewedPacketPreflight,
   getTestMailboxRunPacket,
   getMiddlewareStatus,
   getAdapterReadinessReport,
