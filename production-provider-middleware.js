@@ -348,6 +348,37 @@ function getGmailAuditPreviewExport() {
   };
 }
 
+function getGmailRetryPreview(payload = {}) {
+  const preflight = getGmailReviewedPacketPreflight(payload);
+  const suggestedFixes = preflight.issues.length
+    ? preflight.issues.map((issue) => `Resolve before Gmail retry: ${issue}`)
+    : ["Run Gmail audit preview again after provider implementation review."];
+
+  return {
+    schemaVersion: "regent-growth.gmail-retry-preview.v1",
+    generatedAt: new Date().toISOString(),
+    provider: "gmail",
+    retryAllowed: false,
+    canSend: false,
+    sentEnabled: false,
+    bookedEnabled: false,
+    reviewedPacketValid: preflight.reviewedPacketValid,
+    envConfigured: preflight.envConfigured,
+    implementationReady: preflight.implementationReady,
+    suggestedFixes,
+    nextEndpoints: [
+      "/gmail/status",
+      "/gmail/preflight",
+      "/gmail/audit-preview",
+      "/gmail/audit-preview/export"
+    ],
+    blockedReasons: [
+      "Gmail retry preview is not send approval.",
+      "Real Gmail retry behavior is not implemented."
+    ]
+  };
+}
+
 function getTestMailboxRunPacket() {
   return {
     schemaVersion: "regent-growth.test-mailbox-run-packet.v1",
@@ -891,6 +922,26 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "POST" && requestUrl.pathname === "/gmail/retry-preview") {
+    try {
+      const body = await readJsonBody(request);
+      sendJson(response, 200, getGmailRetryPreview(body));
+    } catch (error) {
+      sendJson(response, 400, {
+        schemaVersion: "regent-growth.gmail-retry-preview.v1",
+        generatedAt: new Date().toISOString(),
+        provider: "gmail",
+        retryAllowed: false,
+        canSend: false,
+        sentEnabled: false,
+        bookedEnabled: false,
+        suggestedFixes: [`Submit valid JSON before Gmail retry preview: ${error.message}`],
+        blockedReasons: ["Gmail retry preview requires valid JSON."]
+      });
+    }
+    return;
+  }
+
   if (request.method === "GET" && requestUrl.pathname === "/audit") {
     sendJson(response, 200, {
       ok: true,
@@ -1042,6 +1093,7 @@ module.exports = {
   createGmailAuditPreviewEntry,
   recordGmailAuditPreviewEntry,
   getGmailAuditPreviewExport,
+  getGmailRetryPreview,
   getTestMailboxRunPacket,
   getMiddlewareStatus,
   getAdapterReadinessReport,
