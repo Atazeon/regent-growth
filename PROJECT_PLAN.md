@@ -92,10 +92,11 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 - First Gmail provider adapter implementation skeleton
 - First Gmail provider adapter skeleton docs
 - First Gmail provider adapter env status export
+- First Gmail provider adapter env status docs
 
 ### Later
 
-- First Gmail provider adapter env status docs
+- First Gmail reviewed packet preflight
 
 ## Data Model Draft
 
