@@ -491,6 +491,66 @@ function getGmailUnsubscribePreflight(payload = {}) {
   };
 }
 
+function getGmailSendReadinessSummary(payload = {}) {
+  const reviewedPacketPreflight = getGmailReviewedPacketPreflight(payload);
+  const envStatus = getGmailEnvStatus();
+  const implementationGuard = getProviderImplementationGuard("gmail");
+  const suppressionPreflight = getGmailSuppressionPreflight(payload);
+  const unsubscribePreflight = getGmailUnsubscribePreflight(payload);
+  const auditPreviewExport = getGmailAuditPreviewExport();
+  const checks = [
+    {
+      key: "reviewed-packet",
+      ready: reviewedPacketPreflight.reviewedPacketValid === true,
+      endpoint: "/gmail/preflight"
+    },
+    {
+      key: "gmail-env",
+      ready: envStatus.configured === true,
+      endpoint: "/gmail/status"
+    },
+    {
+      key: "implementation-controls",
+      ready: implementationGuard.missingControls.length === 0,
+      endpoint: "/provider-implementation-guard?provider=gmail"
+    },
+    {
+      key: "suppression",
+      ready: suppressionPreflight.suppressed === false && suppressionPreflight.issues.length === 0,
+      endpoint: "/gmail/suppression-preflight"
+    },
+    {
+      key: "unsubscribe",
+      ready: unsubscribePreflight.hasUnsubscribeLanguage === true,
+      endpoint: "/gmail/unsubscribe-preflight"
+    },
+    {
+      key: "audit-preview",
+      ready: auditPreviewExport.entries.length > 0 && auditPreviewExport.bodyContentStored === false,
+      endpoint: "/gmail/audit-preview/export"
+    }
+  ];
+  const missingChecks = checks.filter((check) => !check.ready).map((check) => check.key);
+
+  return {
+    schemaVersion: "regent-growth.gmail-send-readiness-summary.v1",
+    generatedAt: new Date().toISOString(),
+    provider: "gmail",
+    readyForImplementationReview: missingChecks.length === 0,
+    approvedForRealSend: false,
+    canSend: false,
+    sentEnabled: false,
+    bookedEnabled: false,
+    checks,
+    missingChecks,
+    blockedReasons: [
+      "Gmail send readiness summary is not send approval.",
+      ...(missingChecks.length ? ["Gmail readiness checks are incomplete."] : []),
+      "Real Gmail sending requires a separate implementation approval."
+    ]
+  };
+}
+
 function getTestMailboxRunPacket() {
   return {
     schemaVersion: "regent-growth.test-mailbox-run-packet.v1",
@@ -1109,6 +1169,25 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "POST" && requestUrl.pathname === "/gmail/send-readiness") {
+    try {
+      const body = await readJsonBody(request);
+      sendJson(response, 200, getGmailSendReadinessSummary(body));
+    } catch (error) {
+      sendJson(response, 400, {
+        schemaVersion: "regent-growth.gmail-send-readiness-summary.v1",
+        generatedAt: new Date().toISOString(),
+        provider: "gmail",
+        approvedForRealSend: false,
+        canSend: false,
+        sentEnabled: false,
+        bookedEnabled: false,
+        issues: [error.message]
+      });
+    }
+    return;
+  }
+
   if (request.method === "GET" && requestUrl.pathname === "/audit") {
     sendJson(response, 200, {
       ok: true,
@@ -1266,6 +1345,7 @@ module.exports = {
   getSuppressedEmailsForProvider,
   getGmailSuppressionPreflight,
   getGmailUnsubscribePreflight,
+  getGmailSendReadinessSummary,
   getTestMailboxRunPacket,
   getMiddlewareStatus,
   getAdapterReadinessReport,
