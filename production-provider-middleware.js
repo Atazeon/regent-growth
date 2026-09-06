@@ -423,6 +423,45 @@ function getGmailResponseMappingPreview(responsePayload = {}) {
   };
 }
 
+function getSuppressedEmailsForProvider(provider = "gmail") {
+  const providerKey = `REGENT_${String(provider).toUpperCase()}_SUPPRESSION_EMAILS`;
+  return [
+    ...(process.env.REGENT_SUPPRESSION_EMAILS || "").split(","),
+    ...(process.env[providerKey] || "").split(",")
+  ]
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function getGmailSuppressionPreflight(payload = {}) {
+  const packet = payload.packet || {};
+  const recipientEmail = String(packet.message?.to || "").trim().toLowerCase();
+  const suppressedEmails = getSuppressedEmailsForProvider("gmail");
+  const suppressed = recipientEmail ? suppressedEmails.includes(recipientEmail) : false;
+  const issues = [
+    ...(!recipientEmail ? ["Recipient email is required for Gmail suppression preflight."] : []),
+    ...(suppressed ? ["Recipient is on the Gmail suppression list."] : [])
+  ];
+
+  return {
+    schemaVersion: "regent-growth.gmail-suppression-preflight.v1",
+    checkedAt: new Date().toISOString(),
+    provider: "gmail",
+    canSend: false,
+    sentEnabled: false,
+    bookedEnabled: false,
+    recipientEmail,
+    suppressionListConfigured: suppressedEmails.length > 0,
+    suppressed,
+    suppressedEmailCount: suppressedEmails.length,
+    issues,
+    blockedReasons: [
+      "Gmail suppression preflight is not send approval.",
+      ...(suppressed ? ["Suppressed recipients must not be contacted."] : [])
+    ]
+  };
+}
+
 function getTestMailboxRunPacket() {
   return {
     schemaVersion: "regent-growth.test-mailbox-run-packet.v1",
@@ -1004,6 +1043,24 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "POST" && requestUrl.pathname === "/gmail/suppression-preflight") {
+    try {
+      const body = await readJsonBody(request);
+      sendJson(response, 200, getGmailSuppressionPreflight(body));
+    } catch (error) {
+      sendJson(response, 400, {
+        schemaVersion: "regent-growth.gmail-suppression-preflight.v1",
+        checkedAt: new Date().toISOString(),
+        provider: "gmail",
+        canSend: false,
+        sentEnabled: false,
+        bookedEnabled: false,
+        issues: [error.message]
+      });
+    }
+    return;
+  }
+
   if (request.method === "GET" && requestUrl.pathname === "/audit") {
     sendJson(response, 200, {
       ok: true,
@@ -1158,6 +1215,8 @@ module.exports = {
   getGmailRetryPreview,
   mapGmailProviderResponse,
   getGmailResponseMappingPreview,
+  getSuppressedEmailsForProvider,
+  getGmailSuppressionPreflight,
   getTestMailboxRunPacket,
   getMiddlewareStatus,
   getAdapterReadinessReport,
