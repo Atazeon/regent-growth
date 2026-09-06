@@ -117,10 +117,11 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 - First Outlook provider adapter skeleton docs
 - First Outlook provider env status export
 - First Outlook provider env status docs
+- First Outlook reviewed packet preflight
 
 ### Later
 
-- First Outlook reviewed packet preflight
+- First Outlook reviewed packet preflight docs
 
 ## Data Model Draft
 

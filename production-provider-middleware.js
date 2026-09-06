@@ -303,19 +303,23 @@ function getOutlookEnvStatus() {
 }
 
 function getGmailReviewedPacketPreflight(payload = {}) {
+  return getProviderReviewedPacketPreflight("gmail", "Gmail", payload);
+}
+
+function getProviderReviewedPacketPreflight(provider, providerLabel, payload = {}) {
   const validation = validateMiddlewareRequest(payload);
-  const envStatus = getGmailEnvStatus();
-  const implementationGuard = getProviderImplementationGuard("gmail");
+  const envStatus = getProviderEnvStatus(provider);
+  const implementationGuard = getProviderImplementationGuard(provider);
   const issues = [
     ...validation.issues,
     ...envStatus.missingEnv.map((name) => `Missing ${name}.`),
-    ...implementationGuard.missingControls.map((key) => `Gmail implementation control missing: ${key}.`)
+    ...implementationGuard.missingControls.map((key) => `${providerLabel} implementation control missing: ${key}.`)
   ];
 
   return {
-    schemaVersion: "regent-growth.gmail-reviewed-packet-preflight.v1",
+    schemaVersion: `regent-growth.${provider}-reviewed-packet-preflight.v1`,
     checkedAt: new Date().toISOString(),
-    provider: "gmail",
+    provider,
     accepted: false,
     canSend: false,
     sentEnabled: false,
@@ -323,15 +327,19 @@ function getGmailReviewedPacketPreflight(payload = {}) {
     reviewedPacketValid: validation.accepted,
     envConfigured: envStatus.configured,
     implementationReady: implementationGuard.missingControls.length === 0,
-    envStatusEndpoint: "/gmail/status",
-    implementationGuardEndpoint: "/provider-implementation-guard?provider=gmail",
+    envStatusEndpoint: `/${provider}/status`,
+    implementationGuardEndpoint: `/provider-implementation-guard?provider=${provider}`,
     issues,
     blockedReasons: [
-      "Gmail reviewed-packet preflight is not send approval.",
-      "Real Gmail sending is not implemented.",
-      ...(issues.length ? ["Gmail preflight issues must be resolved before implementation review."] : [])
+      `${providerLabel} reviewed-packet preflight is not send approval.`,
+      `Real ${providerLabel} sending is not implemented.`,
+      ...(issues.length ? [`${providerLabel} preflight issues must be resolved before implementation review.`] : [])
     ]
   };
+}
+
+function getOutlookReviewedPacketPreflight(payload = {}) {
+  return getProviderReviewedPacketPreflight("outlook", "Outlook", payload);
 }
 
 function createGmailAuditPreviewEntry(payload = {}, preflight = getGmailReviewedPacketPreflight(payload)) {
@@ -1196,6 +1204,26 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "POST" && requestUrl.pathname === "/outlook/preflight") {
+    try {
+      const body = await readJsonBody(request);
+      sendJson(response, 200, getOutlookReviewedPacketPreflight(body));
+    } catch (error) {
+      sendJson(response, 400, {
+        schemaVersion: "regent-growth.outlook-reviewed-packet-preflight.v1",
+        checkedAt: new Date().toISOString(),
+        provider: "outlook",
+        accepted: false,
+        canSend: false,
+        sentEnabled: false,
+        bookedEnabled: false,
+        issues: [error.message],
+        blockedReasons: ["Outlook reviewed-packet preflight requires valid JSON."]
+      });
+    }
+    return;
+  }
+
   if (request.method === "POST" && requestUrl.pathname === "/gmail/audit-preview") {
     try {
       const body = await readJsonBody(request);
@@ -1515,7 +1543,9 @@ module.exports = {
   getProviderEnvStatus,
   getGmailEnvStatus,
   getOutlookEnvStatus,
+  getProviderReviewedPacketPreflight,
   getGmailReviewedPacketPreflight,
+  getOutlookReviewedPacketPreflight,
   createGmailAuditPreviewEntry,
   recordGmailAuditPreviewEntry,
   getGmailAuditPreviewExport,
