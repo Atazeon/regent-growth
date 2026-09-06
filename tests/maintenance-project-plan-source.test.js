@@ -112,7 +112,8 @@ const nextTaskMarkers = [
   "- First Gmail live-send blocked endpoint docs",
   "- First Gmail provider run packet",
   "- First Gmail provider run packet docs",
-  "- First Gmail implementation review export"
+  "- First Gmail implementation review export",
+  "- First Gmail implementation review export docs"
 ];
 
 const checks = [

@@ -611,6 +611,38 @@ function getGmailProviderRunPacket() {
   };
 }
 
+function getGmailImplementationReviewExport(payload = {}) {
+  return {
+    schemaVersion: "regent-growth.gmail-implementation-review-export.v1",
+    generatedAt: new Date().toISOString(),
+    provider: "gmail",
+    approvedForRealSend: false,
+    canSend: false,
+    sentEnabled: false,
+    bookedEnabled: false,
+    runPacket: getGmailProviderRunPacket(),
+    decisionRecord: getRealProviderDecisionRecord("gmail"),
+    implementationGuard: getProviderImplementationGuard("gmail"),
+    readinessSummary: getGmailSendReadinessSummary(payload),
+    requiredDocs: [
+      "docs/PRODUCTION_GMAIL_PROVIDER_STATUS.md",
+      "docs/PRODUCTION_GMAIL_PREFLIGHT.md",
+      "docs/PRODUCTION_GMAIL_AUDIT_PREVIEW.md",
+      "docs/PRODUCTION_GMAIL_RETRY_PREVIEW.md",
+      "docs/PRODUCTION_GMAIL_RESPONSE_MAPPING.md",
+      "docs/PRODUCTION_GMAIL_SUPPRESSION_PREFLIGHT.md",
+      "docs/PRODUCTION_GMAIL_UNSUBSCRIBE_PREFLIGHT.md",
+      "docs/PRODUCTION_GMAIL_SEND_READINESS.md",
+      "docs/PRODUCTION_GMAIL_BLOCKED_SEND.md",
+      "docs/PRODUCTION_GMAIL_RUN_PACKET.md"
+    ],
+    blockedReasons: [
+      "Gmail implementation review export is not send approval.",
+      "Gmail canSend must remain false until a separate implementation approval."
+    ]
+  };
+}
+
 function getTestMailboxRunPacket() {
   return {
     schemaVersion: "regent-growth.test-mailbox-run-packet.v1",
@@ -1273,6 +1305,25 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "POST" && requestUrl.pathname === "/gmail/implementation-review/export") {
+    try {
+      const body = await readJsonBody(request);
+      sendJson(response, 200, getGmailImplementationReviewExport(body));
+    } catch (error) {
+      sendJson(response, 400, {
+        schemaVersion: "regent-growth.gmail-implementation-review-export.v1",
+        generatedAt: new Date().toISOString(),
+        provider: "gmail",
+        approvedForRealSend: false,
+        canSend: false,
+        sentEnabled: false,
+        bookedEnabled: false,
+        issues: [error.message]
+      });
+    }
+    return;
+  }
+
   if (request.method === "GET" && requestUrl.pathname === "/audit") {
     sendJson(response, 200, {
       ok: true,
@@ -1433,6 +1484,7 @@ module.exports = {
   getGmailSendReadinessSummary,
   createBlockedGmailSendResult,
   getGmailProviderRunPacket,
+  getGmailImplementationReviewExport,
   getTestMailboxRunPacket,
   getMiddlewareStatus,
   getAdapterReadinessReport,
