@@ -551,6 +551,31 @@ function getGmailSendReadinessSummary(payload = {}) {
   };
 }
 
+function createBlockedGmailSendResult(payload = {}) {
+  const readiness = getGmailSendReadinessSummary(payload);
+  return {
+    schemaVersion: "regent-growth.gmail-send-blocked.v1",
+    checkedAt: new Date().toISOString(),
+    provider: "gmail",
+    accepted: false,
+    sent: false,
+    booked: false,
+    providerMessageId: "",
+    readyForImplementationReview: readiness.readyForImplementationReview,
+    readinessSummary: readiness.schemaVersion,
+    missingChecks: readiness.missingChecks,
+    issues: [
+      "Gmail live-send endpoint is blocked.",
+      "Real Gmail sending is not implemented.",
+      ...readiness.missingChecks.map((check) => `Gmail readiness check missing: ${check}.`)
+    ],
+    blockedReasons: [
+      "Gmail live-send blocked endpoint is not send approval.",
+      "Implement OAuth send, suppression enforcement, unsubscribe enforcement, audit logging, retry handling, and manual setup approval before enabling Gmail sends."
+    ]
+  };
+}
+
 function getTestMailboxRunPacket() {
   return {
     schemaVersion: "regent-growth.test-mailbox-run-packet.v1",
@@ -1188,6 +1213,26 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "POST" && requestUrl.pathname === "/gmail/send") {
+    try {
+      const body = await readJsonBody(request);
+      sendJson(response, 403, createBlockedGmailSendResult(body));
+    } catch (error) {
+      sendJson(response, 400, {
+        schemaVersion: "regent-growth.gmail-send-blocked.v1",
+        checkedAt: new Date().toISOString(),
+        provider: "gmail",
+        accepted: false,
+        sent: false,
+        booked: false,
+        providerMessageId: "",
+        issues: [error.message],
+        blockedReasons: ["Gmail live-send endpoint requires valid JSON."]
+      });
+    }
+    return;
+  }
+
   if (request.method === "GET" && requestUrl.pathname === "/audit") {
     sendJson(response, 200, {
       ok: true,
@@ -1346,6 +1391,7 @@ module.exports = {
   getGmailSuppressionPreflight,
   getGmailUnsubscribePreflight,
   getGmailSendReadinessSummary,
+  createBlockedGmailSendResult,
   getTestMailboxRunPacket,
   getMiddlewareStatus,
   getAdapterReadinessReport,

@@ -107,10 +107,11 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 - First Gmail unsubscribe preflight docs
 - First Gmail send readiness summary
 - First Gmail send readiness summary docs
+- First Gmail live-send blocked endpoint
 
 ### Later
 
-- First Gmail live-send blocked endpoint
+- First Gmail live-send blocked endpoint docs
 
 ## Data Model Draft
 

@@ -108,7 +108,8 @@ const nextTaskMarkers = [
   "- First Gmail unsubscribe preflight docs",
   "- First Gmail send readiness summary",
   "- First Gmail send readiness summary docs",
-  "- First Gmail live-send blocked endpoint"
+  "- First Gmail live-send blocked endpoint",
+  "- First Gmail live-send blocked endpoint docs"
 ];
 
 const checks = [
