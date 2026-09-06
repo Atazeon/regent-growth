@@ -114,7 +114,8 @@ const nextTaskMarkers = [
   "- First Gmail provider run packet docs",
   "- First Gmail implementation review export",
   "- First Gmail implementation review export docs",
-  "- First Outlook provider adapter implementation skeleton"
+  "- First Outlook provider adapter implementation skeleton",
+  "- First Outlook provider adapter skeleton docs"
 ];
 
 const checks = [

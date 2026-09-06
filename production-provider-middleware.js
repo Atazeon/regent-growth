@@ -89,6 +89,7 @@ function getAdapterGuardrails(adapter = getProviderAdapter()) {
 function createProviderSendAdapter(adapter = getProviderAdapter()) {
   if (adapter.name === "test-mailbox") return createTestMailboxSendAdapter(adapter);
   if (adapter.name === "gmail") return createGmailSendAdapter(adapter);
+  if (adapter.name === "outlook") return createOutlookSendAdapter(adapter);
 
   return {
     provider: adapter.name,
@@ -106,17 +107,17 @@ function createProviderSendAdapter(adapter = getProviderAdapter()) {
   };
 }
 
-function createGmailSendAdapter(adapter = getProviderAdapter("gmail")) {
+function createProviderSkeletonSendAdapter(adapter = getProviderAdapter(), providerLabel = adapter.name) {
   return {
     provider: adapter.name,
     canSend: false,
     async sendReviewedPacket(payload = {}) {
       const validation = validateMiddlewareRequest(payload);
-      const guard = getProviderImplementationGuard("gmail");
+      const guard = getProviderImplementationGuard(adapter.name);
       const issues = [
-        "Provider adapter gmail is not send-capable yet.",
+        `Provider adapter ${adapter.name} is not send-capable yet.`,
         ...validation.issues,
-        ...guard.missingControls.map((key) => `Gmail implementation control missing: ${key}.`)
+        ...guard.missingControls.map((key) => `${providerLabel} implementation control missing: ${key}.`)
       ];
 
       if (guard.candidate?.missingEnv?.length) {
@@ -132,10 +133,18 @@ function createGmailSendAdapter(adapter = getProviderAdapter("gmail")) {
         implementationGuard: guard.schemaVersion,
         missingControls: guard.missingControls,
         issues,
-        message: "Gmail adapter skeleton validated the packet path. Real Gmail sending is not implemented."
+        message: `${providerLabel} adapter skeleton validated the packet path. Real ${providerLabel} sending is not implemented.`
       };
     }
   };
+}
+
+function createGmailSendAdapter(adapter = getProviderAdapter("gmail")) {
+  return createProviderSkeletonSendAdapter(adapter, "Gmail");
+}
+
+function createOutlookSendAdapter(adapter = getProviderAdapter("outlook")) {
+  return createProviderSkeletonSendAdapter(adapter, "Outlook");
 }
 
 function createTestMailboxSendAdapter(adapter = getProviderAdapter("test-mailbox")) {
@@ -1463,7 +1472,9 @@ module.exports = {
   getProviderAdapter,
   getAdapterGuardrails,
   createProviderSendAdapter,
+  createProviderSkeletonSendAdapter,
   createGmailSendAdapter,
+  createOutlookSendAdapter,
   createTestMailboxSendAdapter,
   createTestMailboxCaptureAuditEntry,
   recordTestMailboxCaptureAuditEntry,
