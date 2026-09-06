@@ -276,6 +276,32 @@ function getGmailEnvStatus() {
   };
 }
 
+function getProviderEnvStatus(provider) {
+  const adapter = getProviderAdapter(provider);
+  const guardrails = getAdapterGuardrails(adapter);
+  const configuredEnv = guardrails.requiredEnv.filter((name) => Boolean(process.env[name]));
+
+  return {
+    schemaVersion: `regent-growth.${adapter.name}-provider-status.v1`,
+    checkedAt: new Date().toISOString(),
+    provider: adapter.name,
+    configured: guardrails.missingEnv.length === 0,
+    canSend: false,
+    sentEnabled: false,
+    bookedEnabled: false,
+    requiredEnv: guardrails.requiredEnv,
+    configuredEnv,
+    missingEnv: guardrails.missingEnv,
+    requiredSetup: guardrails.requiredSetup,
+    implementationGuardEndpoint: `/provider-implementation-guard?provider=${adapter.name}`,
+    decisionRecordEndpoint: `/provider-decision-record?provider=${adapter.name}`
+  };
+}
+
+function getOutlookEnvStatus() {
+  return getProviderEnvStatus("outlook");
+}
+
 function getGmailReviewedPacketPreflight(payload = {}) {
   const validation = validateMiddlewareRequest(payload);
   const envStatus = getGmailEnvStatus();
@@ -1145,6 +1171,11 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "GET" && requestUrl.pathname === "/outlook/status") {
+    sendJson(response, 200, getOutlookEnvStatus());
+    return;
+  }
+
   if (request.method === "POST" && requestUrl.pathname === "/gmail/preflight") {
     try {
       const body = await readJsonBody(request);
@@ -1481,7 +1512,9 @@ module.exports = {
   getTestMailboxCaptureAuditTrail,
   getTestMailboxCaptureAuditExport,
   getTestMailboxEnvStatus,
+  getProviderEnvStatus,
   getGmailEnvStatus,
+  getOutlookEnvStatus,
   getGmailReviewedPacketPreflight,
   createGmailAuditPreviewEntry,
   recordGmailAuditPreviewEntry,

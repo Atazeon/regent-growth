@@ -115,10 +115,11 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 - First Gmail implementation review export docs
 - First Outlook provider adapter implementation skeleton
 - First Outlook provider adapter skeleton docs
+- First Outlook provider env status export
 
 ### Later
 
-- First Outlook provider env status export
+- First Outlook provider env status docs
 
 ## Data Model Draft
 
