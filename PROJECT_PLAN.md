@@ -103,10 +103,11 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 - First Gmail provider response mapping docs
 - First Gmail suppression preflight
 - First Gmail suppression preflight docs
+- First Gmail unsubscribe preflight
 
 ### Later
 
-- First Gmail unsubscribe preflight
+- First Gmail unsubscribe preflight docs
 
 ## Data Model Draft
 
