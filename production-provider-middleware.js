@@ -576,6 +576,41 @@ function createBlockedGmailSendResult(payload = {}) {
   };
 }
 
+function getGmailProviderRunPacket() {
+  return {
+    schemaVersion: "regent-growth.gmail-provider-run-packet.v1",
+    generatedAt: new Date().toISOString(),
+    provider: "gmail",
+    mode: "blocked-send-prep",
+    approvedForRealSend: false,
+    canSend: false,
+    sentEnabled: false,
+    bookedEnabled: false,
+    fixture: "tests/fixtures/production-reviewed-send-valid.json",
+    endpoints: {
+      status: "/gmail/status",
+      preflight: "/gmail/preflight",
+      auditPreview: "/gmail/audit-preview",
+      auditPreviewExport: "/gmail/audit-preview/export",
+      retryPreview: "/gmail/retry-preview",
+      responseMappingPreview: "/gmail/response-mapping-preview",
+      suppressionPreflight: "/gmail/suppression-preflight",
+      unsubscribePreflight: "/gmail/unsubscribe-preflight",
+      sendReadiness: "/gmail/send-readiness",
+      blockedSend: "/gmail/send"
+    },
+    requiredProof: [
+      "Gmail environment status export reviewed.",
+      "Reviewed packet preflight passes validation.",
+      "Suppression preflight confirms recipient is not suppressed.",
+      "Unsubscribe preflight confirms opt-out language.",
+      "Audit preview export confirms bodyContentStored is false.",
+      "Response mapping preview covers success and retryable errors.",
+      "Blocked send endpoint returns 403 with sent false."
+    ]
+  };
+}
+
 function getTestMailboxRunPacket() {
   return {
     schemaVersion: "regent-growth.test-mailbox-run-packet.v1",
@@ -1233,6 +1268,11 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "GET" && requestUrl.pathname === "/gmail/run-packet") {
+    sendJson(response, 200, getGmailProviderRunPacket());
+    return;
+  }
+
   if (request.method === "GET" && requestUrl.pathname === "/audit") {
     sendJson(response, 200, {
       ok: true,
@@ -1392,6 +1432,7 @@ module.exports = {
   getGmailUnsubscribePreflight,
   getGmailSendReadinessSummary,
   createBlockedGmailSendResult,
+  getGmailProviderRunPacket,
   getTestMailboxRunPacket,
   getMiddlewareStatus,
   getAdapterReadinessReport,
