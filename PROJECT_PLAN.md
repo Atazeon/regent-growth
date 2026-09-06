@@ -110,10 +110,11 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 - First Gmail live-send blocked endpoint
 - First Gmail live-send blocked endpoint docs
 - First Gmail provider run packet
+- First Gmail provider run packet docs
 
 ### Later
 
-- First Gmail provider run packet docs
+- First Gmail implementation review export
 
 ## Data Model Draft
 
