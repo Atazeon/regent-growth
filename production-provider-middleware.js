@@ -504,6 +504,50 @@ function getGmailResponseMappingPreview(responsePayload = {}) {
   };
 }
 
+function mapOutlookProviderResponse(responsePayload = {}) {
+  const accepted = Boolean(responsePayload.id || responsePayload.internetMessageId);
+  const error = responsePayload.error || {};
+  const issues = [];
+
+  if (!accepted) {
+    issues.push(error.message || "Outlook response did not include a message id.");
+  }
+  if (error.code) {
+    issues.push(`Outlook error code: ${error.code}.`);
+  }
+
+  return {
+    schemaVersion: "regent-growth.outlook-response-mapping.v1",
+    mappedAt: new Date().toISOString(),
+    provider: "outlook",
+    accepted,
+    sent: false,
+    booked: false,
+    providerMessageId: responsePayload.id || responsePayload.internetMessageId || "",
+    conversationId: responsePayload.conversationId || "",
+    retryable: ["TooManyRequests", "ServiceUnavailable", "Timeout", "MailboxUnavailable"].includes(error.code),
+    issueCount: issues.length,
+    issues,
+    rawResponseStored: false
+  };
+}
+
+function getOutlookResponseMappingPreview(responsePayload = {}) {
+  return {
+    schemaVersion: "regent-growth.outlook-response-mapping-preview.v1",
+    generatedAt: new Date().toISOString(),
+    provider: "outlook",
+    canSend: false,
+    sentEnabled: false,
+    bookedEnabled: false,
+    mapping: mapOutlookProviderResponse(responsePayload),
+    blockedReasons: [
+      "Outlook response mapping preview is not send approval.",
+      "Raw Outlook responses must not be stored in audit exports."
+    ]
+  };
+}
+
 function getSuppressedEmailsForProvider(provider = "gmail") {
   const providerKey = `REGENT_${String(provider).toUpperCase()}_SUPPRESSION_EMAILS`;
   return [
@@ -1380,6 +1424,24 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "POST" && requestUrl.pathname === "/outlook/response-mapping-preview") {
+    try {
+      const body = await readJsonBody(request);
+      sendJson(response, 200, getOutlookResponseMappingPreview(body));
+    } catch (error) {
+      sendJson(response, 400, {
+        schemaVersion: "regent-growth.outlook-response-mapping-preview.v1",
+        generatedAt: new Date().toISOString(),
+        provider: "outlook",
+        canSend: false,
+        sentEnabled: false,
+        bookedEnabled: false,
+        issues: [error.message]
+      });
+    }
+    return;
+  }
+
   if (request.method === "POST" && requestUrl.pathname === "/gmail/suppression-preflight") {
     try {
       const body = await readJsonBody(request);
@@ -1649,6 +1711,8 @@ module.exports = {
   getOutlookRetryPreview,
   mapGmailProviderResponse,
   getGmailResponseMappingPreview,
+  mapOutlookProviderResponse,
+  getOutlookResponseMappingPreview,
   getSuppressedEmailsForProvider,
   getGmailSuppressionPreflight,
   getGmailUnsubscribePreflight,
