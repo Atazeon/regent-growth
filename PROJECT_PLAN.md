@@ -122,10 +122,11 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 - First Outlook provider audit preview
 - First Outlook provider audit preview docs
 - First Outlook provider retry preview
+- First Outlook provider retry preview docs
 
 ### Later
 
-- First Outlook provider retry preview docs
+- First Outlook provider response mapping preview
 
 ## Data Model Draft
 
