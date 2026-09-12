@@ -421,16 +421,16 @@ function getOutlookAuditPreviewExport() {
   return getProviderAuditPreviewExport("outlook");
 }
 
-function getGmailRetryPreview(payload = {}) {
-  const preflight = getGmailReviewedPacketPreflight(payload);
+function getProviderRetryPreview(provider, providerLabel, payload = {}) {
+  const preflight = getProviderReviewedPacketPreflight(provider, providerLabel, payload);
   const suggestedFixes = preflight.issues.length
-    ? preflight.issues.map((issue) => `Resolve before Gmail retry: ${issue}`)
-    : ["Run Gmail audit preview again after provider implementation review."];
+    ? preflight.issues.map((issue) => `Resolve before ${providerLabel} retry: ${issue}`)
+    : [`Run ${providerLabel} audit preview again after provider implementation review.`];
 
   return {
-    schemaVersion: "regent-growth.gmail-retry-preview.v1",
+    schemaVersion: `regent-growth.${provider}-retry-preview.v1`,
     generatedAt: new Date().toISOString(),
-    provider: "gmail",
+    provider,
     retryAllowed: false,
     canSend: false,
     sentEnabled: false,
@@ -440,16 +440,24 @@ function getGmailRetryPreview(payload = {}) {
     implementationReady: preflight.implementationReady,
     suggestedFixes,
     nextEndpoints: [
-      "/gmail/status",
-      "/gmail/preflight",
-      "/gmail/audit-preview",
-      "/gmail/audit-preview/export"
+      `/${provider}/status`,
+      `/${provider}/preflight`,
+      `/${provider}/audit-preview`,
+      `/${provider}/audit-preview/export`
     ],
     blockedReasons: [
-      "Gmail retry preview is not send approval.",
-      "Real Gmail retry behavior is not implemented."
+      `${providerLabel} retry preview is not send approval.`,
+      `Real ${providerLabel} retry behavior is not implemented.`
     ]
   };
+}
+
+function getGmailRetryPreview(payload = {}) {
+  return getProviderRetryPreview("gmail", "Gmail", payload);
+}
+
+function getOutlookRetryPreview(payload = {}) {
+  return getProviderRetryPreview("outlook", "Outlook", payload);
 }
 
 function mapGmailProviderResponse(responsePayload = {}) {
@@ -1334,6 +1342,26 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "POST" && requestUrl.pathname === "/outlook/retry-preview") {
+    try {
+      const body = await readJsonBody(request);
+      sendJson(response, 200, getOutlookRetryPreview(body));
+    } catch (error) {
+      sendJson(response, 400, {
+        schemaVersion: "regent-growth.outlook-retry-preview.v1",
+        generatedAt: new Date().toISOString(),
+        provider: "outlook",
+        retryAllowed: false,
+        canSend: false,
+        sentEnabled: false,
+        bookedEnabled: false,
+        suggestedFixes: [`Submit valid JSON before Outlook retry preview: ${error.message}`],
+        blockedReasons: ["Outlook retry preview requires valid JSON."]
+      });
+    }
+    return;
+  }
+
   if (request.method === "POST" && requestUrl.pathname === "/gmail/response-mapping-preview") {
     try {
       const body = await readJsonBody(request);
@@ -1616,7 +1644,9 @@ module.exports = {
   getProviderAuditPreviewExport,
   getGmailAuditPreviewExport,
   getOutlookAuditPreviewExport,
+  getProviderRetryPreview,
   getGmailRetryPreview,
+  getOutlookRetryPreview,
   mapGmailProviderResponse,
   getGmailResponseMappingPreview,
   getSuppressedEmailsForProvider,

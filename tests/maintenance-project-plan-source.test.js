@@ -122,7 +122,8 @@ const nextTaskMarkers = [
   "- First Outlook reviewed packet preflight docs",
   "- First Outlook provider audit preview",
   "- First Outlook provider audit preview docs",
-  "- First Outlook provider retry preview"
+  "- First Outlook provider retry preview",
+  "- First Outlook provider retry preview docs"
 ];
 
 const checks = [
