@@ -700,12 +700,12 @@ function getOutlookSendReadinessSummary(payload = {}) {
   return getProviderSendReadinessSummary("outlook", "Outlook", payload);
 }
 
-function createBlockedGmailSendResult(payload = {}) {
-  const readiness = getGmailSendReadinessSummary(payload);
+function createBlockedProviderSendResult(provider, providerLabel, payload = {}) {
+  const readiness = getProviderSendReadinessSummary(provider, providerLabel, payload);
   return {
-    schemaVersion: "regent-growth.gmail-send-blocked.v1",
+    schemaVersion: `regent-growth.${provider}-send-blocked.v1`,
     checkedAt: new Date().toISOString(),
-    provider: "gmail",
+    provider,
     accepted: false,
     sent: false,
     booked: false,
@@ -714,15 +714,23 @@ function createBlockedGmailSendResult(payload = {}) {
     readinessSummary: readiness.schemaVersion,
     missingChecks: readiness.missingChecks,
     issues: [
-      "Gmail live-send endpoint is blocked.",
-      "Real Gmail sending is not implemented.",
-      ...readiness.missingChecks.map((check) => `Gmail readiness check missing: ${check}.`)
+      `${providerLabel} live-send endpoint is blocked.`,
+      `Real ${providerLabel} sending is not implemented.`,
+      ...readiness.missingChecks.map((check) => `${providerLabel} readiness check missing: ${check}.`)
     ],
     blockedReasons: [
-      "Gmail live-send blocked endpoint is not send approval.",
-      "Implement OAuth send, suppression enforcement, unsubscribe enforcement, audit logging, retry handling, and manual setup approval before enabling Gmail sends."
+      `${providerLabel} live-send blocked endpoint is not send approval.`,
+      `Implement OAuth send, suppression enforcement, unsubscribe enforcement, audit logging, retry handling, and manual setup approval before enabling ${providerLabel} sends.`
     ]
   };
+}
+
+function createBlockedGmailSendResult(payload = {}) {
+  return createBlockedProviderSendResult("gmail", "Gmail", payload);
+}
+
+function createBlockedOutlookSendResult(payload = {}) {
+  return createBlockedProviderSendResult("outlook", "Outlook", payload);
 }
 
 function getGmailProviderRunPacket() {
@@ -1598,6 +1606,26 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "POST" && requestUrl.pathname === "/outlook/send") {
+    try {
+      const body = await readJsonBody(request);
+      sendJson(response, 403, createBlockedOutlookSendResult(body));
+    } catch (error) {
+      sendJson(response, 400, {
+        schemaVersion: "regent-growth.outlook-send-blocked.v1",
+        checkedAt: new Date().toISOString(),
+        provider: "outlook",
+        accepted: false,
+        sent: false,
+        booked: false,
+        providerMessageId: "",
+        issues: [error.message],
+        blockedReasons: ["Outlook live-send endpoint requires valid JSON."]
+      });
+    }
+    return;
+  }
+
   if (request.method === "GET" && requestUrl.pathname === "/gmail/run-packet") {
     sendJson(response, 200, getGmailProviderRunPacket());
     return;
@@ -1803,7 +1831,9 @@ module.exports = {
   getProviderSendReadinessSummary,
   getGmailSendReadinessSummary,
   getOutlookSendReadinessSummary,
+  createBlockedProviderSendResult,
   createBlockedGmailSendResult,
+  createBlockedOutlookSendResult,
   getGmailProviderRunPacket,
   getGmailImplementationReviewExport,
   getTestMailboxRunPacket,

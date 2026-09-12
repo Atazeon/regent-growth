@@ -131,10 +131,11 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 - First Outlook unsubscribe preflight docs
 - First Outlook send readiness summary
 - First Outlook send readiness summary docs
+- First Outlook live-send blocked endpoint
 
 ### Later
 
-- First Outlook live-send blocked endpoint
+- First Outlook live-send blocked endpoint docs
 
 ## Data Model Draft
 
