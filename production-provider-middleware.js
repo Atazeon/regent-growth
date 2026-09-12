@@ -1018,6 +1018,47 @@ function getRealProviderSendAdapterImplementationPlan() {
   };
 }
 
+function getProviderSendFeatureFlagContract(provider = "gmail") {
+  const normalizedProvider = String(provider || "").toLowerCase();
+  const providerLabel = normalizedProvider === "outlook" ? "Outlook" : "Gmail";
+  const validProvider = ["gmail", "outlook"].includes(normalizedProvider);
+  const providerPrefix = validProvider ? normalizedProvider.toUpperCase() : "";
+  const requiredFlags = validProvider
+    ? [
+        `REGENT_${providerPrefix}_SEND_ADAPTER_REVIEWED`,
+        `REGENT_${providerPrefix}_SUPPRESSION_REVIEWED`,
+        `REGENT_${providerPrefix}_UNSUBSCRIBE_REVIEWED`,
+        `REGENT_${providerPrefix}_AUDIT_REVIEWED`,
+        `REGENT_${providerPrefix}_RETRY_REVIEWED`,
+        `REGENT_${providerPrefix}_SETUP_APPROVED`,
+        `REGENT_${providerPrefix}_CAN_SEND`
+      ]
+    : [];
+  const enabledFlags = requiredFlags.filter((flag) => process.env[flag] === "true");
+  const missingFlags = requiredFlags.filter((flag) => process.env[flag] !== "true");
+
+  return {
+    schemaVersion: "regent-growth.provider-send-feature-flag-contract.v1",
+    checkedAt: new Date().toISOString(),
+    provider: normalizedProvider,
+    validProvider,
+    approvedForRealSend: false,
+    canSend: false,
+    sentEnabled: false,
+    bookedEnabled: false,
+    requiredFlags,
+    enabledFlags,
+    missingFlags,
+    activationRule: validProvider
+      ? `${providerLabel} canSend may only change after every required flag is true and a separate implementation approval is recorded.`
+      : "Provider must be gmail or outlook.",
+    blockedReasons: [
+      "Feature flag contract is not send approval.",
+      ...(validProvider ? [`${providerLabel} send adapter remains blocked by default.`] : ["Invalid provider."])
+    ]
+  };
+}
+
 function getRealProviderPreflightGate() {
   const readinessExport = getAdapterReadinessExport();
   const testMailboxStatus = getTestMailboxEnvStatus();
@@ -1854,6 +1895,11 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "GET" && requestUrl.pathname === "/provider-send-feature-flags") {
+    sendJson(response, 200, getProviderSendFeatureFlagContract(requestUrl.searchParams.get("provider") || "gmail"));
+    return;
+  }
+
   if (request.method === "POST" && requestUrl.pathname === "/reviewed-send") {
     try {
       const body = await readJsonBody(request);
@@ -2037,6 +2083,7 @@ module.exports = {
   getRealProviderProductionReadinessReview,
   getRealProviderRolloutGapList,
   getRealProviderSendAdapterImplementationPlan,
+  getProviderSendFeatureFlagContract,
   getRealProviderPreflightGate,
   getRealProviderSelectionPlan,
   getRealProviderDecisionRecord,
