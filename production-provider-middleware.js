@@ -776,36 +776,46 @@ function getOutlookProviderRunPacket() {
   return getProviderRunPacket("outlook", "Outlook");
 }
 
-function getGmailImplementationReviewExport(payload = {}) {
+function getProviderImplementationReviewExport(provider, providerLabel, payload = {}) {
+  const providerDocName = providerLabel.toUpperCase();
+
   return {
-    schemaVersion: "regent-growth.gmail-implementation-review-export.v1",
+    schemaVersion: `regent-growth.${provider}-implementation-review-export.v1`,
     generatedAt: new Date().toISOString(),
-    provider: "gmail",
+    provider,
     approvedForRealSend: false,
     canSend: false,
     sentEnabled: false,
     bookedEnabled: false,
-    runPacket: getGmailProviderRunPacket(),
-    decisionRecord: getRealProviderDecisionRecord("gmail"),
-    implementationGuard: getProviderImplementationGuard("gmail"),
-    readinessSummary: getGmailSendReadinessSummary(payload),
+    runPacket: getProviderRunPacket(provider, providerLabel),
+    decisionRecord: getRealProviderDecisionRecord(provider),
+    implementationGuard: getProviderImplementationGuard(provider),
+    readinessSummary: getProviderSendReadinessSummary(provider, providerLabel, payload),
     requiredDocs: [
-      "docs/PRODUCTION_GMAIL_PROVIDER_STATUS.md",
-      "docs/PRODUCTION_GMAIL_PREFLIGHT.md",
-      "docs/PRODUCTION_GMAIL_AUDIT_PREVIEW.md",
-      "docs/PRODUCTION_GMAIL_RETRY_PREVIEW.md",
-      "docs/PRODUCTION_GMAIL_RESPONSE_MAPPING.md",
-      "docs/PRODUCTION_GMAIL_SUPPRESSION_PREFLIGHT.md",
-      "docs/PRODUCTION_GMAIL_UNSUBSCRIBE_PREFLIGHT.md",
-      "docs/PRODUCTION_GMAIL_SEND_READINESS.md",
-      "docs/PRODUCTION_GMAIL_BLOCKED_SEND.md",
-      "docs/PRODUCTION_GMAIL_RUN_PACKET.md"
+      `docs/PRODUCTION_${providerDocName}_PROVIDER_STATUS.md`,
+      `docs/PRODUCTION_${providerDocName}_PREFLIGHT.md`,
+      `docs/PRODUCTION_${providerDocName}_AUDIT_PREVIEW.md`,
+      `docs/PRODUCTION_${providerDocName}_RETRY_PREVIEW.md`,
+      `docs/PRODUCTION_${providerDocName}_RESPONSE_MAPPING.md`,
+      `docs/PRODUCTION_${providerDocName}_SUPPRESSION_PREFLIGHT.md`,
+      `docs/PRODUCTION_${providerDocName}_UNSUBSCRIBE_PREFLIGHT.md`,
+      `docs/PRODUCTION_${providerDocName}_SEND_READINESS.md`,
+      `docs/PRODUCTION_${providerDocName}_BLOCKED_SEND.md`,
+      `docs/PRODUCTION_${providerDocName}_RUN_PACKET.md`
     ],
     blockedReasons: [
-      "Gmail implementation review export is not send approval.",
-      "Gmail canSend must remain false until a separate implementation approval."
+      `${providerLabel} implementation review export is not send approval.`,
+      `${providerLabel} canSend must remain false until a separate implementation approval.`
     ]
   };
+}
+
+function getGmailImplementationReviewExport(payload = {}) {
+  return getProviderImplementationReviewExport("gmail", "Gmail", payload);
+}
+
+function getOutlookImplementationReviewExport(payload = {}) {
+  return getProviderImplementationReviewExport("outlook", "Outlook", payload);
 }
 
 function getTestMailboxRunPacket() {
@@ -1663,6 +1673,25 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "POST" && requestUrl.pathname === "/outlook/implementation-review/export") {
+    try {
+      const body = await readJsonBody(request);
+      sendJson(response, 200, getOutlookImplementationReviewExport(body));
+    } catch (error) {
+      sendJson(response, 400, {
+        schemaVersion: "regent-growth.outlook-implementation-review-export.v1",
+        generatedAt: new Date().toISOString(),
+        provider: "outlook",
+        approvedForRealSend: false,
+        canSend: false,
+        sentEnabled: false,
+        bookedEnabled: false,
+        issues: [error.message]
+      });
+    }
+    return;
+  }
+
   if (request.method === "GET" && requestUrl.pathname === "/audit") {
     sendJson(response, 200, {
       ok: true,
@@ -1850,7 +1879,9 @@ module.exports = {
   getProviderRunPacket,
   getGmailProviderRunPacket,
   getOutlookProviderRunPacket,
+  getProviderImplementationReviewExport,
   getGmailImplementationReviewExport,
+  getOutlookImplementationReviewExport,
   getTestMailboxRunPacket,
   getMiddlewareStatus,
   getAdapterReadinessReport,

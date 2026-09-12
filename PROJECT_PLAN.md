@@ -135,10 +135,11 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 - First Outlook live-send blocked endpoint docs
 - First Outlook provider run packet
 - First Outlook provider run packet docs
+- First Outlook implementation review export
 
 ### Later
 
-- First Outlook implementation review export
+- First Outlook implementation review export docs
 
 ## Data Model Draft
 
