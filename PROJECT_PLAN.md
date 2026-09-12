@@ -139,10 +139,11 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 - First Outlook implementation review export docs
 - Real-provider production readiness review
 - Real-provider production readiness review docs
+- First real-provider rollout gap list
 
 ### Later
 
-- First real-provider rollout gap list
+- First real-provider rollout gap list docs
 
 ## Data Model Draft
 

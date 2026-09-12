@@ -140,7 +140,8 @@ const nextTaskMarkers = [
   "- First Outlook implementation review export docs",
   "- Real-provider production readiness review",
   "- Real-provider production readiness review docs",
-  "- First real-provider rollout gap list"
+  "- First real-provider rollout gap list",
+  "- First real-provider rollout gap list docs"
 ];
 
 const checks = [

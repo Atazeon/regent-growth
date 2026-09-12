@@ -943,6 +943,42 @@ function getRealProviderProductionReadinessReview(payload = {}) {
   };
 }
 
+function getRealProviderRolloutGapList() {
+  const providers = ["gmail", "outlook"].map((provider) => {
+    const providerLabel = provider === "outlook" ? "Outlook" : "Gmail";
+    return {
+      provider,
+      canSend: false,
+      approvedForRealSend: false,
+      implementationReviewEndpoint: `/${provider}/implementation-review/export`,
+      readinessReviewEndpoint: "/real-provider/production-readiness-review",
+      gaps: [
+        `${providerLabel} OAuth send adapter is not implemented.`,
+        `${providerLabel} suppression enforcement must run inside the send path.`,
+        `${providerLabel} unsubscribe enforcement must run inside the send path.`,
+        `${providerLabel} provider response handling must map success and retryable failures.`,
+        `${providerLabel} retry behavior must be bounded and audited.`,
+        `${providerLabel} audit logging must avoid storing message body content.`,
+        `${providerLabel} manual setup approval must be recorded before canSend changes.`
+      ]
+    };
+  });
+
+  return {
+    schemaVersion: "regent-growth.real-provider-rollout-gap-list.v1",
+    generatedAt: new Date().toISOString(),
+    approvedForRealSend: false,
+    canSend: false,
+    sentEnabled: false,
+    bookedEnabled: false,
+    providers,
+    blockedReasons: [
+      "Rollout gap list is not send approval.",
+      "Every provider gap must be closed in a separate reviewed implementation before live sending."
+    ]
+  };
+}
+
 function getRealProviderPreflightGate() {
   const readinessExport = getAdapterReadinessExport();
   const testMailboxStatus = getTestMailboxEnvStatus();
@@ -1769,6 +1805,11 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "GET" && requestUrl.pathname === "/real-provider/rollout-gap-list") {
+    sendJson(response, 200, getRealProviderRolloutGapList());
+    return;
+  }
+
   if (request.method === "POST" && requestUrl.pathname === "/reviewed-send") {
     try {
       const body = await readJsonBody(request);
@@ -1950,6 +1991,7 @@ module.exports = {
   getAdapterReadinessReport,
   getAdapterReadinessExport,
   getRealProviderProductionReadinessReview,
+  getRealProviderRolloutGapList,
   getRealProviderPreflightGate,
   getRealProviderSelectionPlan,
   getRealProviderDecisionRecord,
