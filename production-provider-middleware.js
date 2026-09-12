@@ -632,51 +632,51 @@ function getOutlookUnsubscribePreflight(payload = {}) {
   return getProviderUnsubscribePreflight("outlook", "Outlook", payload);
 }
 
-function getGmailSendReadinessSummary(payload = {}) {
-  const reviewedPacketPreflight = getGmailReviewedPacketPreflight(payload);
-  const envStatus = getGmailEnvStatus();
-  const implementationGuard = getProviderImplementationGuard("gmail");
-  const suppressionPreflight = getGmailSuppressionPreflight(payload);
-  const unsubscribePreflight = getGmailUnsubscribePreflight(payload);
-  const auditPreviewExport = getGmailAuditPreviewExport();
+function getProviderSendReadinessSummary(provider, providerLabel, payload = {}) {
+  const reviewedPacketPreflight = getProviderReviewedPacketPreflight(provider, providerLabel, payload);
+  const envStatus = getProviderEnvStatus(provider);
+  const implementationGuard = getProviderImplementationGuard(provider);
+  const suppressionPreflight = getProviderSuppressionPreflight(provider, providerLabel, payload);
+  const unsubscribePreflight = getProviderUnsubscribePreflight(provider, providerLabel, payload);
+  const auditPreviewExport = getProviderAuditPreviewExport(provider);
   const checks = [
     {
       key: "reviewed-packet",
       ready: reviewedPacketPreflight.reviewedPacketValid === true,
-      endpoint: "/gmail/preflight"
+      endpoint: `/${provider}/preflight`
     },
     {
-      key: "gmail-env",
+      key: `${provider}-env`,
       ready: envStatus.configured === true,
-      endpoint: "/gmail/status"
+      endpoint: `/${provider}/status`
     },
     {
       key: "implementation-controls",
       ready: implementationGuard.missingControls.length === 0,
-      endpoint: "/provider-implementation-guard?provider=gmail"
+      endpoint: `/provider-implementation-guard?provider=${provider}`
     },
     {
       key: "suppression",
       ready: suppressionPreflight.suppressed === false && suppressionPreflight.issues.length === 0,
-      endpoint: "/gmail/suppression-preflight"
+      endpoint: `/${provider}/suppression-preflight`
     },
     {
       key: "unsubscribe",
       ready: unsubscribePreflight.hasUnsubscribeLanguage === true,
-      endpoint: "/gmail/unsubscribe-preflight"
+      endpoint: `/${provider}/unsubscribe-preflight`
     },
     {
       key: "audit-preview",
       ready: auditPreviewExport.entries.length > 0 && auditPreviewExport.bodyContentStored === false,
-      endpoint: "/gmail/audit-preview/export"
+      endpoint: `/${provider}/audit-preview/export`
     }
   ];
   const missingChecks = checks.filter((check) => !check.ready).map((check) => check.key);
 
   return {
-    schemaVersion: "regent-growth.gmail-send-readiness-summary.v1",
+    schemaVersion: `regent-growth.${provider}-send-readiness-summary.v1`,
     generatedAt: new Date().toISOString(),
-    provider: "gmail",
+    provider,
     readyForImplementationReview: missingChecks.length === 0,
     approvedForRealSend: false,
     canSend: false,
@@ -685,11 +685,19 @@ function getGmailSendReadinessSummary(payload = {}) {
     checks,
     missingChecks,
     blockedReasons: [
-      "Gmail send readiness summary is not send approval.",
-      ...(missingChecks.length ? ["Gmail readiness checks are incomplete."] : []),
-      "Real Gmail sending requires a separate implementation approval."
+      `${providerLabel} send readiness summary is not send approval.`,
+      ...(missingChecks.length ? [`${providerLabel} readiness checks are incomplete.`] : []),
+      `Real ${providerLabel} sending requires a separate implementation approval.`
     ]
   };
+}
+
+function getGmailSendReadinessSummary(payload = {}) {
+  return getProviderSendReadinessSummary("gmail", "Gmail", payload);
+}
+
+function getOutlookSendReadinessSummary(payload = {}) {
+  return getProviderSendReadinessSummary("outlook", "Outlook", payload);
 }
 
 function createBlockedGmailSendResult(payload = {}) {
@@ -1551,6 +1559,25 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "POST" && requestUrl.pathname === "/outlook/send-readiness") {
+    try {
+      const body = await readJsonBody(request);
+      sendJson(response, 200, getOutlookSendReadinessSummary(body));
+    } catch (error) {
+      sendJson(response, 400, {
+        schemaVersion: "regent-growth.outlook-send-readiness-summary.v1",
+        generatedAt: new Date().toISOString(),
+        provider: "outlook",
+        approvedForRealSend: false,
+        canSend: false,
+        sentEnabled: false,
+        bookedEnabled: false,
+        issues: [error.message]
+      });
+    }
+    return;
+  }
+
   if (request.method === "POST" && requestUrl.pathname === "/gmail/send") {
     try {
       const body = await readJsonBody(request);
@@ -1773,7 +1800,9 @@ module.exports = {
   getProviderUnsubscribePreflight,
   getGmailUnsubscribePreflight,
   getOutlookUnsubscribePreflight,
+  getProviderSendReadinessSummary,
   getGmailSendReadinessSummary,
+  getOutlookSendReadinessSummary,
   createBlockedGmailSendResult,
   getGmailProviderRunPacket,
   getGmailImplementationReviewExport,
