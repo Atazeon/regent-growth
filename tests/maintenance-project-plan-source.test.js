@@ -131,7 +131,8 @@ const nextTaskMarkers = [
   "- First Outlook unsubscribe preflight",
   "- First Outlook unsubscribe preflight docs",
   "- First Outlook send readiness summary",
-  "- First Outlook send readiness summary docs"
+  "- First Outlook send readiness summary docs",
+  "- First Outlook live-send blocked endpoint"
 ];
 
 const checks = [
