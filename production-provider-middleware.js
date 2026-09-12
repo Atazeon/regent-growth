@@ -7,6 +7,7 @@ const maxAuditEntries = 100;
 const middlewareAuditTrail = [];
 const testMailboxCaptureAuditTrail = [];
 const gmailAuditPreviewTrail = [];
+const outlookAuditPreviewTrail = [];
 
 const providerAdapters = {
   stub: {
@@ -342,12 +343,16 @@ function getOutlookReviewedPacketPreflight(payload = {}) {
   return getProviderReviewedPacketPreflight("outlook", "Outlook", payload);
 }
 
-function createGmailAuditPreviewEntry(payload = {}, preflight = getGmailReviewedPacketPreflight(payload)) {
+function getProviderAuditPreviewTrail(provider) {
+  return provider === "outlook" ? outlookAuditPreviewTrail : gmailAuditPreviewTrail;
+}
+
+function createProviderAuditPreviewEntry(provider, providerLabel, payload = {}, preflight = getProviderReviewedPacketPreflight(provider, providerLabel, payload)) {
   const packet = payload.packet || {};
   return {
-    id: `gmail-audit-preview-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    action: "gmail-preflight",
-    provider: "gmail",
+    id: `${provider}-audit-preview-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    action: `${provider}-preflight`,
+    provider,
     accepted: false,
     sent: false,
     booked: false,
@@ -364,17 +369,34 @@ function createGmailAuditPreviewEntry(payload = {}, preflight = getGmailReviewed
   };
 }
 
-function recordGmailAuditPreviewEntry(payload = {}, preflight = getGmailReviewedPacketPreflight(payload)) {
-  const entry = createGmailAuditPreviewEntry(payload, preflight);
-  gmailAuditPreviewTrail.unshift(entry);
-  gmailAuditPreviewTrail.splice(maxAuditEntries);
+function createGmailAuditPreviewEntry(payload = {}, preflight = getGmailReviewedPacketPreflight(payload)) {
+  return createProviderAuditPreviewEntry("gmail", "Gmail", payload, preflight);
+}
+
+function createOutlookAuditPreviewEntry(payload = {}, preflight = getOutlookReviewedPacketPreflight(payload)) {
+  return createProviderAuditPreviewEntry("outlook", "Outlook", payload, preflight);
+}
+
+function recordProviderAuditPreviewEntry(provider, providerLabel, payload = {}, preflight = getProviderReviewedPacketPreflight(provider, providerLabel, payload)) {
+  const entry = createProviderAuditPreviewEntry(provider, providerLabel, payload, preflight);
+  const trail = getProviderAuditPreviewTrail(provider);
+  trail.unshift(entry);
+  trail.splice(maxAuditEntries);
   return entry;
 }
 
-function getGmailAuditPreviewExport() {
-  const entries = gmailAuditPreviewTrail.slice();
+function recordGmailAuditPreviewEntry(payload = {}, preflight = getGmailReviewedPacketPreflight(payload)) {
+  return recordProviderAuditPreviewEntry("gmail", "Gmail", payload, preflight);
+}
+
+function recordOutlookAuditPreviewEntry(payload = {}, preflight = getOutlookReviewedPacketPreflight(payload)) {
+  return recordProviderAuditPreviewEntry("outlook", "Outlook", payload, preflight);
+}
+
+function getProviderAuditPreviewExport(provider) {
+  const entries = getProviderAuditPreviewTrail(provider).slice();
   return {
-    schemaVersion: "regent-growth.gmail-audit-preview.v1",
+    schemaVersion: `regent-growth.${provider}-audit-preview.v1`,
     generatedAt: new Date().toISOString(),
     maxEntries: maxAuditEntries,
     bodyContentStored: false,
@@ -389,6 +411,14 @@ function getGmailAuditPreviewExport() {
     },
     entries
   };
+}
+
+function getGmailAuditPreviewExport() {
+  return getProviderAuditPreviewExport("gmail");
+}
+
+function getOutlookAuditPreviewExport() {
+  return getProviderAuditPreviewExport("outlook");
 }
 
 function getGmailRetryPreview(payload = {}) {
@@ -1254,6 +1284,36 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "POST" && requestUrl.pathname === "/outlook/audit-preview") {
+    try {
+      const body = await readJsonBody(request);
+      const preflight = getOutlookReviewedPacketPreflight(body);
+      const auditPreview = recordOutlookAuditPreviewEntry(body, preflight);
+      sendJson(response, 200, {
+        schemaVersion: "regent-growth.outlook-audit-preview-result.v1",
+        recorded: true,
+        sent: false,
+        booked: false,
+        preflight,
+        auditPreview
+      });
+    } catch (error) {
+      sendJson(response, 400, {
+        schemaVersion: "regent-growth.outlook-audit-preview-result.v1",
+        recorded: false,
+        sent: false,
+        booked: false,
+        issues: [error.message]
+      });
+    }
+    return;
+  }
+
+  if (request.method === "GET" && requestUrl.pathname === "/outlook/audit-preview/export") {
+    sendJson(response, 200, getOutlookAuditPreviewExport());
+    return;
+  }
+
   if (request.method === "POST" && requestUrl.pathname === "/gmail/retry-preview") {
     try {
       const body = await readJsonBody(request);
@@ -1546,9 +1606,16 @@ module.exports = {
   getProviderReviewedPacketPreflight,
   getGmailReviewedPacketPreflight,
   getOutlookReviewedPacketPreflight,
+  getProviderAuditPreviewTrail,
+  createProviderAuditPreviewEntry,
   createGmailAuditPreviewEntry,
+  createOutlookAuditPreviewEntry,
+  recordProviderAuditPreviewEntry,
   recordGmailAuditPreviewEntry,
+  recordOutlookAuditPreviewEntry,
+  getProviderAuditPreviewExport,
   getGmailAuditPreviewExport,
+  getOutlookAuditPreviewExport,
   getGmailRetryPreview,
   mapGmailProviderResponse,
   getGmailResponseMappingPreview,
