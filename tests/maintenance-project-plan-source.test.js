@@ -142,7 +142,8 @@ const nextTaskMarkers = [
   "- Real-provider production readiness review docs",
   "- First real-provider rollout gap list",
   "- First real-provider rollout gap list docs",
-  "- First real-provider send adapter implementation plan"
+  "- First real-provider send adapter implementation plan",
+  "- First real-provider send adapter implementation plan docs"
 ];
 
 const checks = [

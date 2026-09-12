@@ -141,10 +141,11 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 - Real-provider production readiness review docs
 - First real-provider rollout gap list
 - First real-provider rollout gap list docs
+- First real-provider send adapter implementation plan
 
 ### Later
 
-- First real-provider send adapter implementation plan
+- First real-provider send adapter implementation plan docs
 
 ## Data Model Draft
 

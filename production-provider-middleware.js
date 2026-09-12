@@ -979,6 +979,45 @@ function getRealProviderRolloutGapList() {
   };
 }
 
+function getRealProviderSendAdapterImplementationPlan() {
+  return {
+    schemaVersion: "regent-growth.real-provider-send-adapter-implementation-plan.v1",
+    generatedAt: new Date().toISOString(),
+    approvedForRealSend: false,
+    canSend: false,
+    sentEnabled: false,
+    bookedEnabled: false,
+    targetProviders: ["gmail", "outlook"],
+    prerequisiteEndpoints: [
+      "/real-provider/production-readiness-review",
+      "/real-provider/rollout-gap-list",
+      "/gmail/implementation-review/export",
+      "/outlook/implementation-review/export"
+    ],
+    implementationStages: [
+      "Add provider OAuth token loading without logging secrets.",
+      "Add send adapter call behind canSend false until final approval.",
+      "Enforce suppression checks inside the send path.",
+      "Enforce unsubscribe language inside the send path.",
+      "Map provider responses without storing raw response bodies.",
+      "Add bounded retry behavior with audit entries.",
+      "Require manual setup approval before any provider canSend flag changes."
+    ],
+    requiredTests: [
+      "Unit test blocked default behavior.",
+      "Unit test suppression enforcement blocks suppressed recipients.",
+      "Unit test unsubscribe enforcement blocks noncompliant drafts.",
+      "Unit test response mapping covers success and retryable failures.",
+      "Unit test audit export keeps bodyContentStored false.",
+      "Integration test remains disabled without manual setup approval."
+    ],
+    blockedReasons: [
+      "Implementation plan is not send approval.",
+      "Real provider send adapters must remain disabled until the plan is implemented and separately approved."
+    ]
+  };
+}
+
 function getRealProviderPreflightGate() {
   const readinessExport = getAdapterReadinessExport();
   const testMailboxStatus = getTestMailboxEnvStatus();
@@ -1810,6 +1849,11 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "GET" && requestUrl.pathname === "/real-provider/send-adapter-implementation-plan") {
+    sendJson(response, 200, getRealProviderSendAdapterImplementationPlan());
+    return;
+  }
+
   if (request.method === "POST" && requestUrl.pathname === "/reviewed-send") {
     try {
       const body = await readJsonBody(request);
@@ -1992,6 +2036,7 @@ module.exports = {
   getAdapterReadinessExport,
   getRealProviderProductionReadinessReview,
   getRealProviderRolloutGapList,
+  getRealProviderSendAdapterImplementationPlan,
   getRealProviderPreflightGate,
   getRealProviderSelectionPlan,
   getRealProviderDecisionRecord,
