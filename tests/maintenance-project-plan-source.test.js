@@ -145,7 +145,8 @@ const nextTaskMarkers = [
   "- First real-provider send adapter implementation plan",
   "- First real-provider send adapter implementation plan docs",
   "- First provider send adapter feature flag contract",
-  "- First provider send adapter feature flag contract docs"
+  "- First provider send adapter feature flag contract docs",
+  "- First provider send adapter audit contract"
 ];
 
 const checks = [
