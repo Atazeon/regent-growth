@@ -133,7 +133,8 @@ const nextTaskMarkers = [
   "- First Outlook send readiness summary",
   "- First Outlook send readiness summary docs",
   "- First Outlook live-send blocked endpoint",
-  "- First Outlook live-send blocked endpoint docs"
+  "- First Outlook live-send blocked endpoint docs",
+  "- First Outlook provider run packet"
 ];
 
 const checks = [
