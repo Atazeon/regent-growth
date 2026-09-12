@@ -137,10 +137,11 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 - First Outlook provider run packet docs
 - First Outlook implementation review export
 - First Outlook implementation review export docs
+- Real-provider production readiness review
 
 ### Later
 
-- Real-provider production readiness review
+- Real-provider production readiness review docs
 
 ## Data Model Draft
 

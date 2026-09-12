@@ -138,7 +138,8 @@ const nextTaskMarkers = [
   "- First Outlook provider run packet docs",
   "- First Outlook implementation review export",
   "- First Outlook implementation review export docs",
-  "- Real-provider production readiness review"
+  "- Real-provider production readiness review",
+  "- Real-provider production readiness review docs"
 ];
 
 const checks = [

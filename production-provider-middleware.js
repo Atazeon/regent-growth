@@ -898,6 +898,51 @@ function getAdapterReadinessExport() {
   };
 }
 
+function getRealProviderProductionReadinessReview(payload = {}) {
+  const providers = ["gmail", "outlook"].map((provider) => {
+    const providerLabel = provider === "outlook" ? "Outlook" : "Gmail";
+    const reviewExport = getProviderImplementationReviewExport(provider, providerLabel, payload);
+    const readiness = reviewExport.readinessSummary;
+    return {
+      provider,
+      implementationReviewSchema: reviewExport.schemaVersion,
+      runPacketSchema: reviewExport.runPacket.schemaVersion,
+      readinessSummarySchema: readiness.schemaVersion,
+      requiredDocCount: reviewExport.requiredDocs.length,
+      readyForImplementationReview: readiness.readyForImplementationReview,
+      missingChecks: readiness.missingChecks,
+      approvedForRealSend: false,
+      canSend: false
+    };
+  });
+  const reviewableProviders = providers
+    .filter((provider) => provider.readyForImplementationReview)
+    .map((provider) => provider.provider);
+
+  return {
+    schemaVersion: "regent-growth.real-provider-production-readiness-review.v1",
+    generatedAt: new Date().toISOString(),
+    approvedForRealSend: false,
+    canSend: false,
+    sentEnabled: false,
+    bookedEnabled: false,
+    providers,
+    reviewableProviders,
+    implementationReviewEndpoints: {
+      gmail: "/gmail/implementation-review/export",
+      outlook: "/outlook/implementation-review/export"
+    },
+    requiredDocs: [
+      "docs/PRODUCTION_GMAIL_IMPLEMENTATION_REVIEW.md",
+      "docs/PRODUCTION_OUTLOOK_IMPLEMENTATION_REVIEW.md"
+    ],
+    blockedReasons: [
+      "Production readiness review is not send approval.",
+      "Gmail and Outlook remain blocked until a separate send-capable implementation is approved."
+    ]
+  };
+}
+
 function getRealProviderPreflightGate() {
   const readinessExport = getAdapterReadinessExport();
   const testMailboxStatus = getTestMailboxEnvStatus();
@@ -1706,6 +1751,24 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "POST" && requestUrl.pathname === "/real-provider/production-readiness-review") {
+    try {
+      const body = await readJsonBody(request);
+      sendJson(response, 200, getRealProviderProductionReadinessReview(body));
+    } catch (error) {
+      sendJson(response, 400, {
+        schemaVersion: "regent-growth.real-provider-production-readiness-review.v1",
+        generatedAt: new Date().toISOString(),
+        approvedForRealSend: false,
+        canSend: false,
+        sentEnabled: false,
+        bookedEnabled: false,
+        issues: [error.message]
+      });
+    }
+    return;
+  }
+
   if (request.method === "POST" && requestUrl.pathname === "/reviewed-send") {
     try {
       const body = await readJsonBody(request);
@@ -1886,6 +1949,7 @@ module.exports = {
   getMiddlewareStatus,
   getAdapterReadinessReport,
   getAdapterReadinessExport,
+  getRealProviderProductionReadinessReview,
   getRealProviderPreflightGate,
   getRealProviderSelectionPlan,
   getRealProviderDecisionRecord,
