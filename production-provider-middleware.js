@@ -558,20 +558,20 @@ function getSuppressedEmailsForProvider(provider = "gmail") {
     .filter(Boolean);
 }
 
-function getGmailSuppressionPreflight(payload = {}) {
+function getProviderSuppressionPreflight(provider, providerLabel, payload = {}) {
   const packet = payload.packet || {};
   const recipientEmail = String(packet.message?.to || "").trim().toLowerCase();
-  const suppressedEmails = getSuppressedEmailsForProvider("gmail");
+  const suppressedEmails = getSuppressedEmailsForProvider(provider);
   const suppressed = recipientEmail ? suppressedEmails.includes(recipientEmail) : false;
   const issues = [
-    ...(!recipientEmail ? ["Recipient email is required for Gmail suppression preflight."] : []),
-    ...(suppressed ? ["Recipient is on the Gmail suppression list."] : [])
+    ...(!recipientEmail ? [`Recipient email is required for ${providerLabel} suppression preflight.`] : []),
+    ...(suppressed ? [`Recipient is on the ${providerLabel} suppression list.`] : [])
   ];
 
   return {
-    schemaVersion: "regent-growth.gmail-suppression-preflight.v1",
+    schemaVersion: `regent-growth.${provider}-suppression-preflight.v1`,
     checkedAt: new Date().toISOString(),
-    provider: "gmail",
+    provider,
     canSend: false,
     sentEnabled: false,
     bookedEnabled: false,
@@ -581,10 +581,18 @@ function getGmailSuppressionPreflight(payload = {}) {
     suppressedEmailCount: suppressedEmails.length,
     issues,
     blockedReasons: [
-      "Gmail suppression preflight is not send approval.",
+      `${providerLabel} suppression preflight is not send approval.`,
       ...(suppressed ? ["Suppressed recipients must not be contacted."] : [])
     ]
   };
+}
+
+function getGmailSuppressionPreflight(payload = {}) {
+  return getProviderSuppressionPreflight("gmail", "Gmail", payload);
+}
+
+function getOutlookSuppressionPreflight(payload = {}) {
+  return getProviderSuppressionPreflight("outlook", "Outlook", payload);
 }
 
 function getGmailUnsubscribePreflight(payload = {}) {
@@ -1460,6 +1468,24 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "POST" && requestUrl.pathname === "/outlook/suppression-preflight") {
+    try {
+      const body = await readJsonBody(request);
+      sendJson(response, 200, getOutlookSuppressionPreflight(body));
+    } catch (error) {
+      sendJson(response, 400, {
+        schemaVersion: "regent-growth.outlook-suppression-preflight.v1",
+        checkedAt: new Date().toISOString(),
+        provider: "outlook",
+        canSend: false,
+        sentEnabled: false,
+        bookedEnabled: false,
+        issues: [error.message]
+      });
+    }
+    return;
+  }
+
   if (request.method === "POST" && requestUrl.pathname === "/gmail/unsubscribe-preflight") {
     try {
       const body = await readJsonBody(request);
@@ -1714,7 +1740,9 @@ module.exports = {
   mapOutlookProviderResponse,
   getOutlookResponseMappingPreview,
   getSuppressedEmailsForProvider,
+  getProviderSuppressionPreflight,
   getGmailSuppressionPreflight,
+  getOutlookSuppressionPreflight,
   getGmailUnsubscribePreflight,
   getGmailSendReadinessSummary,
   createBlockedGmailSendResult,
