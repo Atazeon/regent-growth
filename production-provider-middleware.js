@@ -733,11 +733,11 @@ function createBlockedOutlookSendResult(payload = {}) {
   return createBlockedProviderSendResult("outlook", "Outlook", payload);
 }
 
-function getGmailProviderRunPacket() {
+function getProviderRunPacket(provider, providerLabel) {
   return {
-    schemaVersion: "regent-growth.gmail-provider-run-packet.v1",
+    schemaVersion: `regent-growth.${provider}-provider-run-packet.v1`,
     generatedAt: new Date().toISOString(),
-    provider: "gmail",
+    provider,
     mode: "blocked-send-prep",
     approvedForRealSend: false,
     canSend: false,
@@ -745,19 +745,19 @@ function getGmailProviderRunPacket() {
     bookedEnabled: false,
     fixture: "tests/fixtures/production-reviewed-send-valid.json",
     endpoints: {
-      status: "/gmail/status",
-      preflight: "/gmail/preflight",
-      auditPreview: "/gmail/audit-preview",
-      auditPreviewExport: "/gmail/audit-preview/export",
-      retryPreview: "/gmail/retry-preview",
-      responseMappingPreview: "/gmail/response-mapping-preview",
-      suppressionPreflight: "/gmail/suppression-preflight",
-      unsubscribePreflight: "/gmail/unsubscribe-preflight",
-      sendReadiness: "/gmail/send-readiness",
-      blockedSend: "/gmail/send"
+      status: `/${provider}/status`,
+      preflight: `/${provider}/preflight`,
+      auditPreview: `/${provider}/audit-preview`,
+      auditPreviewExport: `/${provider}/audit-preview/export`,
+      retryPreview: `/${provider}/retry-preview`,
+      responseMappingPreview: `/${provider}/response-mapping-preview`,
+      suppressionPreflight: `/${provider}/suppression-preflight`,
+      unsubscribePreflight: `/${provider}/unsubscribe-preflight`,
+      sendReadiness: `/${provider}/send-readiness`,
+      blockedSend: `/${provider}/send`
     },
     requiredProof: [
-      "Gmail environment status export reviewed.",
+      `${providerLabel} environment status export reviewed.`,
       "Reviewed packet preflight passes validation.",
       "Suppression preflight confirms recipient is not suppressed.",
       "Unsubscribe preflight confirms opt-out language.",
@@ -766,6 +766,14 @@ function getGmailProviderRunPacket() {
       "Blocked send endpoint returns 403 with sent false."
     ]
   };
+}
+
+function getGmailProviderRunPacket() {
+  return getProviderRunPacket("gmail", "Gmail");
+}
+
+function getOutlookProviderRunPacket() {
+  return getProviderRunPacket("outlook", "Outlook");
 }
 
 function getGmailImplementationReviewExport(payload = {}) {
@@ -1631,6 +1639,11 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "GET" && requestUrl.pathname === "/outlook/run-packet") {
+    sendJson(response, 200, getOutlookProviderRunPacket());
+    return;
+  }
+
   if (request.method === "POST" && requestUrl.pathname === "/gmail/implementation-review/export") {
     try {
       const body = await readJsonBody(request);
@@ -1834,7 +1847,9 @@ module.exports = {
   createBlockedProviderSendResult,
   createBlockedGmailSendResult,
   createBlockedOutlookSendResult,
+  getProviderRunPacket,
   getGmailProviderRunPacket,
+  getOutlookProviderRunPacket,
   getGmailImplementationReviewExport,
   getTestMailboxRunPacket,
   getMiddlewareStatus,
