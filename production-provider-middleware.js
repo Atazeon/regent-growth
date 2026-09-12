@@ -595,21 +595,21 @@ function getOutlookSuppressionPreflight(payload = {}) {
   return getProviderSuppressionPreflight("outlook", "Outlook", payload);
 }
 
-function getGmailUnsubscribePreflight(payload = {}) {
+function getProviderUnsubscribePreflight(provider, providerLabel, payload = {}) {
   const packet = payload.packet || {};
   const body = String(packet.message?.body || "");
   const normalizedBody = body.toLowerCase();
   const requiredTerms = ["unsubscribe", "opt out"];
   const hasUnsubscribeLanguage = requiredTerms.some((term) => normalizedBody.includes(term));
   const issues = [
-    ...(!body ? ["Message body is required for Gmail unsubscribe preflight."] : []),
+    ...(!body ? [`Message body is required for ${providerLabel} unsubscribe preflight.`] : []),
     ...(!hasUnsubscribeLanguage ? ["Message body must include unsubscribe or opt-out language."] : [])
   ];
 
   return {
-    schemaVersion: "regent-growth.gmail-unsubscribe-preflight.v1",
+    schemaVersion: `regent-growth.${provider}-unsubscribe-preflight.v1`,
     checkedAt: new Date().toISOString(),
-    provider: "gmail",
+    provider,
     canSend: false,
     sentEnabled: false,
     bookedEnabled: false,
@@ -618,10 +618,18 @@ function getGmailUnsubscribePreflight(payload = {}) {
     requiredTerms,
     issues,
     blockedReasons: [
-      "Gmail unsubscribe preflight is not send approval.",
-      ...(!hasUnsubscribeLanguage ? ["Unsubscribe or opt-out language is required before Gmail implementation review."] : [])
+      `${providerLabel} unsubscribe preflight is not send approval.`,
+      ...(!hasUnsubscribeLanguage ? [`Unsubscribe or opt-out language is required before ${providerLabel} implementation review.`] : [])
     ]
   };
+}
+
+function getGmailUnsubscribePreflight(payload = {}) {
+  return getProviderUnsubscribePreflight("gmail", "Gmail", payload);
+}
+
+function getOutlookUnsubscribePreflight(payload = {}) {
+  return getProviderUnsubscribePreflight("outlook", "Outlook", payload);
 }
 
 function getGmailSendReadinessSummary(payload = {}) {
@@ -1505,6 +1513,25 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "POST" && requestUrl.pathname === "/outlook/unsubscribe-preflight") {
+    try {
+      const body = await readJsonBody(request);
+      sendJson(response, 200, getOutlookUnsubscribePreflight(body));
+    } catch (error) {
+      sendJson(response, 400, {
+        schemaVersion: "regent-growth.outlook-unsubscribe-preflight.v1",
+        checkedAt: new Date().toISOString(),
+        provider: "outlook",
+        canSend: false,
+        sentEnabled: false,
+        bookedEnabled: false,
+        bodyContentStored: false,
+        issues: [error.message]
+      });
+    }
+    return;
+  }
+
   if (request.method === "POST" && requestUrl.pathname === "/gmail/send-readiness") {
     try {
       const body = await readJsonBody(request);
@@ -1743,7 +1770,9 @@ module.exports = {
   getProviderSuppressionPreflight,
   getGmailSuppressionPreflight,
   getOutlookSuppressionPreflight,
+  getProviderUnsubscribePreflight,
   getGmailUnsubscribePreflight,
+  getOutlookUnsubscribePreflight,
   getGmailSendReadinessSummary,
   createBlockedGmailSendResult,
   getGmailProviderRunPacket,

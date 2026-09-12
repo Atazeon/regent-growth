@@ -127,10 +127,11 @@ AI direction: use local Ollama through `http://127.0.0.1:11434` as the first AI 
 - First Outlook provider response mapping docs
 - First Outlook suppression preflight
 - First Outlook suppression preflight docs
+- First Outlook unsubscribe preflight
 
 ### Later
 
-- First Outlook unsubscribe preflight
+- First Outlook unsubscribe preflight docs
 
 ## Data Model Draft
 

@@ -128,7 +128,8 @@ const nextTaskMarkers = [
   "- First Outlook provider response mapping docs",
   "- First Outlook suppression preflight",
   "- First Outlook suppression preflight docs",
-  "- First Outlook unsubscribe preflight"
+  "- First Outlook unsubscribe preflight",
+  "- First Outlook unsubscribe preflight docs"
 ];
 
 const checks = [
